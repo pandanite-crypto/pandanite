@@ -126,6 +126,7 @@ void BlockChain::updateDifficulty(Block& block) {
         int delta = -round(log2(ratio));
         this->difficulty += delta;
         this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
+        cout<<"Average block time: "<<average<<endl;
         cout<<"Updated difficulty: "<<this->difficulty<<endl;
     }
 }
