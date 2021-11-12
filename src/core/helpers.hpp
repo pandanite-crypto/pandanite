@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "common.hpp"
+#include <ctime>
 using namespace std;
 
 string randomString(int length);

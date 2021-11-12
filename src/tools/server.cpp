@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
         }
         res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
     }).get("/ledger/:user", [&manager](auto *res, auto *req) {
-        PublicWalletAddress w = stringToWalletAddress(req->getParameter(0));
+        PublicWalletAddress w = stringToWalletAddress(string(req->getParameter(0)));
         json ledger = manager.getLedger(w);
         res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
     }).post("/submit", [&manager](auto *res, auto *req) {

@@ -59,7 +59,7 @@ json RequestManager::getBlock(int index) {
 }
 json RequestManager::getLedger(PublicWalletAddress w) {
     json result;
-    LedgerState& l = this->blockchain->getLedger();
+    LedgerState& ledger = this->blockchain->getLedger();
     if (ledger.find(w) == ledger.end()) {
         result["error"] = "Wallet not found";
     } else {

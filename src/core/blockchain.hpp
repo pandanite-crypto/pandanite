@@ -5,6 +5,7 @@
 #include "executor.hpp"
 #include "common.hpp"
 #include <string>
+#include <thread>
 #include <vector>
 #include <map>
 #include <mutex>
