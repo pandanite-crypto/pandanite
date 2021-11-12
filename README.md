@@ -25,31 +25,23 @@ make
 * JSON for modern CPP
 
 ### Usage
-To start, generate a pub/private key as follows:
+The hosts list is stored hosts.txt. To start a server simply run:
+```
+./bin/server <port>
+```
+
+To start mining, generate a pub/private key as follows:
 ```
 mkdir keys
 ./bin/cli
 1 [add new user]
 ./keys/miner.json [enter the save file path]
 ```
-This will create a file called miner.json that is read by the miner. Once you have done this start a local chain server:
-```
-./bin/server 3000
-```
-You can now run the miner
+
+This will create a file called miner.json that is read by the miner. You can run the miner as follows:
 ```
 ./bin/miner
 ```
-If everything is working you will see the miner successfully adding blocks.
-
-Note that the difficulties setup here are very low. You'll want to look at `./src/core/constants.hpp` to put a larger transaction count, higher difficulty scores etc. You will need to edit the `genesis.json` file to reflect the min difficulty count.
-
-If you want to run more server you can specify a host to mirror the blockchain from
-```
-./bin/server 8000 http://localhost:3000
-```
-
-
 
 
 
