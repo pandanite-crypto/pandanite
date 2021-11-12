@@ -57,11 +57,13 @@ json RequestManager::getProofOfWork() {
 json RequestManager::getBlock(int index) {
     return this->blockchain->getBlock(index).toJson();
 }
-json RequestManager::getLedger() {
+json RequestManager::getLedger(PublicWalletAddress w) {
     json result;
-    for(auto it : this->blockchain->getLedger()) {
-        string hex = walletAddressToString(it.first);
-        result[hex] = it.second;
+    LedgerState& l = this->blockchain->getLedger();
+    if (ledger.find(w) == ledger.end()) {
+        result["error"] = "Wallet not found";
+    } else {
+        result["balance"] = ledger[w];
     }
     return result;
 }

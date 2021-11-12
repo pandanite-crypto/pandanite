@@ -13,7 +13,7 @@ class RequestManager {
         json getProofOfWork();
         json submitProofOfWork(json data);
         json getBlock(int index);
-        json getLedger();
+        json getLedger(PublicWalletAddress w);
         string getBlockCount();
         BlockChain* blockchain;
     protected:
