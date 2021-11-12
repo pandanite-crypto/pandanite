@@ -2,6 +2,8 @@ panda-coin
 ====================
 Simple C++ implementation of a blockchain based cryptocurrency
 
+![panda](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Noto_Emoji_KitKat_1f43c.svg/240px-Noto_Emoji_KitKat_1f43c.svg.png)
+
 Requires:
 * CMake
 * Conan package manager (http://www.conan.io)
