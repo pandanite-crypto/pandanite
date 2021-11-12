@@ -34,9 +34,10 @@ void run_mining(User& miner, string& host) {
         SHA256Hash solution = mineHash(hash, challengeSize);
         newBlock.setNonce(solution);
         // send the solution!
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         cout<<"Submitting solution"<<endl;
         cout<<submitBlock(host, newBlock)<<endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        
     }
 }
 

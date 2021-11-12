@@ -126,6 +126,7 @@ void BlockChain::updateDifficulty(Block& block) {
         int delta = -round(log2(ratio));
         this->difficulty += delta;
         this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
+        cout<<"Updated difficulty: "<<this->difficulty<<endl;
     }
 }
 
@@ -136,6 +137,7 @@ int BlockChain::getDifficulty() {
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
+    if (block.getId() != this->chain.size() + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce(this->getLastHash())) return INVALID_NONCE;
     LedgerState deltasFromBlock;

@@ -1,5 +1,6 @@
 #include "merkle_tree.hpp"
 #include <queue>
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
@@ -42,6 +43,9 @@ MerkleTree::~MerkleTree() {
 
 void MerkleTree::setItems(vector<Transaction>& items) {
     if (this->root) delete this->root;
+    std::sort(items.begin(), items.end(), [](const Transaction & a, const Transaction & b) -> bool { 
+        return SHA256toString(a.getHash()) > SHA256toString(b.getHash());
+    });
     queue<HashTree*> q;
     for(auto item : items) {
         SHA256Hash h = item.getHash();
