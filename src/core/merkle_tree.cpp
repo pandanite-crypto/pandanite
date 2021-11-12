@@ -1,0 +1,81 @@
+#include "merkle_tree.hpp"
+#include <queue>
+#include <iostream>
+using namespace std;
+
+
+
+HashTree::HashTree(SHA256Hash hash) {
+    parent = left = right = NULL;
+    this->hash = hash;
+}
+HashTree::~HashTree() {
+    if (this->left) delete this->left;
+    if (this->right) delete this->right;
+}
+
+HashTree* getProof(HashTree* fringe, HashTree* previousNode=NULL) {
+    HashTree* result = new HashTree(fringe->hash);
+    if (previousNode != NULL) {
+        if (fringe->left && fringe->left != previousNode) {
+            result->left = fringe->left;
+            result->right = previousNode;
+        } else if (fringe->right && fringe->right != previousNode) {
+            result->right = fringe->right;
+            result->left = previousNode;
+        }
+    }
+    if(fringe->parent) {
+        return getProof(fringe->parent, fringe);
+    } else {
+        return result;
+    }
+}
+
+MerkleTree::MerkleTree() {
+    this->root = NULL;
+}
+
+MerkleTree::~MerkleTree() {
+    delete this->root;
+}
+
+void MerkleTree::setItems(vector<Transaction>& items) {
+    if (this->root) delete this->root;
+    queue<HashTree*> q;
+    for(auto item : items) {
+        SHA256Hash h = item.getHash();
+        this->fringeNodes[h] = new HashTree(h);
+        q.push(this->fringeNodes[h]);
+    }
+
+    if (q.size()%2 == 1) {
+        auto repeat = new HashTree(q.back()->hash);
+        q.push(repeat);
+    }
+    
+    while(q.size()>1) {
+        HashTree* a = q.front();
+        q.pop();
+        HashTree* b = q.front();
+        q.pop();
+        HashTree* root = new HashTree(NULL_SHA256_HASH);
+        root->left = a;
+        root->right = b;
+        a->parent = root;
+        b->parent = root;
+        root->hash = concatHashes(a->hash, b->hash);
+        q.push(root);
+    }
+    this->root = q.front();
+}
+
+SHA256Hash MerkleTree::getRootHash() {
+    return this->root->hash;
+}
+
+HashTree* MerkleTree::getMerkleProof(Transaction t) {
+    SHA256Hash hash = t.getHash();
+    if (this->fringeNodes.find(hash) == this->fringeNodes.end()) throw std::runtime_error("Item not in Merkle Tree");
+    return getProof(this->fringeNodes[hash]);
+}
