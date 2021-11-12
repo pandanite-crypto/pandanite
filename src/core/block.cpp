@@ -114,13 +114,13 @@ void Block::computeMerkleTree() {
 
 SHA256Hash Block::getHash(SHA256Hash previousHash) {
     if (!this->hasMerkleTree) this->computeMerkleTree();
-    BlockHeader b;
-    b.timestamp = this->timestamp;
-    b.nonce = NULL_SHA256_HASH;
-    b.difficulty = this->difficulty;
-    b.previousBlockHash = previousHash;
-    b.merkleRoot = this->merkleTree.getRootHash();
-    SHA256Hash h = SHA256((const char*)&b, sizeof(b));
+    stringstream s;
+    s<<timeToString(this->timestamp)<<":";
+    s<<this->difficulty<<":";
+    s<<SHA256toString(previousHash)<<":";  
+    s<<SHA256toString(this->merkleTree.getRootHash())<<":";
+    string str = s.str();
+    SHA256Hash h = SHA256(s.str());
     return h;
 }
 

@@ -12,7 +12,6 @@ int main() {
     map<string,User*> users;
     string host = "http://localhost:3000";
 
-    json data = readJsonFromFile("./keys/miner.json");
     while(true) {
         int x; 
         cout << "Choose an option: " <<endl;

@@ -1,3 +1,4 @@
+#pragma once
 #include "transaction.hpp"
 #include "crypto.hpp"
 #include <map>

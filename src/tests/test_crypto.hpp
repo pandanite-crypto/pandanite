@@ -43,9 +43,8 @@ TEST(mine_hash) {
     SHA256Hash answer = mineHash(hash, 16);
     SHA256Hash newHash = concatHashes(hash, answer);
     const char * a = (const char*) newHash.data();
-    const char * b = (const char*) hash.data();
     // check first 2 bytes (16 bits)
-    ASSERT_TRUE(memcmp(a, b, 2) == 0);
+    ASSERT_TRUE(a[0] == 0 && a[1] == 0);
 }
 
 TEST(sha256_to_string) {

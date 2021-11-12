@@ -215,10 +215,10 @@ bool checkSignature(const char* bytes, size_t len, TransactionSignature signatur
 
 SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b) {
     vector<uint8_t> concat;
-    for(size_t i = 0; i < 32; i++) {
+    for(size_t i = 0; i < a.size(); i++) {
         concat.push_back(a[i]);
     }
-    for(size_t i = 0; i < 32; i++) {
+    for(size_t i = 0; i < b.size(); i++) {
         concat.push_back(b[i]);
     }
     SHA256Hash fullHash  = SHA256((const char*)concat.data(), concat.size());
@@ -229,13 +229,15 @@ SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b) {
 bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize) {
     SHA256Hash fullHash  = concatHashes(target, nonce);
     int bytes = challengeSize / 8;
-    const uint8_t * a = target.data();
-    const uint8_t * b = fullHash.data();
+    const uint8_t * a = fullHash.data();
     if (bytes == 0) {
-        return a[0]>>(8-challengeSize) == b[0]>>(8-challengeSize);
-    } else if(memcmp(a, b, bytes) == 0) {
+        return a[0]>>(8-challengeSize) == 0;
+    } else {
+        for (int i = 0; i < bytes; i++) {
+            if (a[i] != 0) return false;
+        }
         int remainingBits = challengeSize - 8*bytes;
-        if (remainingBits > 0) return a[bytes + 1]>>(8-remainingBits) == b[bytes + 1]>>(8-remainingBits);
+        if (remainingBits > 0) return a[bytes + 1]>>(8-remainingBits) == 0;
         else return true;
     }
     return false;

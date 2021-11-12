@@ -19,18 +19,19 @@ void run_mining(User& miner, string& host) {
         cout<<"getting problem"<<endl;
         int nextBlock = getCurrentBlockCount(host) + 1;
         json problem = getMiningProblem(host);
-        SHA256Hash lastHash = stringToSHA256(problem["lastHash"]);
+        string lastHashStr = problem["lastHash"];
+        SHA256Hash lastHash = stringToSHA256(lastHashStr);
         int challengeSize = problem["challengeSize"];
-
+        
+        User miner;
         // have miner mine the next block
         Transaction fee = miner.mine(nextBlock);
         vector<Transaction> transactions;
         Block newBlock;
         newBlock.setId(nextBlock);
-        newBlock.setDifficulty(challengeSize);
         newBlock.addTransaction(fee);
         SHA256Hash hash = newBlock.getHash(lastHash);
-        SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+        SHA256Hash solution = mineHash(hash, challengeSize);
         newBlock.setNonce(solution);
         // send the solution!
         cout<<"Submitting solution"<<endl;
@@ -40,9 +41,6 @@ void run_mining(User& miner, string& host) {
 }
 
 int main() {
-    
-    
-
     json data = readJsonFromFile("./keys/miner.json");
     User miner(data);
     string host = "http://localhost:3000";

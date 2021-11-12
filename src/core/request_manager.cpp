@@ -1,5 +1,6 @@
 #include "request_manager.hpp"
 #include "helpers.hpp"
+#include "user.hpp"
 #include <map>
 #include <iostream>
 using namespace std;
@@ -33,6 +34,7 @@ json RequestManager::submitProofOfWork(json request) {
     this->blockchain->acquire();
     // parse and add mining fee 
     Block newBlock(request["block"]);
+
     // add to the chain!
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);

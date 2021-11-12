@@ -8,17 +8,6 @@
 #include "merkle_tree.hpp"
 using namespace std;
 
-#define NONCE_CHAR_COUNT 45
-#define PUBKEY_CHAR_COUNT 100
-
-struct BlockHeader {
-    time_t timestamp;
-    SHA256Hash merkleRoot;
-    SHA256Hash nonce;
-    int difficulty;
-    SHA256Hash previousBlockHash;
-};
-
 class Block {
     public:
         Block();

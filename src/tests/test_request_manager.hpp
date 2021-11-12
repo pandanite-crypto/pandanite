@@ -2,6 +2,7 @@
 #include "../core/user.hpp"
 #include "../core/block.hpp"
 #include "../core/transaction.hpp"
+#include <thread>
 using namespace std;
 
 TEST(test_accepts_proof_of_work) {
@@ -11,7 +12,7 @@ TEST(test_accepts_proof_of_work) {
     string lastHashStr = pow["lastHash"];
     SHA256Hash lastHash = stringToSHA256(lastHashStr);
     int challengeSize = pow["challengeSize"];
-    
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     User miner;
     // have miner mine the next block
     Transaction fee = miner.mine(2);
