@@ -28,7 +28,7 @@ PandaCoin is written from the ground up in C++. We want the PandaCoin source cod
 ### Getting Started
 
 1. The first step is to create a founding wallet. This can be done using the create wallet application. Save the key file and keep it in a safe location. Never share it with anyone. If you lose this key you loose your wallet.
-2. The second step is to setup a node. Nodes can have mining switched on or switched off (if you don't want the node hogging your CPU). Instructions for compiling the code from source are below. We also offer hosted panda coin miner nodes for $49.99 a month -- we charge this to pay for our server costs.
+2. The second step is to setup a node. Nodes can have mining switched on or switched off (if you don't want the node hogging your CPU). Instructions for compiling the code from source are below. We also offer hosted panda coin miner nodes for $49.99 a month (to pay for our server costs).
 3. Once the node is ready, you can start it by specifying your public wallet address (which is written in the key-file). This address is where coins mined by the node will be stored.
 
 ### Building
