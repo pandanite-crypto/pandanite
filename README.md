@@ -9,7 +9,7 @@ To do this PandaCoin gives a certain portion of every transaction back to the us
 Unlike other cryptocurrencies, creating a PandaCoin founding wallet requires proof of work. This is to prevent users from simply creating thousands of fake wallets per person in order earn multiple rewards. Non-founding wallets can still transact on the network, but they will not earn any rewards.
 
 ### How it works
-Wallet addresses correspond to public keys which are generated from private keys. The private key is a 256-bit number and you can generate as many of them as you want. We require founding wallet addresses to have a certain number of prefixed '0's for them to be admitted. The more '0's required the harder it is to find a wallet address that matches the pattern. We chose the difficulty level so that on an average modern laptop it will take roughly 2 hours to generate a founding wallet.
+Wallet addresses correspond to public keys which are generated from private keys. The private key is a 256-bit number and you can generate as many of them as you want. We require the SHA256 hash of founding wallet addresses to have a certain number of prefixed '0's for them to be admitted. The more '0's required the harder it is to find a wallet address that matches the pattern. We chose the difficulty level so that on an average modern laptop it will take roughly 2 hours to generate a founding wallet.
 
 ### Payouts
 The total transaction founders fee is 0.5%. This 0.5% is split amongst three groups
