@@ -1,8 +1,10 @@
 panda-coin
 ====================
-Simple C++ implementation of a blockchain based cryptocurrency
+Simple C++ implementation of a blockchain based cryptocurrency.
 
 ![panda](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Noto_Emoji_KitKat_1f43c.svg/240px-Noto_Emoji_KitKat_1f43c.svg.png)
+
+PandaCoin was written from scratch with the goal of having a fully functional coin with source code that is as simple and easy to understand as possible.
 
 Requires:
 * CMake
