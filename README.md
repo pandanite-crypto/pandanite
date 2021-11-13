@@ -1,7 +1,6 @@
 Welcome to PandaCoin! 
 ====================
-![panda](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Noto_Emoji_KitKat_1f43c.svg/240px-Noto_Emoji_KitKat_1f43c.svg.png)
-
+<image src="https://github.com/mr-pandabear/panda-website/blob/master/logo.png" width="350"/>
 PandaCoin was designed with a simple philosophy: those that help create the global panda network should earn from the effort they put in, without having to sell off their coins.
 
 To do this PandaCoin gives a certain portion of every transaction back to the user base, with a payout proportional to each founding wallets seniority, up to the first 1 million founding wallets. This means that the first 1 million users will always earn from the panda network because they believed in our currency early.
