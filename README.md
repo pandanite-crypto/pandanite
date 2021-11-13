@@ -1,8 +1,8 @@
-Panda Coin
+Welcome to PandaCoin! 
 ====================
 ![panda](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Noto_Emoji_KitKat_1f43c.svg/240px-Noto_Emoji_KitKat_1f43c.svg.png)
 
-Welcome to PandaCoin! PandaCoin was designed with a simple philosophy: those that help create the global panda network should earn from the effort they put in, without having to sell off their coins.
+PandaCoin was designed with a simple philosophy: those that help create the global panda network should earn from the effort they put in, without having to sell off their coins.
 
 To do this PandaCoin gives a certain portion of every transaction back to the user base, with a payout proportional to each founding wallets seniority, up to the first 1 million founding wallets. This means that the first 1 million users will always earn from the panda network because they believed in our currency early.
 
@@ -25,6 +25,13 @@ PandaCoin's are minted by miners who earn a reward of 50 bamboo per block. Minin
 ### Technical Implementation
 PandaCoin is written from the ground up in C++. We want the PandaCoin source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we build PandaCoin with love from the ground up. PandaCoin uses JSON rather than complex serialized formats to communicate between nodes. This is done for simplicity but we will eventually replace JSON for MessagePack once the blockcount reaches a certain threshold. 
 
+### Getting Started
+
+1. The first step is to create a founding wallet. This can be done using the create wallet application. Save the key file and keep it in a safe location. Never share it with anyone. If you lose this key you loose your wallet.
+2. The second step is to setup a node. Nodes can have mining switched on or switched off (if you don't want the node hogging your CPU). Instructions for compiling the code from source are below. We also offer hosted panda coin miner nodes for $49.99 a month -- we charge this to pay for our server costs.
+3. Once the node is ready, you can start it by specifying your public wallet address (which is written in the key-file). This address is where coins mined by the node will be stored.
+
+### Building
 Requires:
 * CMake
 * Conan package manager (http://www.conan.io)
