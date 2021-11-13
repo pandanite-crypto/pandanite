@@ -49,7 +49,7 @@ int main() {
             cin>>amount;
             User * fromUser = users[from];
             User * toUser = users[to];
-            int blockId = getCurrentBlockCount(host) + 1;
+            int blockId = getCurrentBlockCount(host) + 2; // usually send 1 block into the future
             cout<<"Creating transaction, current block: "<<blockId<<endl;
             Transaction t = fromUser->send(*toUser, amount, blockId);
             cout<<sendTransaction(host, t)<<endl;

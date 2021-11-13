@@ -3,6 +3,8 @@
 #include "transaction.hpp"
 #include "common.hpp"
 #include <vector>
+#include <map>
+#include <list>
 using namespace std;
 
 
@@ -17,6 +19,5 @@ class RequestManager {
         string getBlockCount();
         BlockChain* blockchain;
     protected:
-        
-        vector<Transaction> transactionQueue;
+        map<int,list<Transaction>> transactionQueue;
 };

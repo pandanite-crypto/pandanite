@@ -30,6 +30,10 @@ void run_mining(User& miner, string& host) {
         Block newBlock;
         newBlock.setId(nextBlock);
         newBlock.addTransaction(fee);
+        for(auto t : problem["transactions"]) {
+            Transaction x(t);
+            newBlock.addTransaction(x);
+        }
         newBlock.setDifficulty(challengeSize);
         SHA256Hash hash = newBlock.getHash(lastHash);
         SHA256Hash solution = mineHash(hash, challengeSize);
@@ -45,7 +49,7 @@ void run_mining(User& miner, string& host) {
 int main() {
     json data = readJsonFromFile("./keys/miner.json");
     User miner(data);
-    string host = "http://ec2-34-202-237-234.compute-1.amazonaws.com:3000";
+    string host = "http://localhost:3000";
     // run miner in background
     std::thread mining_thread(run_mining, ref(miner), ref(host));
 

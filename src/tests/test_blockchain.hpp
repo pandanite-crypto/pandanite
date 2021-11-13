@@ -17,6 +17,7 @@ TEST(check_adding_new_node_with_hash) {
     Transaction fee = miner.mine(1);
     vector<Transaction> transactions;
     Block newBlock;
+    newBlock.setId(2);
     newBlock.addTransaction(fee);
     SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
