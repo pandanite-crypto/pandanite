@@ -22,7 +22,7 @@ PandaCoin's are minted by miners who earn a reward of 50 bamboo per block. Minin
 
 
 ### Technical Implementation
-PandaCoin is written from the ground up in C++. We want the PandaCoin source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we build PandaCoin with love from the ground up. PandaCoin uses JSON rather than complex serialized formats to communicate between nodes. This is done for simplicity but we will eventually replace JSON for MessagePack once the blockcount reaches a certain threshold. 
+PandaCoin is written from the ground up in C++. We want the PandaCoin source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built PandaCoin from the ground up with lots of love/
 
 ### Getting Started
 
