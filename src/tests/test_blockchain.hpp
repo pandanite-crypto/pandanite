@@ -1,6 +1,7 @@
 #include "../core/blockchain.hpp"
 #include "../core/helpers.hpp"
 #include "../core/constants.hpp"
+#include "../core/user.hpp"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -14,7 +15,7 @@ TEST(check_adding_new_node_with_hash) {
     User other;
 
     // have miner mine the next block
-    Transaction fee = miner.mine(1);
+    Transaction fee = miner.mine(2);
     vector<Transaction> transactions;
     Block newBlock;
     newBlock.setId(2);
@@ -24,6 +25,7 @@ TEST(check_adding_new_node_with_hash) {
     newBlock.setNonce(solution);
     ExecutionStatus status = blockchain->addBlock(newBlock);
     ASSERT_EQUAL(status, SUCCESS);
+    delete blockchain;
 }
 
 TEST(check_adding_two_nodes_updates_ledger) {
@@ -43,9 +45,10 @@ TEST(check_adding_two_nodes_updates_ledger) {
         ExecutionStatus status = blockchain->addBlock(newBlock);
         ASSERT_EQUAL(status, SUCCESS);
     }
-    LedgerState &ledger = blockchain->getLedger();
-    double total = ledger[miner.getAddress()];
+    Ledger& ledger = blockchain->getLedger();
+    double total = ledger.getWalletValue(miner.getAddress());
     ASSERT_EQUAL(total, 100.0);
+    delete blockchain;
 }
 
 TEST(check_sending_transaction_updates_ledger) {
@@ -72,10 +75,11 @@ TEST(check_sending_transaction_updates_ledger) {
         ExecutionStatus status = blockchain->addBlock(newBlock);
         ASSERT_EQUAL(status, SUCCESS);
     }
-    LedgerState &ledger = blockchain->getLedger();
-    double minerTotal = ledger[miner.getAddress()];
-    double otherTotal = ledger[other.getAddress()];
+    Ledger& ledger = blockchain->getLedger();
+    double minerTotal = ledger.getWalletValue(miner.getAddress());
+    double otherTotal = ledger.getWalletValue(other.getAddress());
 
     ASSERT_EQUAL(minerTotal, 80.0);
     ASSERT_EQUAL(otherTotal, 20.0);
+    delete blockchain;
 }

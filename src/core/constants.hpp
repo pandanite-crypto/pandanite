@@ -3,6 +3,7 @@
 #define MINING_PAYMENTS_UNTIL 200000
 #define GENESIS_FILE_PATH "./genesis.json"
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
+#define LEDGER_FILE_PATH "./data/ledger"
 #define MAX_TRANSACTIONS_PER_BLOCK 2500
 #define DIFFICULTY_RESET_FREQUENCY 1000
 #define DESIRED_BLOCK_TIME_SEC 30

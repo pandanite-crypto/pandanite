@@ -99,11 +99,11 @@ json RequestManager::getBlock(int index) {
 }
 json RequestManager::getLedger(PublicWalletAddress w) {
     json result;
-    LedgerState& ledger = this->blockchain->getLedger();
-    if (ledger.find(w) == ledger.end()) {
+    Ledger& ledger = this->blockchain->getLedger();
+    if (!ledger.hasWallet(w)) {
         result["error"] = "Wallet not found";
     } else {
-        result["balance"] = ledger[w];
+        result["balance"] = ledger.getWalletValue(w);
     }
     return result;
 }

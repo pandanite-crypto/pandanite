@@ -4,6 +4,7 @@
 #include "constants.hpp"
 #include "executor.hpp"
 #include "common.hpp"
+#include "ledger.hpp"
 #include <string>
 #include <thread>
 #include <vector>
@@ -23,12 +24,12 @@ class BlockChain {
         int getDifficulty();
         int getBlockCount();
         SHA256Hash getLastHash();
-        LedgerState& getLedger();
+        Ledger& getLedger();
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(Transaction& t);
     protected:
         vector<Block> chain;
-        LedgerState ledger;
+        Ledger ledger;
         SHA256Hash lastHash;
         int difficulty;
         void updateDifficulty(Block& b);

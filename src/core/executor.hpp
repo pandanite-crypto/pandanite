@@ -2,6 +2,7 @@
 #include "block.hpp"
 #include "constants.hpp"
 #include "common.hpp"
+#include "ledger.hpp"
 using namespace std;
 
 enum ExecutionStatus {
@@ -23,7 +24,7 @@ string executionStatusAsString(ExecutionStatus s);
 
 class Executor {
     public:
-        static void Rollback(LedgerState& ledger, LedgerState& deltas);
-        static ExecutionStatus ExecuteBlock(Block& block, LedgerState& ledger, LedgerState& deltas);
-        static ExecutionStatus ExecuteTransaction(LedgerState& ledger, Transaction t, LedgerState& deltas);
+        static void Rollback(Ledger& ledger, LedgerState& deltas);
+        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, LedgerState& deltas);
+        static ExecutionStatus ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas);
 };

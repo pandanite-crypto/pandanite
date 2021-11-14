@@ -49,12 +49,12 @@ string executionStatusAsString(ExecutionStatus status) {
     }
 }
 
-void deposit(PublicWalletAddress to, double amt, LedgerState& ledger,  LedgerState& deltas) {
-    auto receiver = ledger.find(to);
-    if (receiver == ledger.end()) {
-        ledger.insert(pair<PublicWalletAddress, TransactionAmount>(to, amt));
+void deposit(PublicWalletAddress to, double amt, Ledger& ledger,  LedgerState& deltas) {
+    
+    if (ledger.hasWallet(to)) {
+        ledger.deposit(to, amt);
     } else {
-        receiver->second += amt;
+        ledger.setWalletValue(to, amt);
     }
     auto receiverDelta = deltas.find(to);
     if (receiverDelta == deltas.end()) {
@@ -64,9 +64,12 @@ void deposit(PublicWalletAddress to, double amt, LedgerState& ledger,  LedgerSta
     }
 }
 
-void withdraw(PublicWalletAddress from, double amt, LedgerState & ledger,  LedgerState & deltas) {
-    auto fromAccount = ledger.find(from);
-    fromAccount->second -= amt;
+void withdraw(PublicWalletAddress from, double amt, Ledger& ledger,  LedgerState & deltas) {
+    if (ledger.hasWallet(from)) {
+        ledger.withdraw(from, amt);
+    } else {
+        throw std::runtime_error("Tried withdrawing from non-existant account");
+    }
 
     auto senderDelta = deltas.find(from);
     if (senderDelta == deltas.end()) {
@@ -76,7 +79,7 @@ void withdraw(PublicWalletAddress from, double amt, LedgerState & ledger,  Ledge
     }
 }
 
-ExecutionStatus updateLedger(Transaction& t, LedgerState & ledger, LedgerState & deltas) {
+ExecutionStatus updateLedger(Transaction& t, Ledger& ledger, LedgerState & deltas) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
@@ -91,12 +94,12 @@ ExecutionStatus updateLedger(Transaction& t, LedgerState & ledger, LedgerState &
             return INCORRECT_MINING_FEE;
         }
     }
-    auto sender = ledger.find(from);
+    
     // from account must exist
-    if (sender == ledger.end()) {
+    if (!ledger.hasWallet(from)) {
         return SENDER_DOES_NOT_EXIST;
     }
-    TransactionAmount total = sender->second;
+    TransactionAmount total = ledger.getWalletValue(from);
     // total must be less than amt
     if (total < (amt + fees)) {
         return BALANCE_TOO_LOW;
@@ -111,13 +114,13 @@ ExecutionStatus updateLedger(Transaction& t, LedgerState & ledger, LedgerState &
     return SUCCESS;
 }
 
-void Executor::Rollback(LedgerState& ledger, LedgerState& deltas) {
+void Executor::Rollback(Ledger& ledger, LedgerState& deltas) {
     for(auto it : deltas) {
-        ledger[it.first] -= it.second;
+        ledger.withdraw(it.first, it.second);
     }
 }
 
-ExecutionStatus Executor::ExecuteTransaction(LedgerState& ledger, Transaction t, LedgerState& deltas) {
+ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas) {
     if (!t.isFee() && !t.signatureValid()) {
         return INVALID_SIGNATURE;
     }
@@ -127,7 +130,7 @@ ExecutionStatus Executor::ExecuteTransaction(LedgerState& ledger, Transaction t,
     return updateLedger(t, ledger, deltas);
 }
 
-ExecutionStatus Executor::ExecuteBlock(Block& curr, LedgerState&ledger, LedgerState& deltas) {
+ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState& deltas) {
     // try executing each transaction
     bool foundFee = false;
     set<string> nonces;

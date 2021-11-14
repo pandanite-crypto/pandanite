@@ -53,8 +53,8 @@ BlockChain::BlockChain() {
 }
 
 void BlockChain::resetChain() {
+    ledger.init(LEDGER_FILE_PATH);
     this->chain.clear();
-    this->ledger = LedgerState();
     for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
     json data = readJsonFromFile(GENESIS_FILE_PATH);
     Block genesis(data);
@@ -79,7 +79,7 @@ void BlockChain::release() {
     this->lock.unlock();
 }
 
-LedgerState& BlockChain::getLedger() {
+Ledger& BlockChain::getLedger() {
     return this->ledger;
 }
 

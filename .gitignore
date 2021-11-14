@@ -1,6 +1,7 @@
 main
 keys/
 build/
+data/
 bin/
 .vscode/
 CMakeFiles/
