@@ -1,11 +1,13 @@
 #include <App.h>
 #include <string>
+#include <filesystem>
 #include "../core/crypto.hpp"
 #include "../core/request_manager.hpp"
 using namespace std;
 
 int main(int argc, char **argv) {
     int port = 3000;
+    std::filesystem::remove_all(LEDGER_FILE_PATH);
     string chainHost = "";
     if (argc > 1 ) {
         port = std::stoi(string(argv[1]));
@@ -22,13 +24,17 @@ int main(int argc, char **argv) {
         json stats = manager.getStats();
         res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(stats.dump());
     }).get("/block/:b", [&manager](auto *res, auto *req) {
-        int idx = std::stoi(string(req->getParameter(0)));
-        int count = std::stoi(manager.getBlockCount());
         json result;
-        if (idx < 0 || idx > count) {
-            result["error"] = "Invalid Block";
-        } else {
-            result = manager.getBlock(idx);
+        try {
+            int idx = std::stoi(string(req->getParameter(0)));
+            int count = std::stoi(manager.getBlockCount());
+            if (idx < 0 || idx > count) {
+                result["error"] = "Invalid Block";
+            } else {
+                result = manager.getBlock(idx);
+            }
+        } catch (...) {
+            result["error"] = "Unknown error";
         }
         res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
     }).get("/ledger/:user", [&manager](auto *res, auto *req) {

@@ -1,7 +1,7 @@
 #include "ledger.hpp"
 #include "crypto.hpp"
 #include <iostream>
-#include <filesystem>
+#include <experimental/filesystem>
 using namespace std;
 
 
@@ -25,7 +25,7 @@ void Ledger::clearDB() {
     delete db;
     leveldb::Options options;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
-    std::filesystem::remove(this->path); 
+    experimental::filesystem::remove_all(this->path); 
     if(!status.ok()) throw std::runtime_error("Could not close ledger db : " + status.ToString());
 }
 
