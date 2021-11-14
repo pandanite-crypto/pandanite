@@ -225,11 +225,9 @@ SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b) {
     return fullHash;
 }
 
-
-bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize) {
-    SHA256Hash fullHash  = concatHashes(target, nonce);
+bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize) {
     int bytes = challengeSize / 8;
-    const uint8_t * a = fullHash.data();
+    const uint8_t * a = hash.data();
     if (bytes == 0) {
         return a[0]>>(8-challengeSize) == 0;
     } else {
@@ -241,6 +239,12 @@ bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize
         else return true;
     }
     return false;
+}
+
+
+bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize) {
+    SHA256Hash fullHash  = concatHashes(target, nonce);
+    return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
 SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize) {

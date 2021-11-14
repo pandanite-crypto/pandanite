@@ -15,6 +15,7 @@ string SHA256toString(SHA256Hash h);
 std::vector<uint8_t> hexDecode(const string& hex);
 string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b);
+bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize);
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);
 string walletAddressToString(PublicWalletAddress p);

@@ -14,11 +14,13 @@ int main(int argc, char **argv) {
     if (argc > 2) {
         chainHost = string(argv[2]);
     }
-
     RequestManager manager(chainHost);
     uWS::App().get("/block_count", [&manager](auto *res, auto *req) {
         std::string count = manager.getBlockCount();
         res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
+    }).get("/stats", [&manager](auto *res, auto *req) {
+        json stats = manager.getStats();
+        res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(stats.dump());
     }).get("/block/:b", [&manager](auto *res, auto *req) {
         int idx = std::stoi(string(req->getParameter(0)));
         int count = std::stoi(manager.getBlockCount());

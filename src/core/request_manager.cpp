@@ -89,6 +89,11 @@ json RequestManager::getProofOfWork() {
     return result;
 
 }
+
+size_t RequestManager::getPendingTransactionSize(int block) {
+    if (this->transactionQueue.find(block) == this->transactionQueue.end()) return 0;
+    return this->transactionQueue[block].size();
+}
 json RequestManager::getBlock(int index) {
     return this->blockchain->getBlock(index).toJson();
 }
@@ -105,4 +110,39 @@ json RequestManager::getLedger(PublicWalletAddress w) {
 string RequestManager::getBlockCount() {
     int count = this->blockchain->getBlockCount();
     return std::to_string(count);
+}
+
+json RequestManager::getStats() {
+    json info;
+    if (this->blockchain->getBlockCount() == 1) {
+        info["error"] = "Need more data";
+        return info;
+    }
+    int coins = this->blockchain->getBlockCount()*50;
+    int wallets = this->blockchain->getLedger().size();
+    info["num_coins"] = coins;
+    info["num_wallets"] = wallets;
+    info["pending_transactions"]= this->getPendingTransactionSize(this->blockchain->getBlockCount()+2);
+    
+    int idx = this->blockchain->getBlockCount();
+    Block a = this->blockchain->getBlock(idx);
+    Block b = this->blockchain->getBlock(idx-1);
+    int timeDelta = a.getTimestamp() - b.getTimestamp();
+    int totalSent = 0;
+    int fees = 0;
+    info["transactions"] = json::array();
+    for(auto t : a.getTransactions()) {
+        totalSent += t.getAmount();
+        fees += t.getTransactionFee();
+        info["transactions"].push_back(t.toJson());
+    }
+    int count = a.getTransactions().size();
+    info["transactions_per_second"]= a.getTransactions().size()/(double)timeDelta;
+    info["transaction_volume"]= totalSent;
+    info["avg_transaction_size"]= totalSent/count;
+    info["avg_transaction_fee"]= fees/count;
+    info["difficulty"]= a.getDifficulty();
+    info["current_block"]= this->blockchain->getBlockCount()+1;
+    info["last_block_time"]= timeDelta;
+    return info;
 }

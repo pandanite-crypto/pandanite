@@ -20,6 +20,7 @@ class Block {
         void setId(int id);
         void setDifficulty(int d);
         void computeMerkleTree();
+        void freeMerkleTree();
         SHA256Hash getHash(SHA256Hash lastHash);
         SHA256Hash getNonce();
         time_t getTimestamp();

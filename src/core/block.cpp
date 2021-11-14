@@ -112,6 +112,12 @@ void Block::computeMerkleTree() {
     this->merkleTree.setItems(this->transactions);
 }
 
+void Block::freeMerkleTree() {
+    this->hasMerkleTree = false;
+    vector<Transaction> empty;
+    this->merkleTree.setItems(empty);
+}
+
 SHA256Hash Block::getHash(SHA256Hash previousHash) {
     if (!this->hasMerkleTree) this->computeMerkleTree();
     stringstream s;

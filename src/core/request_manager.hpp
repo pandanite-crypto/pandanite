@@ -16,8 +16,10 @@ class RequestManager {
         json submitProofOfWork(json data);
         json getBlock(int index);
         json getLedger(PublicWalletAddress w);
+        json getStats();
         string getBlockCount();
         BlockChain* blockchain;
     protected:
+        size_t getPendingTransactionSize(int block);
         map<int,list<Transaction>> transactionQueue;
 };

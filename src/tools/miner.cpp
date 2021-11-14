@@ -23,7 +23,6 @@ void run_mining(User& miner, string& host) {
         SHA256Hash lastHash = stringToSHA256(lastHashStr);
         int challengeSize = problem["challengeSize"];
         
-        User miner;
         // have miner mine the next block
         Transaction fee = miner.mine(nextBlock);
         vector<Transaction> transactions;
