@@ -48,9 +48,7 @@ Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
     for(auto t : transactions) {
         this->addTransaction(t);
     }
-    if (!this->hasMerkleTree) {
-        this->computeMerkleTree();
-    }
+    this->computeMerkleTree();
 }
 
 BlockHeader Block::serialize() {
@@ -100,6 +98,11 @@ int Block::getId() {
 
 void Block::setId(int id) {
     this->id = id;
+}
+
+HashTree* Block::verifyTransaction(Transaction &t) {
+    if (!this->hasMerkleTree) this->computeMerkleTree();
+    return this->merkleTree.getMerkleProof(t);
 }
 
 void Block::addTransaction(Transaction t) {

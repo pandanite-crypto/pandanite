@@ -80,6 +80,6 @@ SHA256Hash MerkleTree::getRootHash() {
 
 HashTree* MerkleTree::getMerkleProof(Transaction t) {
     SHA256Hash hash = t.getHash();
-    if (this->fringeNodes.find(hash) == this->fringeNodes.end()) throw std::runtime_error("Item not in Merkle Tree");
+    if (this->fringeNodes.find(hash) == this->fringeNodes.end()) return NULL;
     return getProof(this->fringeNodes[hash]);
 }

@@ -1,6 +1,7 @@
 #include "request_manager.hpp"
 #include "helpers.hpp"
 #include "user.hpp"
+#include "merkle_tree.hpp"
 #include <map>
 #include <iostream>
 using namespace std;
@@ -76,6 +77,39 @@ json RequestManager::submitProofOfWork(json request) {
     }
     this->blockchain->release();
     return result;
+}
+
+json hashTreeToJson(HashTree* root) {
+    json ret;
+    ret["hash"] = SHA256toString(root->hash);
+    if (root->left) {
+        ret["left"] = hashTreeToJson(root->left);
+    }
+    if (root->right) {
+        ret["right"] = hashTreeToJson(root->right);
+    }
+    return ret;
+}
+
+json RequestManager::verifyTransaction(json data) {
+    Transaction t(data);
+    json response;
+    Block b;
+    try {
+        b = this->blockchain->getBlock(t.getBlockId());
+        HashTree* root = b.verifyTransaction(t);
+        if (root == NULL) {
+            response["error"] = "Could not find transaction in block";
+        } else {
+            // convert to a JSON tree of hashes
+            response["status"] = "SUCCESS";
+            response["proof"] = hashTreeToJson(root);
+            delete root;
+        }
+    } catch(...) {
+        response["error"] = "Could not find block";
+    }
+    return response;
 }
 
 json RequestManager::getProofOfWork() {

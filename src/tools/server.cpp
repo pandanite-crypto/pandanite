@@ -128,6 +128,19 @@ int main(int argc, char **argv) {
             }
         });
         res->onAborted([]() {});
+    }).post("/verify_transaction", [&manager](auto *res, auto *req) {
+        /* Allocate automatic, stack, variable as usual */
+        std::string buffer;
+        /* Move it to storage of lambda */
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            if (last) {
+                json submission = json::parse(buffer);
+                json response = manager.verifyTransaction(submission);
+                res->end(response.dump());
+            }
+        });
+        res->onAborted([]() {});
     }).listen(port, [port](auto *token) {
         cout<<"Started server on port "<<port<<endl;
     }).run();

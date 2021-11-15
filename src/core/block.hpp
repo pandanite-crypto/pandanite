@@ -32,6 +32,7 @@ class Block {
         void setDifficulty(int d);
         void computeMerkleTree();
         void freeMerkleTree();
+        HashTree* verifyTransaction(Transaction &t);
         SHA256Hash getHash(SHA256Hash lastHash);
         SHA256Hash getNonce();
         time_t getTimestamp();
