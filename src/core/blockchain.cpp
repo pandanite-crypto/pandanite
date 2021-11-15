@@ -22,16 +22,12 @@ using namespace std;
 void chain_sync(BlockChain& blockchain) {
     int popOnFailure = 1;
     while(true) {
-        cout<<"synchronizing chain"<<endl;
         ExecutionStatus valid;
         blockchain.acquire();
         valid = blockchain.startChainSync();
-        if (valid != SUCCESS) {
-            blockchain.resetChain();
-        } else {
-            cout<<"chain in sync, node count: " <<blockchain.getBlockCount()<<endl;
+        if (valid==SUCCESS) {
+            cout<<"chain in sync, block count: "<<blockchain.getBlockCount()<<endl;
         }
-
         blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -67,8 +63,8 @@ void BlockChain::resetChain() {
     }
 }
 
-void BlockChain::sync(string host) {
-    this->host = host;
+void BlockChain::sync(vector<string> hosts) {
+    this->hosts = hosts;
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
@@ -126,8 +122,6 @@ void BlockChain::updateDifficulty(Block& block) {
         int delta = -round(log2(ratio));
         this->difficulty += delta;
         this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
-        cout<<"Average block time: "<<average<<endl;
-        cout<<"Updated difficulty: "<<this->difficulty<<endl;
     }
 }
 
@@ -148,6 +142,10 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         //revert ledger
         Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
+        if (this->deltas.size() > MAX_HISTORY) {
+            this->deltas.pop_front();
+        }
+        this->deltas.push_back(deltasFromBlock);
         this->chain.push_back(block);
         this->lastHash = block.getHash(concatHashes(this->getLastHash(), block.getNonce()));
         this->updateDifficulty(block);
@@ -156,7 +154,22 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-    this->targetBlockCount = getCurrentBlockCount(host);
+    // iterate through each of the hosts and pick the longest one:
+    string bestHost = "";
+    int bestCount = 0;
+    for(auto host : this->hosts) {
+        try {
+            int curr = getCurrentBlockCount(host);
+            if (curr > bestCount) {
+                bestCount = curr;
+                bestHost = host;
+            }
+        } catch (...) {
+            continue;
+        }
+    }
+
+    this->targetBlockCount = bestCount;
 
     int startCount = this->chain.size() + 1;
 
@@ -166,12 +179,16 @@ ExecutionStatus BlockChain::startChainSync() {
 
     // download any remaining blocks
     for(int i = startCount; i <= this->targetBlockCount; i++) {
-        // get data for block by polling at random
-        json block = getBlockData(this->host, i);
+        json block = getBlockData(bestHost, i);
         Block toAdd(block);
         ExecutionStatus addResult = this->addBlock(toAdd);
         if (addResult != SUCCESS) {
-            cout<<"Failed to add block:" << executionStatusAsString(addResult)<<endl;
+            // if this chain sync fails, pop off a few blocks before trying again
+            for(int j = this->deltas.size() - 1; j <=0; j--) {
+                Executor::Rollback(this->ledger, this->deltas.back());
+                this->deltas.pop_back();
+                this->chain.pop_back();
+            }
             return addResult;
         }
     }

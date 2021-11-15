@@ -10,7 +10,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(string hostUrl="");
+        RequestManager(vector<string> hosts);
         json addTransaction(json data);
         json getProofOfWork();
         json submitProofOfWork(json data);

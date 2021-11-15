@@ -5,6 +5,7 @@
 #include "executor.hpp"
 #include "common.hpp"
 #include "ledger.hpp"
+#include <list>
 #include <string>
 #include <thread>
 #include <vector>
@@ -15,7 +16,7 @@ using namespace std;
 class BlockChain {
     public:
         BlockChain();
-        void sync(string host);
+        void sync(vector<string> hosts);
         void acquire();
         void release();
         void resetChain();
@@ -30,6 +31,7 @@ class BlockChain {
     protected:
         vector<Block> chain;
         Ledger ledger;
+        list<LedgerState> deltas;
         SHA256Hash lastHash;
         int difficulty;
         void updateDifficulty(Block& b);
@@ -38,6 +40,6 @@ class BlockChain {
         int targetBlockCount;
         std::mutex lock;
         vector<std::thread> syncThread;
-        string host;
+        vector<string> hosts;
         friend void chain_sync(BlockChain& blockchain);
 };

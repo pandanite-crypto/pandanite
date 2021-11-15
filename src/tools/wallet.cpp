@@ -9,16 +9,11 @@
 using namespace std;
 
 
-void run_mining() {
+void key_search() {
 
     secp256k1_context *ctx = NULL;
     size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    
-    
-    
-
-
     time_t last = std::time(0);
     long i = 0;
     cout<<"Starting search for keys"<<endl;
@@ -57,7 +52,7 @@ void run_mining() {
 
 int main() {
 
-    std::thread mining_thread(run_mining);
+    std::thread key_search_thread(key_search);
 
-    mining_thread.join();
+    key_search_thread.join();
 }

@@ -6,9 +6,9 @@
 using namespace std;
 
 
-RequestManager::RequestManager(string hostUrl) {
+RequestManager::RequestManager(vector<string> hosts) {
     this->blockchain = new BlockChain();
-    if (hostUrl != "") this->blockchain->sync(hostUrl);
+    if (hosts.size()>0) this->blockchain->sync(hosts);
 }
 
 json RequestManager::addTransaction(json data) {
@@ -46,6 +46,7 @@ json RequestManager::addTransaction(json data) {
     this->blockchain->release();
     return result;
 }
+
 json RequestManager::submitProofOfWork(json request) {
     json result;
     // build map of all public keys in transaction
