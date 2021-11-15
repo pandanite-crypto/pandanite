@@ -144,6 +144,47 @@ TEST(check_miner_fee) {
     ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(20)); 
 }
 
+TEST(check_taxes_collected) {
+    Block b;
+
+    Ledger ledger;
+    ledger.init("./data/tmpdb");
+    double taxRate = 0.5;
+    ledger.setTaxRate(taxRate);
+    LedgerState deltas;
+    ExecutionStatus status;
+    
+    User miner;
+    User receiver;
+
+    // add mining transaction twice
+    Transaction t = miner.mine(1);
+    b.addTransaction(t);
+    status = Executor::ExecuteBlock(b, ledger, deltas);
+    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(25));
+    ASSERT_EQUAL(ledger.getTaxCollected(), BMB(25));
+
+    Block c;
+    c.addTransaction(miner.mine(1));
+    Transaction t2 = miner.send(receiver, BMB(20), 1);
+    t2.setTransactionFee(BMB(1));
+    t2.setMinerWallet(receiver.getAddress());
+    miner.signTransaction(t2);
+    c.addTransaction(t2);
+
+    LedgerState deltas2;
+    status = Executor::ExecuteBlock(c, ledger, deltas2);
+    ASSERT_EQUAL(status, SUCCESS);
+    ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(10.5)); 
+    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(29)); 
+    ASSERT_EQUAL(ledger.getTaxCollected(), BMB(60.5));
+
+    // test rollback
+    Executor::RollbackBlock(c, ledger);
+    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(25));
+    ASSERT_EQUAL(ledger.getTaxCollected(), BMB(25));
+}
+
 
 TEST(check_bad_signature) {
     Block b;

@@ -2,6 +2,7 @@
 #include "crypto.hpp"
 #include "transaction.hpp"
 #include <iostream>
+#include <thread>
 #include <experimental/filesystem>
 using namespace std;
 
@@ -15,6 +16,8 @@ void BlockStore::init(string path) {
         this->clearDB();
     }
     this->path = path;
+    experimental::filesystem::remove_all(this->path);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     this->numBlocks = 0;
     leveldb::Options options;
     options.create_if_missing = true;

@@ -1,6 +1,7 @@
 #pragma once
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include "common.hpp"
+#include "constants.hpp"
 #include <secp256k1.h>
 #include <secp256k1_preallocated.h>
 #include "openssl/sha.h"
@@ -17,6 +18,7 @@ string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b);
 bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize);
 
+bool isFounderWalletPossible(PublicWalletAddress w);
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);
 string walletAddressToString(PublicWalletAddress p);
 PublicWalletAddress stringToWalletAddress(string s);

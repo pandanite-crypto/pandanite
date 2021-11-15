@@ -50,11 +50,10 @@ string executionStatusAsString(ExecutionStatus status) {
 }
 
 void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  LedgerState& deltas) {
-    if (ledger.hasWallet(to)) {
-        ledger.deposit(to, amt);
-    } else {
-        ledger.setWalletValue(to, amt);
+    if (!ledger.hasWallet(to)) {
+        ledger.createWallet(to);   
     }
+    ledger.deposit(to, amt);
     auto receiverDelta = deltas.find(to);
     if (receiverDelta == deltas.end()) {
         deltas.insert(pair<PublicWalletAddress, TransactionAmount>(to, amt));
@@ -99,7 +98,7 @@ ExecutionStatus updateLedger(Transaction& t, Ledger& ledger, LedgerState & delta
         return SENDER_DOES_NOT_EXIST;
     }
     TransactionAmount total = ledger.getWalletValue(from);
-    // total must be less than amt
+    // must have enough for amt+fees
     if (total < (amt + fees)) {
         return BALANCE_TOO_LOW;
     }
@@ -113,9 +112,36 @@ ExecutionStatus updateLedger(Transaction& t, Ledger& ledger, LedgerState & delta
     return SUCCESS;
 }
 
+void rollbackLedger(Transaction& t, Ledger& ledger) {
+    TransactionAmount amt = t.getAmount();
+    TransactionAmount fees = t.getTransactionFee();
+    PublicWalletAddress to = t.toWallet();
+    PublicWalletAddress from = t.fromWallet();
+    PublicWalletAddress miner;
+    
+    if (t.isFee()) {
+        ledger.revertDeposit(to, amt);
+    } else {
+        ledger.revertDeposit(to, amt);
+        ledger.revertSend(from, amt);
+        if (fees > 0 && t.hasMiner()) {
+            miner = t.getMinerWallet();
+            ledger.revertDeposit(miner, fees);
+            ledger.revertSend(from, fees);
+        }
+    }
+}
+
 void Executor::Rollback(Ledger& ledger, LedgerState& deltas) {
     for(auto it : deltas) {
         ledger.withdraw(it.first, it.second);
+    }
+}
+
+void Executor::RollbackBlock(Block& curr, Ledger& ledger) {
+    for(int i = curr.getTransactions().size() - 1; i >=0; i--) {
+        Transaction t = curr.getTransactions()[i];
+        rollbackLedger(t, ledger);
     }
 }
 

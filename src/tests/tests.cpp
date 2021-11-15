@@ -10,4 +10,9 @@
 #include "test_blockchain.hpp"
 #include "test_merkle_tree.hpp"
 #include "test_ledger.hpp"
+#include "../core/constants.hpp"
+#include <experimental/filesystem>
+using namespace std;
+
+
 TEST_MAIN();

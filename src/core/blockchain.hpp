@@ -35,8 +35,8 @@ class BlockChain {
         list<LedgerState> deltas;
         SHA256Hash lastHash;
         int difficulty;
+        void distributeTaxes(Block& block);
         void updateDifficulty(Block& b);
-        void updateKeyPool(Block& b);
         ExecutionStatus startChainSync();
         int targetBlockCount;
         std::mutex lock;

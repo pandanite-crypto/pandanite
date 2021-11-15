@@ -104,6 +104,14 @@ SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
 }
 
+void BlockChain::distributeTaxes(Block& block) {
+    if (block.getId() >= TAX_PAYOUT_UNTIL) {
+        ledger.setTaxRate(0);
+    } else if (block.getId() % TAX_PAYOUT_FREQUENCY == 0) {
+        ledger.payoutTaxes();
+    }
+}
+
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
         // compute the new difficulty score based on average block time
@@ -153,6 +161,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->numBlocks++;
         this->lastHash = block.getHash(concatHashes(this->getLastHash(), block.getNonce()));
         this->updateDifficulty(block);
+        this->distributeTaxes(block);
     }
     return status;
 }

@@ -36,10 +36,8 @@ void key_search() {
         if(!res) continue;
 
         time_t curr = std::time(0);
-        SHA256Hash hash = SHA256(publicKeyToString(publicKey));
-        
-        int difficulty = 20;
-        bool found = checkLeadingZeroBits(hash, difficulty);
+        PublicWalletAddress w = walletAddressFromPublicKey(publicKey);
+        bool found = isFounderWalletPossible(w);
         if (found) {
             string wallet = walletAddressToString(walletAddressFromPublicKey(publicKey));
             string pubKey = publicKeyToString(publicKey);

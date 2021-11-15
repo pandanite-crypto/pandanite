@@ -1,6 +1,7 @@
 #include "ledger.hpp"
 #include "crypto.hpp"
 #include <iostream>
+#include <thread>
 #include <experimental/filesystem>
 using namespace std;
 
@@ -14,6 +15,10 @@ void Ledger::init(string path) {
         this->clearDB();
     }
     this->path = path;
+    experimental::filesystem::remove_all(this->path); 
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    this->taxRate = 0;
+    this->totalTax = 0;
     leveldb::Options options;
     options.create_if_missing = true;
     options.error_if_exists = true;
@@ -31,6 +36,32 @@ void Ledger::clearDB() {
 
 Ledger::~Ledger() {
     if(this->db) this->clearDB();
+}
+
+void Ledger::recordTax(TransactionAmount amt) {
+    this->totalTax += amt;
+}
+
+void Ledger::resetTax() {
+    this->totalTax = 0;
+}
+
+TransactionAmount Ledger::getTaxCollected() {
+    return this->totalTax;
+}
+
+void Ledger::payoutTaxes() {
+    TransactionAmount total = this->getTaxCollected();
+    TransactionAmount perWallet = total / this->taxRecepients.size();
+    for(auto wallet : this->taxRecepients) {
+        TransactionAmount value = this->getWalletValue(wallet);
+        this->setWalletValue(wallet, value + perWallet);
+    }
+    this->resetTax();
+}
+
+void Ledger::setTaxRate(double rate) {
+    this->taxRate = rate;
 }
 
 leveldb::Slice walletToSlice(const PublicWalletAddress& w) {
@@ -53,8 +84,17 @@ bool Ledger::hasWallet(const PublicWalletAddress& wallet) {
     return (status.ok());
 }
 
+void Ledger::createWallet(const PublicWalletAddress& wallet) {
+    if(this->hasWallet(wallet)) throw std::runtime_error("Wallet exists");
+    this->setWalletValue(wallet, 0);
+}
+
 void Ledger::setWalletValue(const PublicWalletAddress& wallet, TransactionAmount amount) {
     if (!this->hasWallet(wallet)) {
+        // check if this is a founding wallet:
+        if (isFounderWalletPossible(wallet) && this->taxRecepients.size() < TOTAL_FOUNDERS) {
+            this->taxRecepients.insert(wallet);
+        }
         _size++;
     }
     leveldb::Status status = db->Put(leveldb::WriteOptions(), walletToSlice(wallet), amountToSlice(amount));
@@ -74,8 +114,22 @@ void Ledger::withdraw(const PublicWalletAddress& wallet, TransactionAmount amt) 
     this->setWalletValue(wallet, value);
 }
 
+void Ledger::revertSend(const PublicWalletAddress& wallet, TransactionAmount amt) {
+    TransactionAmount value = this->getWalletValue(wallet);
+    this->setWalletValue(wallet, value + amt);
+}
+
 void Ledger::deposit(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
-    value += amt;
-    this->setWalletValue(wallet, value);
+    TransactionAmount tax = this->taxRate * amt;
+    this->recordTax(tax);
+    this->setWalletValue(wallet, value + amt - tax);
+}
+
+void Ledger::revertDeposit(PublicWalletAddress to, TransactionAmount amt) {
+    TransactionAmount value = this->getWalletValue(to);
+    TransactionAmount tax = this->taxRate * amt;
+    TransactionAmount deposited = amt - tax;
+    this->recordTax(-tax);
+    this->setWalletValue(to, value - deposited);
 }
