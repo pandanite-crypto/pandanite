@@ -22,6 +22,7 @@ PandaCoin is written from the ground up in C++. We want the PandaCoin source cod
 * Mempool that allows storage of transactions aimed at future blocks (improved queuing)
 * 30 second block mint time (faster confirmations)
 * Up to 1500 Transactions per block (more transactions per block)
+* Ultra simple REST based interface
 
 ### Getting Started
 
