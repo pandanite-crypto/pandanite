@@ -13,7 +13,7 @@ TEST(check_transaction_json_serialization) {
     User receiver;
 
     Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, 30.0, 1);
+    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
     
     ASSERT_TRUE(t2.signatureValid());
 
@@ -44,7 +44,7 @@ TEST(check_transaction_struct_serialization) {
     User receiver;
 
     Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, 30.0, 1);
+    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
     
     ASSERT_TRUE(t2.signatureValid());
 
@@ -72,7 +72,7 @@ TEST(check_transaction_copy) {
     User receiver;
 
     Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, 30.0, 1);
+    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
     
     Transaction a = t;
     Transaction b = t2;

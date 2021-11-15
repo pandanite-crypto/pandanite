@@ -47,7 +47,7 @@ TEST(check_adding_two_nodes_updates_ledger) {
     }
     Ledger& ledger = blockchain->getLedger();
     double total = ledger.getWalletValue(miner.getAddress());
-    ASSERT_EQUAL(total, 100.0);
+    ASSERT_EQUAL(total, BMB(100.0));
     delete blockchain;
 }
 
@@ -64,7 +64,7 @@ TEST(check_sending_transaction_updates_ledger) {
         newBlock.setId(i);
         newBlock.addTransaction(fee);
         if (i==3) {
-            Transaction t = miner.send(other, 20.0,i);
+            Transaction t = miner.send(other, BMB(20.0),i);
             newBlock.addTransaction(t);
         }
         
@@ -79,7 +79,7 @@ TEST(check_sending_transaction_updates_ledger) {
     double minerTotal = ledger.getWalletValue(miner.getAddress());
     double otherTotal = ledger.getWalletValue(other.getAddress());
 
-    ASSERT_EQUAL(minerTotal, 80.0);
-    ASSERT_EQUAL(otherTotal, 20.0);
+    ASSERT_EQUAL(minerTotal, BMB(80.0));
+    ASSERT_EQUAL(otherTotal, BMB(20.0));
     delete blockchain;
 }

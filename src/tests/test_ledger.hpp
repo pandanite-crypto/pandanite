@@ -9,6 +9,6 @@ TEST(test_ledger_stores_wallets) {
 
     Ledger ledger;
     ledger.init("./data/tmpdb");
-    ledger.setWalletValue(wallet, 50.0);
-    ASSERT_EQUAL(ledger.getWalletValue(wallet), 50.0);
+    ledger.setWalletValue(wallet, BMB(50.0));
+    ASSERT_EQUAL(ledger.getWalletValue(wallet), BMB(50.0));
 }

@@ -60,7 +60,7 @@ TEST(checks_duplicate_nonce) {
     User miner;
     User receiver;
     Transaction t1 = miner.mine(1);
-    Transaction t2 = miner.send(receiver, 30.0, 1);
+    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
     t2.setNonce(t1.getNonce());
     b.addTransaction(t1);
     b.addTransaction(t2);
@@ -82,7 +82,7 @@ TEST(check_valid_send) {
 
     Transaction t = miner.mine(1);
     b.addTransaction(t);
-    Transaction t2 = miner.send(receiver, 30, 1);
+    Transaction t2 = miner.send(receiver, BMB(30), 1);
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
@@ -91,8 +91,8 @@ TEST(check_valid_send) {
     PublicWalletAddress aKey = miner.getAddress(); 
     PublicWalletAddress bKey = receiver.getAddress();
 
-    ASSERT_EQUAL(ledger.getWalletValue(aKey), 20.0)
-    ASSERT_EQUAL(ledger.getWalletValue(bKey), 30.0)
+    ASSERT_EQUAL(ledger.getWalletValue(aKey), BMB(20.0))
+    ASSERT_EQUAL(ledger.getWalletValue(bKey), BMB(30.0))
 }
 
 TEST(check_low_balance) {
@@ -109,7 +109,7 @@ TEST(check_low_balance) {
     Transaction t = miner.mine(1);
     b.addTransaction(t);
 
-    Transaction t2 = miner.send(receiver, 100.0, 1);
+    Transaction t2 = miner.send(receiver, BMB(100.0), 1);
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
@@ -131,8 +131,8 @@ TEST(check_miner_fee) {
     // add mining transaction twice
     Transaction t = miner.mine(1);
     b.addTransaction(t);
-    Transaction t2 = miner.send(receiver, 20, 1);
-    t2.setTransactionFee(10);
+    Transaction t2 = miner.send(receiver, BMB(20), 1);
+    t2.setTransactionFee(BMB(10));
     t2.setMinerWallet(receiver.getAddress());
     miner.signTransaction(t2);
     ASSERT_EQUAL(t2.signatureValid(), true);
@@ -140,8 +140,8 @@ TEST(check_miner_fee) {
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
     ASSERT_EQUAL(status, SUCCESS);
-    ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), 30); 
-    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), 20); 
+    ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(30)); 
+    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(20)); 
 }
 
 
@@ -156,7 +156,7 @@ TEST(check_bad_signature) {
     User receiver;
     Transaction t = miner.mine(b.getId());
     b.addTransaction(t);
-    Transaction t2 = miner.send(receiver, 20.0, b.getId());
+    Transaction t2 = miner.send(receiver, BMB(20.0), b.getId());
 
     // sign with random sig
     User foo;

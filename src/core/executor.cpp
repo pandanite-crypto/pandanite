@@ -49,8 +49,7 @@ string executionStatusAsString(ExecutionStatus status) {
     }
 }
 
-void deposit(PublicWalletAddress to, double amt, Ledger& ledger,  LedgerState& deltas) {
-    
+void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  LedgerState& deltas) {
     if (ledger.hasWallet(to)) {
         ledger.deposit(to, amt);
     } else {
@@ -64,7 +63,7 @@ void deposit(PublicWalletAddress to, double amt, Ledger& ledger,  LedgerState& d
     }
 }
 
-void withdraw(PublicWalletAddress from, double amt, Ledger& ledger,  LedgerState & deltas) {
+void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
     if (ledger.hasWallet(from)) {
         ledger.withdraw(from, amt);
     } else {

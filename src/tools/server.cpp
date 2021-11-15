@@ -10,8 +10,6 @@
 #include "../core/crypto.hpp"
 using namespace std;
 
-
-
 void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
     while(true) {
         string bestHost = "";
@@ -57,9 +55,9 @@ void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
     }
 }
 
-
 int main(int argc, char **argv) {
     experimental::filesystem::remove_all(LEDGER_FILE_PATH);
+    experimental::filesystem::remove_all(BLOCK_STORE_FILE_PATH);
     string configFile = DEFAULT_CONFIG_FILE_PATH;
     if (argc > 1 ) {
         configFile = string(argv[1]);
