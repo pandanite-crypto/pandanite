@@ -50,12 +50,13 @@ BlockChain::BlockChain() {
 
 void BlockChain::resetChain() {
     ledger.init(LEDGER_FILE_PATH);
-    this->chain.clear();
+    blockStore.init(BLOCK_STORE_FILE_PATH);
     for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
     json data = readJsonFromFile(GENESIS_FILE_PATH);
     Block genesis(data);
     this->difficulty = genesis.getDifficulty();
     this->targetBlockCount = 1;
+    this->numBlocks = 0;
     ExecutionStatus status = this->addBlock(genesis);
     if (status != SUCCESS) {
         cout<<"Could not load genesis block"<<endl;
@@ -80,12 +81,12 @@ Ledger& BlockChain::getLedger() {
 }
 
 int BlockChain::getBlockCount() {
-    return this->chain.size();
+    return this->numBlocks;
 }
 
-Block BlockChain::getBlock(int idx) {
-    if (idx < 0 || idx > this->chain.size()) throw std::runtime_error("Invalid block");
-    return this->chain[idx-1];
+Block BlockChain::getBlock(int blockId) {
+    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    return this->blockStore.getBlock(blockId);
 }
 
 ExecutionStatus BlockChain::verifyTransaction(Transaction& t) {
@@ -109,11 +110,13 @@ void BlockChain::updateDifficulty(Block& block) {
         double average = 0;
         int total = 0;
         // ignore genesis block time
-        int first = max((size_t) 3, this->chain.size() - DIFFICULTY_RESET_FREQUENCY);
-        int last = this->chain.size() - 1;
+        int first = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
+        int last = this->numBlocks - 1;
         for(int i = last; i >= first; i--) {
-            int currTs = (int)this->chain[i-1].getTimestamp();
-            int lastTs = (int)this->chain[i-2].getTimestamp();
+            Block b1 = this->blockStore.getBlock(i-1);
+            Block b2 = this->blockStore.getBlock(i-2);
+            int currTs = (int)b1.getTimestamp();
+            int lastTs = (int)b2.getTimestamp();
             average += (double)(currTs - lastTs);
             total++;
         }
@@ -132,7 +135,7 @@ int BlockChain::getDifficulty() {
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
-    if (block.getId() != this->chain.size() + 1) return INVALID_BLOCK_ID;
+    if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce(this->getLastHash())) return INVALID_NONCE;
     LedgerState deltasFromBlock;
@@ -146,7 +149,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
             this->deltas.pop_front();
         }
         this->deltas.push_back(deltasFromBlock);
-        this->chain.push_back(block);
+        this->blockStore.setBlock(block);
+        this->numBlocks++;
         this->lastHash = block.getHash(concatHashes(this->getLastHash(), block.getNonce()));
         this->updateDifficulty(block);
     }
@@ -171,7 +175,7 @@ ExecutionStatus BlockChain::startChainSync() {
 
     this->targetBlockCount = bestCount;
 
-    int startCount = this->chain.size() + 1;
+    int startCount = this->numBlocks + 1;
 
     if (startCount > this->targetBlockCount) {
         return SUCCESS;
@@ -187,7 +191,7 @@ ExecutionStatus BlockChain::startChainSync() {
             for(int j = this->deltas.size() - 1; j <=0; j--) {
                 Executor::Rollback(this->ledger, this->deltas.back());
                 this->deltas.pop_back();
-                this->chain.pop_back();
+                this->numBlocks--;
             }
             return addResult;
         }
@@ -195,7 +199,4 @@ ExecutionStatus BlockChain::startChainSync() {
     return SUCCESS;
 }
 
-bool BlockChain::isLoaded() {
-    return this->chain.size() == this->targetBlockCount;
-};
 

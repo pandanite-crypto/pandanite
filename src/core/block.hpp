@@ -8,11 +8,22 @@
 #include "merkle_tree.hpp"
 using namespace std;
 
+struct BlockHeader {
+    int id;
+    time_t timestamp;
+    int difficulty;
+    int numTransactions;
+    SHA256Hash merkleRoot;
+    SHA256Hash nonce;
+};
+
 class Block {
     public:
         Block();
         Block(json data);
         Block(const Block& b);
+        Block(const BlockHeader&b, vector<Transaction>& transactions);
+        BlockHeader serialize();
         json toJson();
         void addTransaction(Transaction t);
         void setNonce(SHA256Hash s);

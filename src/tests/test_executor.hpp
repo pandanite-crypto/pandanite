@@ -159,7 +159,8 @@ TEST(check_bad_signature) {
     Transaction t2 = miner.send(receiver, 20.0, b.getId());
 
     // sign with random sig
-    t2.sign(TransactionSignature());
+    User foo;
+    t2.sign(foo.getPrivateKey());
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);

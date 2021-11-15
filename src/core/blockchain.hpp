@@ -4,6 +4,7 @@
 #include "constants.hpp"
 #include "executor.hpp"
 #include "common.hpp"
+#include "block_store.hpp"
 #include "ledger.hpp"
 #include <list>
 #include <string>
@@ -20,7 +21,6 @@ class BlockChain {
         void acquire();
         void release();
         void resetChain();
-        bool isLoaded();
         Block getBlock(int idx);
         int getDifficulty();
         int getBlockCount();
@@ -29,7 +29,8 @@ class BlockChain {
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(Transaction& t);
     protected:
-        vector<Block> chain;
+        int numBlocks;
+        BlockStore blockStore;
         Ledger ledger;
         list<LedgerState> deltas;
         SHA256Hash lastHash;

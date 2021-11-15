@@ -1,5 +1,6 @@
 #include "../external/unit_tests.hpp"
 #include "test_block.hpp"
+#include "test_block_store.hpp"
 #include "test_user.hpp"
 #include "test_executor.hpp"
 #include "test_crypto.hpp"

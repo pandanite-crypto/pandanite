@@ -5,6 +5,7 @@
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
 #define DEFAULT_CONFIG_FILE_PATH "./config.json"
 #define LEDGER_FILE_PATH "./data/ledger"
+#define BLOCK_STORE_FILE_PATH "./data/blocks"
 #define MAX_TRANSACTIONS_PER_BLOCK 2500
 #define DIFFICULTY_RESET_FREQUENCY 1000
 #define DESIRED_BLOCK_TIME_SEC 30

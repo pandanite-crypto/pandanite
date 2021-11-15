@@ -6,7 +6,8 @@
 using namespace std;
 
 TEST(test_accepts_proof_of_work) {
-    RequestManager r;
+    vector<string> hosts;
+    RequestManager r(hosts);
 
     json pow = r.getProofOfWork();
     string lastHashStr = pow["lastHash"];

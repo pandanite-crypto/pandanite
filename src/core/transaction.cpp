@@ -23,6 +23,41 @@ Transaction::Transaction() {
 
 }
 
+Transaction::Transaction(const TransactionInfo& t) {
+    this->to = t.to;
+    if (!t.isTransactionFee) this->from = t.from;
+    memcpy((void*)this->signature.data, (void*)t.signature, 64);
+    this->nonce = string((char*)t.nonce, TRANSACTION_NONCE_SIZE);
+    memcpy((void*)this->signingKey.data, (void*)t.signingKey, 64);
+    this->amount = t.amount;
+    this->isTransactionFee = t.isTransactionFee;
+    this->blockId = t.blockId;
+    this->timestamp = t.timestamp;
+    this->fee = t.fee;
+    if (t.hasMiner) {
+        this->setMinerWallet(t.miner);
+    }
+}
+TransactionInfo Transaction::serialize() {
+    TransactionInfo t;
+    t.blockId = this->blockId;
+    memcpy((void*)t.signature, (void*)this->signature.data, 64);
+    memcpy((void*)t.signingKey, (void*)this->signingKey.data, 64);
+    memcpy((char*)t.nonce, (char*)this->nonce.c_str(), TRANSACTION_NONCE_SIZE);
+    t.timestamp = this->timestamp;
+    t.to = this->to;
+    t.from = this->from;
+    t.amount = this->amount;
+    t.fee = this->fee;
+    t.isTransactionFee = this->isTransactionFee;
+    t.hasMiner = this->hasMiner();
+    if (this->hasMiner()) {
+        t.miner = this->miner.value();
+    }
+    return t;
+}
+
+
 Transaction::Transaction(const Transaction & t) {
     this->to = t.to;
     this->from = t.from;

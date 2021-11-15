@@ -8,6 +8,20 @@ using namespace std;
 #define ADDRESS_CHAR_COUNT 53
 #define SIGNATURE_CHAR_COUNT 78
 
+struct TransactionInfo {
+    int blockId;
+    char signature[64];
+    char signingKey[64];
+    time_t timestamp;
+    char nonce[TRANSACTION_NONCE_SIZE];
+    PublicWalletAddress miner;
+    PublicWalletAddress to;
+    PublicWalletAddress from;
+    TransactionAmount amount;
+    TransactionAmount fee;
+    bool isTransactionFee;
+    bool hasMiner;
+};
 
 class Transaction {
     public:
@@ -16,6 +30,8 @@ class Transaction {
         Transaction(const Transaction & t);
         Transaction(PublicWalletAddress to, int blockId);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, int blockId, PublicKey signingKey, TransactionAmount fee=0);
+        Transaction(const TransactionInfo& t);
+        TransactionInfo serialize();
         json toJson();
         void setBlockId(int id);
         int getBlockId() const;

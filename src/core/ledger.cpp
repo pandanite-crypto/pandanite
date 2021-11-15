@@ -56,9 +56,6 @@ bool Ledger::hasWallet(const PublicWalletAddress& wallet) {
 void Ledger::setWalletValue(const PublicWalletAddress& wallet, TransactionAmount amount) {
     if (!this->hasWallet(wallet)) {
         _size++;
-        leveldb::Slice slice = leveldb::Slice((const char*)&_size, sizeof(_size));
-        string key = "num_wallets";
-        db->Put(leveldb::WriteOptions(), key, slice);
     }
     leveldb::Status status = db->Put(leveldb::WriteOptions(), walletToSlice(wallet), amountToSlice(amount));
     if (!status.ok()) throw std::runtime_error("Write failed: " + status.ToString());

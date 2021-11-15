@@ -38,6 +38,34 @@ TEST(check_transaction_json_serialization) {
     ASSERT_EQUAL(ts, deserialized.getTimestamp());
 }
 
+TEST(check_transaction_struct_serialization) {
+
+    User miner;
+    User receiver;
+
+    Transaction t = miner.mine(1);
+    Transaction t2 = miner.send(receiver, 30.0, 1);
+    
+    ASSERT_TRUE(t2.signatureValid());
+
+    // test the send transaction
+    time_t ts = t2.getTimestamp();
+    TransactionInfo serialized = t2.serialize();
+    Transaction deserialized = Transaction(serialized);
+
+    ASSERT_TRUE(deserialized.signatureValid());
+    ASSERT_TRUE(t2 == deserialized);
+    ASSERT_EQUAL(ts, deserialized.getTimestamp());
+
+    // test mining transaction
+    serialized = t.serialize();
+    deserialized = Transaction(serialized);
+    ts = t.getTimestamp();
+    ASSERT_TRUE(t.toString() == deserialized.toString());
+    ASSERT_TRUE(t == deserialized);
+    ASSERT_EQUAL(ts, deserialized.getTimestamp());
+}
+
 TEST(check_transaction_copy) {
 
     User miner;
@@ -50,5 +78,4 @@ TEST(check_transaction_copy) {
     Transaction b = t2;
     ASSERT_TRUE(a==t);
     ASSERT_TRUE(b==t2);
-
 }

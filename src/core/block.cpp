@@ -40,6 +40,33 @@ Block::Block(json block) {
     this->computeMerkleTree();
 }
 
+Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
+    this->id = b.id;
+    this->timestamp = b.timestamp;
+    this->difficulty = b.difficulty;
+    this->nonce= b.nonce;
+    for(auto t : transactions) {
+        this->addTransaction(t);
+    }
+    if (!this->hasMerkleTree) {
+        this->computeMerkleTree();
+    }
+}
+
+BlockHeader Block::serialize() {
+    if (!this->hasMerkleTree) {
+        this->computeMerkleTree();
+    }
+    BlockHeader b;
+    b.id = this->id;
+    b.timestamp = this->timestamp;
+    b.difficulty = this->difficulty;
+    b.numTransactions = this->transactions.size();
+    b.merkleRoot = this->merkleTree.getRootHash();
+    b.nonce = this->nonce;
+    return b;
+}
+
 json Block::toJson() {
     if (!this->hasMerkleTree) {
         this->computeMerkleTree();

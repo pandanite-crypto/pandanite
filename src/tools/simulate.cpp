@@ -23,11 +23,10 @@ void simulate_transactions(vector<string>& hosts) {
             int blockId = getCurrentBlockCount(host) + 2;
             Transaction fee = u.mine(blockId);
             User r = randomUsers[rand()%randomUsers.size()];
-            Transaction t = u.send(r, rand()%5, blockId);
+            Transaction t = u.send(r, 1 + rand()%5, blockId);
             cout<<sendTransaction(host, t)<<endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(100+rand()%100));
         } catch (...) {}
-
     }
 }
 
