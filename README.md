@@ -1,7 +1,7 @@
 Welcome to PandaCoin! 
 ====================
 <image src="https://github.com/mr-pandabear/panda-website/blob/master/site/static/logo.png" width="350"/>
-PandaCoin is a minimalist implementation of a layer 0 blockchain protocol. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ -- it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
+PandaCoin is a minimalist implementation of a layer 1 blockchain protocol. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ -- it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
 
 ### PandaCoin rewards early users
 PandaCoin is just getting started, and it's going to be quite a trek! We want to reward those that help create the PandaNet handsomely for their efforts. To do this PandaCoin gives 2.5% of every transaction back to the first 100,000 founding wallets. These payments last for the first 2 years that the network is live.
