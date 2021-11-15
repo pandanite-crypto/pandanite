@@ -3,6 +3,7 @@
 #include <thread>
 #include <map>
 #include <functional>
+#include <fstream>
 #include <secp256k1.h>
 #include <secp256k1_preallocated.h>
 #include "../core/crypto.hpp"
@@ -10,13 +11,17 @@ using namespace std;
 
 
 void key_search() {
-
     secp256k1_context *ctx = NULL;
     size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
     time_t last = std::time(0);
     long i = 0;
-    cout<<"Starting search for keys"<<endl;
+    cout<<"=====GENERATE WALLET===="<<endl;
+    ofstream myfile;
+    cout<<"Enter output file name"<<endl;
+    string filename;
+    cin>>filename;
+    myfile.open(filename);
     while(true) {
         int res;
         PrivateKey privateKey;
@@ -36,11 +41,24 @@ void key_search() {
         int difficulty = 20;
         bool found = checkLeadingZeroBits(hash, difficulty);
         if (found) {
-            cout<<"Found wallet"<<endl;
-            cout<<"pubKey:"<<publicKeyToString(publicKey)<<endl;
-            cout<<"privateKey:"<<privateKeyToString(privateKey)<<endl;
-            cout<<"Time:"<<(curr-last)<<endl;
+            string wallet = walletAddressToString(walletAddressFromPublicKey(publicKey));
+            string pubKey = publicKeyToString(publicKey);
+            string privKey = privateKeyToString(privateKey);
+            cout<<"Found wallet!"<<endl;
+            cout<<"========================"<<endl;
+            cout<<"Wallet Address:"<<wallet<<endl;
+            cout<<"Public Key    :"<<pubKey<<endl;
+            cout<<"Private Key   :"<<privKey<<endl;
+            cout<<"Time (seconds):"<<(curr-last)<<endl;
+            cout<<"========================"<<endl;
+            cout<<"Output written to "<<filename<<endl;
+            myfile<<"wallet:"<<wallet<<endl;
+            myfile<<"publickey:"<<pubKey<<endl;
+            myfile<<"privatekey:"<<privKey<<endl;
+            myfile.close();
+            return;
             last = curr;
+            break;
         }
         i++;
         if (i%100000 == 0) {
@@ -51,8 +69,6 @@ void key_search() {
 }
 
 int main() {
-
     std::thread key_search_thread(key_search);
-
     key_search_thread.join();
 }

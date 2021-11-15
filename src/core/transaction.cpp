@@ -180,7 +180,8 @@ string Transaction::toString() const {
     return s.str();
 }
 
-void Transaction::sign(TransactionSignature signature) {
+void Transaction::sign(PrivateKey signingKey) {
+    TransactionSignature signature = signWithPrivateKey(this->toString(), signingKey);
     this->signature = signature;
 }
 

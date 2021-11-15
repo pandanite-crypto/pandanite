@@ -13,46 +13,34 @@ int main() {
     string host = "http://localhost:3000";
 
     while(true) {
-        int x; 
-        cout << "Choose an option: " <<endl;
-        cout << "1: add a new user" <<endl;
-        cout << "2: send money" <<endl;
-        cin >> x;
-        if (x == 1) {
-            cout<<"Enter a nickname: (no spaces, case sensitive)"<<endl;
-            string name;
-            cin>>name;
-            cout<<"Do you have a key file?"<<endl;
-            int x;
-            cout << "1: YES" <<endl;
-            cout << "2: NO" <<endl;
-            cin >> x;
-            if (x == 1) {
-                cout<<"Please enter the file name"<<endl;
-                string filepath;
-                cin>>filepath;
-                json data = readJsonFromFile(filepath);
-                users[name] = new User(data);
-            } else {
-                users[name] = new User();
-                writeJsonToFile(users[name]->toJson(),"./keys/" + name + ".json");
-            }
-        } else {
-            cout<<"Enter from user nickname:"<<endl;
-            string from;
-            cin>>from;
-            cout<<"Enter to user nickname:"<<endl;
-            string to;
-            cin>> to;
-            cout<<"Enter the amount:"<<endl;
-            double amount;
-            cin>>amount;
-            User * fromUser = users[from];
-            User * toUser = users[to];
-            int blockId = getCurrentBlockCount(host) + 2; // usually send 1 block into the future
-            cout<<"Creating transaction, current block: "<<blockId<<endl;
-            Transaction t = fromUser->send(*toUser, amount, blockId);
-            cout<<sendTransaction(host, t)<<endl;
-        }
+        cout<<"Enter from user public key:"<<endl;
+        string pubKeyStr;
+        cin>>pubKeyStr;
+        cout<<"Enter from user private key:"<<endl;
+        string privKeyStr;
+        cin>>privKeyStr;
+        PublicKey publicKey = stringToPublicKey(pubKeyStr);
+        PrivateKey privateKey = stringToPrivateKey(privKeyStr);
+
+        cout<<"Enter to user wallet:"<<endl;
+        string to;
+        cin>> to;
+        PublicWalletAddress toWallet = stringToWalletAddress(to);
+        PublicWalletAddress fromWallet = walletAddressFromPublicKey(publicKey);
+
+        cout<<"Enter the amount:"<<endl;
+        TransactionAmount amount;
+        cin>>amount;
+
+        cout<<"Enter the mining fee (or 0):"<<endl;
+        TransactionAmount fee;
+        cin>>fee;
+
+        int blockId = getCurrentBlockCount(host) + 2; // usually send 1 block into the future
+
+        Transaction t(fromWallet, toWallet, amount, blockId, publicKey, fee);
+        t.sign(privateKey);
+        cout<<"Creating transaction, current block: "<<blockId<<endl;
+        cout<<sendTransaction(host, t)<<endl;
     }
 }

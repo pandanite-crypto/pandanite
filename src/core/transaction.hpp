@@ -21,7 +21,7 @@ class Transaction {
         int getBlockId() const;
         void setNonce(string n);
         string getNonce() const;
-        void sign(TransactionSignature signature);
+        void sign(PrivateKey signingKey);
         void setTransactionFee(TransactionAmount amount);
         TransactionAmount getTransactionFee() const;
         void setMinerWallet(PublicWalletAddress amount);

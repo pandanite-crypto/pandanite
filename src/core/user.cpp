@@ -39,7 +39,7 @@ Transaction User::mine(int blockId) {
     return Transaction(this->getAddress(), blockId);
 }
 
-Transaction User::send(User& to, double amount, int blockId) {
+Transaction User::send(User& to, TransactionAmount amount, int blockId) {
     PublicWalletAddress fromWallet = this->getAddress();
     PublicWalletAddress toWallet = to.getAddress();
     Transaction t = Transaction(fromWallet, toWallet, amount, blockId, this->publicKey);
@@ -48,6 +48,5 @@ Transaction User::send(User& to, double amount, int blockId) {
 }
 
 void User::signTransaction(Transaction & t) {
-    TransactionSignature signature = signWithPrivateKey(t.toString(), this->privateKey);
-    t.sign(signature);
+    t.sign(this->privateKey);
 }

@@ -9,7 +9,7 @@ class User {
         User();
         User(json u);
         json toJson();
-        Transaction send(User & u, double amount, int blockId);
+        Transaction send(User & u, TransactionAmount amount, int blockId);
         Transaction mine(int blockId);
         PublicWalletAddress getAddress();
         PublicKey getPublicKey();
