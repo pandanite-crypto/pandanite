@@ -12,46 +12,50 @@ using namespace std;
 
 void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
     while(true) {
-        string bestHost = "";
-        int bestCount = 0;
-        for(auto host : hosts) {
-            try {
-                int curr = getCurrentBlockCount(host);
-                if (curr > bestCount) {
-                    bestCount = curr;
-                    bestHost = host;
+        try {
+            string bestHost = "";
+            int bestCount = 0;
+            for(auto host : hosts) {
+                try {
+                    int curr = getCurrentBlockCount(host);
+                    if (curr > bestCount) {
+                        bestCount = curr;
+                        bestHost = host;
+                    }
+                } catch (...) {
+                    cout<<"Host failed: "<<host<<endl;
                 }
-            } catch (...) {
-                cout<<"Host failed: "<<host<<endl;
             }
+            if (bestHost == "") continue;
+            cout<<"getting problem"<<endl;
+            string host = bestHost;
+            int nextBlock = bestCount + 1;
+            json problem = getMiningProblem(host);
+            string lastHashStr = problem["lastHash"];
+            SHA256Hash lastHash = stringToSHA256(lastHashStr);
+            int challengeSize = problem["challengeSize"];
+            
+            // create fee to our wallet:
+            Transaction fee(wallet, nextBlock);
+            vector<Transaction> transactions;
+            Block newBlock;
+            newBlock.setId(nextBlock);
+            newBlock.addTransaction(fee);
+            for(auto t : problem["transactions"]) {
+                Transaction x(t);
+                newBlock.addTransaction(x);
+            }
+            newBlock.setDifficulty(challengeSize);
+            SHA256Hash hash = newBlock.getHash(lastHash);
+            SHA256Hash solution = mineHash(hash, challengeSize);
+            newBlock.setNonce(solution);
+            // send the solution!
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            cout<<"Submitting solution"<<endl;
+            cout<<submitBlock(host, newBlock)<<endl;
+        } catch (const std::exception& e) {
+            cout<<"failure in mining thread: "<<e.what()<<endl;
         }
-        if (bestHost == "") continue;
-        cout<<"getting problem"<<endl;
-        string host = bestHost;
-        int nextBlock = bestCount + 1;
-        json problem = getMiningProblem(host);
-        string lastHashStr = problem["lastHash"];
-        SHA256Hash lastHash = stringToSHA256(lastHashStr);
-        int challengeSize = problem["challengeSize"];
-        
-        // create fee to our wallet:
-        Transaction fee(wallet, nextBlock);
-        vector<Transaction> transactions;
-        Block newBlock;
-        newBlock.setId(nextBlock);
-        newBlock.addTransaction(fee);
-        for(auto t : problem["transactions"]) {
-            Transaction x(t);
-            newBlock.addTransaction(x);
-        }
-        newBlock.setDifficulty(challengeSize);
-        SHA256Hash hash = newBlock.getHash(lastHash);
-        SHA256Hash solution = mineHash(hash, challengeSize);
-        newBlock.setNonce(solution);
-        // send the solution!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        cout<<"Submitting solution"<<endl;
-        cout<<submitBlock(host, newBlock)<<endl;
     }
 }
 

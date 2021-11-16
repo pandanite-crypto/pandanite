@@ -192,17 +192,21 @@ ExecutionStatus BlockChain::startChainSync() {
 
     // download any remaining blocks
     for(int i = startCount; i <= this->targetBlockCount; i++) {
-        json block = getBlockData(bestHost, i);
-        Block toAdd(block);
-        ExecutionStatus addResult = this->addBlock(toAdd);
-        if (addResult != SUCCESS) {
-            // if this chain sync fails, pop off a few blocks before trying again
-            for(int j = this->deltas.size() - 1; j <=0; j--) {
-                Executor::Rollback(this->ledger, this->deltas.back());
-                this->deltas.pop_back();
-                this->numBlocks--;
+        try {
+            json block = getBlockData(bestHost, i);
+            Block toAdd(block);
+            ExecutionStatus addResult = this->addBlock(toAdd);
+            if (addResult != SUCCESS) {
+                // if this chain sync fails, pop off a few blocks before trying again
+                for(int j = this->deltas.size() - 1; j <=0; j--) {
+                    Executor::Rollback(this->ledger, this->deltas.back());
+                    this->deltas.pop_back();
+                    this->numBlocks--;
+                }
+                return addResult;
             }
-            return addResult;
+        } except(const std::exception &e) {
+            cout<<"Failed to load block"<<e.what()<<endl;
         }
     }
     return SUCCESS;
