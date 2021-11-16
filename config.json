@@ -3,8 +3,8 @@
     "runMiner": true,
     "minerPublicKey": "0335DFCBDA618C2F3386EB523ACC6087D44137FA3803416A40B849C877C0F14562",
     "hosts":[ 
-        "http://localhost:3001",
-        "http://localhost:3000",
-        "http://localhost:3003"
+        "http://ec2-34-209-19-41.us-west-2.compute.amazonaws.com:3000",
+        "http://ec2-18-236-182-33.us-west-2.compute.amazonaws.com:3000",
+        "http://ec2-54-184-91-162.us-west-2.compute.amazonaws.com:3000"
     ]
 }

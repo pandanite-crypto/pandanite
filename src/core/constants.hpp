@@ -4,7 +4,7 @@
 #define TIMEOUT_MS 2000
 #define FOUNDER_WALLET_BITS 20
 #define TOTAL_FOUNDERS 100000
-#define MINING_PAYMENTS_UNTIL 200000
+#define MINING_PAYMENTS_UNTIL 2000000
 #define GENESIS_FILE_PATH "./genesis.json"
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
 #define DEFAULT_CONFIG_FILE_PATH "./config.json"
