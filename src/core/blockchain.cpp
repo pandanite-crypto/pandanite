@@ -197,16 +197,11 @@ ExecutionStatus BlockChain::startChainSync() {
             Block toAdd(block);
             ExecutionStatus addResult = this->addBlock(toAdd);
             if (addResult != SUCCESS) {
-                // if this chain sync fails, pop off a few blocks before trying again
-                for(int j = this->deltas.size() - 1; j <=0; j--) {
-                    Executor::Rollback(this->ledger, this->deltas.back());
-                    this->deltas.pop_back();
-                    this->numBlocks--;
-                }
                 return addResult;
             }
-        } except(const std::exception &e) {
+        } catch (const std::exception &e) {
             cout<<"Failed to load block"<<e.what()<<endl;
+            return UNKNOWN_ERROR;
         }
     }
     return SUCCESS;

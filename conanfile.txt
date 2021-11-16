@@ -1,5 +1,4 @@
 [requires]
-leveldb/1.23
 openssl/3.0.0
 jsonformoderncpp/3.7.0
 uwebsockets/19.3.0

@@ -27,10 +27,11 @@ void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
                 }
             }
             if (bestHost == "") continue;
-            cout<<"getting problem"<<endl;
+            cout<<"getting problem: " << bestHost<<endl;
             string host = bestHost;
             int nextBlock = bestCount + 1;
             json problem = getMiningProblem(host);
+            cout<<problem<<endl;
             string lastHashStr = problem["lastHash"];
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
             int challengeSize = problem["challengeSize"];

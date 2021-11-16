@@ -34,6 +34,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case NO_MINING_FEE:
             return "NO_MINING_FEE";
         break;
+        case UNKNOWN_ERROR:
+            return "UNKNOWN_ERROR";
+        break;
         case INVALID_TRANSACTION_NONCE:
             return "INVALID_TRANSACTION_NONCE";
         break;

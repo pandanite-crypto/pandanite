@@ -1,5 +1,5 @@
 {
-    "port": 3002,
+    "port": 3000,
     "runMiner": true,
     "minerPublicKey": "0335DFCBDA618C2F3386EB523ACC6087D44137FA3803416A40B849C877C0F14562",
     "hosts":[ 

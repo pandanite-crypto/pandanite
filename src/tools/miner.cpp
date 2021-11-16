@@ -23,7 +23,7 @@ void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
             }
         }
         if (bestHost == "") continue;
-        cout<<"getting problem"<<endl;
+        cout<<"getting problem: " << bestHost<<endl;
         string host = bestHost;
         int nextBlock = bestCount + 1;
         json problem = getMiningProblem(host);
