@@ -7,8 +7,10 @@ class HostManager {
         HostManager(); // only used as mock
         std::pair<string,int> getLongestChainHost();
         size_t size();
-    protected:
-        vector<string> hosts;
         void refreshHostList();
+        vector<string> getHosts();
+    protected:
+        vector<string> hostSources;
+        vector<string> hosts;
 };
 

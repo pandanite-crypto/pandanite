@@ -1,6 +1,6 @@
 #pragma once
-#include "common.hpp"
 #include "leveldb/db.h"
+#include "common.hpp"
 #include "block.hpp"
 
 class BlockStore {

@@ -1,11 +1,11 @@
 #pragma once
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#include "common.hpp"
-#include "constants.hpp"
 #include <secp256k1.h>
 #include <secp256k1_preallocated.h>
 #include "openssl/sha.h"
 #include "openssl/ripemd.h"
+#include "common.hpp"
+#include "constants.hpp"
 using namespace std;
 
 SHA256Hash SHA256(const char* buffer, size_t len);

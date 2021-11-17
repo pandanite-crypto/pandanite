@@ -1,7 +1,7 @@
 #pragma once
-#include "transaction.hpp"
 #include <vector>
 #include <map>
+#include "transaction.hpp"
 #include "constants.hpp"
 #include "common.hpp"
 #include "crypto.hpp"

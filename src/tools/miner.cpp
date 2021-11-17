@@ -3,8 +3,10 @@
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
+#include "../core/logger.hpp"
 #include <iostream>
 #include <mutex>
+#include <set>
 #include <thread>
 using namespace std;
 
@@ -27,20 +29,23 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             Block newBlock;
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
+            set<string> nonces;
             for(auto t : problem["transactions"]) {
                 Transaction x(t);
+                if (nonces.find(x.getNonce()) != nonces.end()) continue;
                 newBlock.addTransaction(x);
+                nonces.insert(x.getNonce());
             }
             newBlock.setDifficulty(challengeSize);
             SHA256Hash hash = newBlock.getHash(lastHash);
             SHA256Hash solution = mineHash(hash, challengeSize);
             newBlock.setNonce(solution);
             // send the solution!
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            cout<<"Submitting solution"<<endl;
+            Logger::logStatus("Submitting solution");
             cout<<submitBlock(host, newBlock)<<endl;
         } catch (const std::exception& e) {
-            cout<<"failure in mining thread: "<<e.what()<<endl;
+            Logger::logError("run_mining", string(e.what()));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 }
@@ -54,7 +59,7 @@ int main(int argc, char **argv) {
     json config = readJsonFromFile(configFile);
     int port = config["port"];
     HostManager hosts(config);
-    cout<<"Running miner"<<endl;
+    Logger::logStatus("Running miner");
     PublicWalletAddress wallet = walletAddressFromPublicKey(stringToPublicKey(config["minerPublicKey"]));
     std::thread mining_thread(run_mining, wallet, ref(hosts));
     mining_thread.join();

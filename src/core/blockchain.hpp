@@ -1,4 +1,10 @@
 #pragma once
+#include <list>
+#include <string>
+#include <thread>
+#include <vector>
+#include <map>
+#include <mutex>
 #include "block.hpp"
 #include "api.hpp"
 #include "constants.hpp"
@@ -7,12 +13,6 @@
 #include "block_store.hpp"
 #include "ledger.hpp"
 #include "host_manager.hpp"
-#include <list>
-#include <string>
-#include <thread>
-#include <vector>
-#include <map>
-#include <mutex>
 using namespace std;
 
 class BlockChain {

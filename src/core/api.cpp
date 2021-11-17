@@ -41,11 +41,9 @@ json sendTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/add_transaction");
     json req;
     req["transaction"] = t.toJson();
-    cout<<"sending:"<<req.dump()<<endl;
     const auto response = request.send("POST", req.dump(), {
         "Content-Type: application/json"
     },std::chrono::milliseconds{TIMEOUT_MS});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    cout<<responseStr<<endl;
     return json::parse(responseStr);
 }

@@ -1,16 +1,24 @@
+#include <map>
+#include <iostream>
 #include "../core/user.hpp"
 #include "../core/api.hpp"
 #include "../core/helpers.hpp"
 #include "../core/common.hpp"
-#include <map>
-#include <iostream>
+#include "../core/host_manager.hpp"
 using namespace std;
 
 
 
-int main() {
+int main(int argc, char** argv) {
     map<string,User*> users;
-    string host = "http://localhost:3000";
+
+    string configFile = DEFAULT_CONFIG_FILE_PATH;
+    if (argc > 1 ) {
+        configFile = string(argv[1]);
+    }
+    json config = readJsonFromFile(configFile);
+    int port = config["port"];
+    HostManager hosts(config);
 
     while(true) {
         cout<<"Enter from user public key:"<<endl;
@@ -35,9 +43,9 @@ int main() {
         cout<<"Enter the mining fee (or 0):"<<endl;
         TransactionAmount fee;
         cin>>fee;
-
+        std::pair<string,int> best = hosts.getLongestChainHost();
+        string host = best.first;
         int blockId = getCurrentBlockCount(host) + 2; // usually send 1 block into the future
-
         Transaction t(fromWallet, toWallet, amount, blockId, publicKey, fee);
         t.sign(privateKey);
         cout<<"Creating transaction, current block: "<<blockId<<endl;

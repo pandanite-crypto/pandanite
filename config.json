@@ -2,7 +2,7 @@
     "port": 3000,
     "runMiner": false,
     "minerPublicKey": "0335DFCBDA618C2F3386EB523ACC6087D44137FA3803416A40B849C877C0F14562",
-    "nodeSources":[ 
+    "hostSources":[ 
         "http://ec2-54-245-21-140.us-west-2.compute.amazonaws.com/hosts"
     ]
 }

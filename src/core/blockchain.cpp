@@ -12,6 +12,7 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
+#include "logger.hpp"
 #include "blockchain.hpp"
 #include "helpers.hpp"
 #include "user.hpp"
@@ -20,16 +21,20 @@
 using namespace std;
 
 void chain_sync(BlockChain& blockchain) {
-    int popOnFailure = 1;
+    int i = 0;
     while(true) {
-        ExecutionStatus valid;
-        blockchain.acquire();
-        valid = blockchain.startChainSync();
-        if (valid==SUCCESS) {
-            cout<<"chain in sync, block count: "<<blockchain.getBlockCount()<<endl;
+        try {
+            ExecutionStatus valid;
+            blockchain.acquire();
+            valid = blockchain.startChainSync();
+            blockchain.release();
+            if (i%2000) { // refresh host list roughly every 3 min
+                blockchain.hosts.refreshHostList();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        } catch(std::exception & e) {
+            Logger::logError("chain_sync", string(e.what()));
         }
-        blockchain.release();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -169,7 +174,7 @@ ExecutionStatus BlockChain::startChainSync() {
     std::pair<string,int> bestHostInfo = this->hosts.getLongestChainHost();
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = bestHostInfo.second;
-
+    
     int startCount = this->numBlocks + 1;
 
     if (startCount > this->targetBlockCount) {
@@ -186,7 +191,7 @@ ExecutionStatus BlockChain::startChainSync() {
                 return addResult;
             }
         } catch (const std::exception &e) {
-            cout<<"Failed to load block"<<e.what()<<endl;
+            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
             return UNKNOWN_ERROR;
         }
     }
