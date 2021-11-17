@@ -11,3 +11,4 @@ TransactionAmount BMB(double amount);
 std::time_t getCurrentTime();
 std::string timeToString(const std::time_t& t);
 std::time_t stringToTime(const std::string& input);
+std::string exec(const char* cmd);

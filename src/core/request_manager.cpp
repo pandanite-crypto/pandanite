@@ -7,9 +7,9 @@
 using namespace std;
 
 
-RequestManager::RequestManager(vector<string> hosts) {
-    this->blockchain = new BlockChain();
-    if (hosts.size()>0) this->blockchain->sync(hosts);
+RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
+    this->blockchain = new BlockChain(hosts);
+    if (hosts.size()>0) this->blockchain->sync();
 }
 
 json RequestManager::addTransaction(json data) {

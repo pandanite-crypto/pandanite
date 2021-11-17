@@ -1,6 +1,7 @@
 #pragma once
 #include "blockchain.hpp"
 #include "transaction.hpp"
+#include "host_manager.hpp"
 #include "common.hpp"
 #include <vector>
 #include <map>
@@ -10,7 +11,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(vector<string> hosts);
+        RequestManager(HostManager& hosts);
         json addTransaction(json data);
         json getProofOfWork();
         json submitProofOfWork(json data);
@@ -21,6 +22,7 @@ class RequestManager {
         string getBlockCount();
         BlockChain* blockchain;
     protected:
+        HostManager& hosts;
         size_t getPendingTransactionSize(int block);
         map<int,list<Transaction>> transactionQueue;
 };

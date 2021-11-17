@@ -1,5 +1,6 @@
 #include "../core/blockchain.hpp"
 #include "../core/helpers.hpp"
+#include "../core/host_manager.hpp"
 #include "../core/constants.hpp"
 #include "../core/user.hpp"
 #include <chrono>
@@ -9,7 +10,8 @@ using namespace std;
 using namespace std::chrono_literals;
 
 TEST(check_adding_new_node_with_hash) {
-    BlockChain* blockchain = new BlockChain();
+    HostManager h;
+    BlockChain* blockchain = new BlockChain(h);
     blockchain->resetChain();
     User miner;
     User other;
@@ -29,7 +31,8 @@ TEST(check_adding_new_node_with_hash) {
 }
 
 TEST(check_adding_two_nodes_updates_ledger) {
-    BlockChain* blockchain = new BlockChain();
+    HostManager h;
+    BlockChain* blockchain = new BlockChain(h);
     blockchain->resetChain();
     User miner;
 
@@ -52,7 +55,8 @@ TEST(check_adding_two_nodes_updates_ledger) {
 }
 
 TEST(check_sending_transaction_updates_ledger) {
-    BlockChain* blockchain = new BlockChain();
+    HostManager h;
+    BlockChain* blockchain = new BlockChain(h);
     blockchain->resetChain();
     User miner;
     User other;

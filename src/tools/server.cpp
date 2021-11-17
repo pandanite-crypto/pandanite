@@ -4,34 +4,22 @@
 #include <thread>
 #include <experimental/filesystem>
 #include "../core/crypto.hpp"
+#include "../core/host_manager.hpp"
 #include "../core/helpers.hpp"
 #include "../core/request_manager.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 using namespace std;
 
-void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
+void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
     while(true) {
         try {
-            string bestHost = "";
-            int bestCount = 0;
-            for(auto host : hosts) {
-                try {
-                    int curr = getCurrentBlockCount(host);
-                    if (curr > bestCount) {
-                        bestCount = curr;
-                        bestHost = host;
-                    }
-                } catch (...) {
-                    cout<<"Host failed: "<<host<<endl;
-                }
-            }
-            if (bestHost == "") continue;
-            cout<<"getting problem: " << bestHost<<endl;
-            string host = bestHost;
+            std::pair<string,int> bestHost = hosts.getLongestChainHost();
+            if (bestHost.first == "") continue;
+            int bestCount = bestHost.second;
+            string host = bestHost.first;
             int nextBlock = bestCount + 1;
             json problem = getMiningProblem(host);
-            cout<<problem<<endl;
             string lastHashStr = problem["lastHash"];
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
             int challengeSize = problem["challengeSize"];
@@ -63,6 +51,7 @@ void run_mining(PublicWalletAddress wallet, vector<string>& hosts) {
 int main(int argc, char **argv) {
     experimental::filesystem::remove_all(LEDGER_FILE_PATH);
     experimental::filesystem::remove_all(BLOCK_STORE_FILE_PATH);
+    
     string configFile = DEFAULT_CONFIG_FILE_PATH;
     if (argc > 1 ) {
         configFile = string(argv[1]);
@@ -71,7 +60,10 @@ int main(int argc, char **argv) {
     json config = readJsonFromFile(configFile);
 
     int port = config["port"];
-    vector<string> hosts = config["hosts"];
+    
+    HostManager hosts(config);
+    RequestManager manager(hosts);
+    
     bool runMiner = config["runMiner"];
     if (runMiner) {
         cout<<"Running miner"<<endl;
@@ -79,8 +71,8 @@ int main(int argc, char **argv) {
         std::thread mining_thread(run_mining, wallet, ref(hosts));
         mining_thread.detach();
     }
+    
 
-    RequestManager manager(hosts);
     uWS::App().get("/block_count", [&manager](auto *res, auto *req) {
         std::string count = manager.getBlockCount();
         res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);

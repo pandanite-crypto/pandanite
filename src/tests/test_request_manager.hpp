@@ -2,11 +2,12 @@
 #include "../core/user.hpp"
 #include "../core/block.hpp"
 #include "../core/transaction.hpp"
+#include "../core/host_manager.hpp"
 #include <thread>
 using namespace std;
 
 TEST(test_accepts_proof_of_work) {
-    vector<string> hosts;
+    HostManager hosts;
     RequestManager r(hosts);
 
     json pow = r.getProofOfWork();

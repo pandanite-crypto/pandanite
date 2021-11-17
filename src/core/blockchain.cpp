@@ -33,7 +33,7 @@ void chain_sync(BlockChain& blockchain) {
     }
 }
 
-BlockChain::BlockChain() {
+BlockChain::BlockChain(HostManager& hosts) : hosts(hosts) {
     // check that genesis block file exists.
     ifstream f(GENESIS_FILE_PATH);
     if (!f.good()) {
@@ -59,13 +59,11 @@ void BlockChain::resetChain() {
     this->numBlocks = 0;
     ExecutionStatus status = this->addBlock(genesis);
     if (status != SUCCESS) {
-        cout<<"Could not load genesis block"<<endl;
-        cout<<executionStatusAsString(status)<<endl;
+        throw std::runtime_error("Could not load genesis block");
     }
 }
 
-void BlockChain::sync(vector<string> hosts) {
-    this->hosts = hosts;
+void BlockChain::sync() {
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
@@ -168,21 +166,9 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // iterate through each of the hosts and pick the longest one:
-    string bestHost = "";
-    int bestCount = 0;
-    for(auto host : this->hosts) {
-        try {
-            int curr = getCurrentBlockCount(host);
-            if (curr > bestCount) {
-                bestCount = curr;
-                bestHost = host;
-            }
-        } catch (...) {
-            continue;
-        }
-    }
-
-    this->targetBlockCount = bestCount;
+    std::pair<string,int> bestHostInfo = this->hosts.getLongestChainHost();
+    string bestHost = bestHostInfo.first;
+    this->targetBlockCount = bestHostInfo.second;
 
     int startCount = this->numBlocks + 1;
 
