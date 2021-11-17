@@ -31,7 +31,8 @@ void chain_sync(BlockChain& blockchain) {
             Logger::logError("chain_sync", string(e.what()));
         }
         blockchain.release();
-        if (i%2000) { // refresh host list roughly every 3 min
+        if (i%2000 == 0) { // refresh host list roughly every 3 min
+            Logger::logStatus("chain_sync: Refreshing host list");
             blockchain.hosts.refreshHostList();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
