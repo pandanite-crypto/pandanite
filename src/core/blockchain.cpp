@@ -21,20 +21,21 @@
 using namespace std;
 
 void chain_sync(BlockChain& blockchain) {
-    int i = 0;
+    unsigned long i = 0;
     while(true) {
+        blockchain.acquire();
         try {
             ExecutionStatus valid;
-            blockchain.acquire();
             valid = blockchain.startChainSync();
-            blockchain.release();
-            if (i%2000) { // refresh host list roughly every 3 min
-                blockchain.hosts.refreshHostList();
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch(std::exception & e) {
             Logger::logError("chain_sync", string(e.what()));
         }
+        blockchain.release();
+        if (i%2000) { // refresh host list roughly every 3 min
+            blockchain.hosts.refreshHostList();
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        i++;
     }
 }
 

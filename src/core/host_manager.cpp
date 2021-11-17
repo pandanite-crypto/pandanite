@@ -63,10 +63,14 @@ std::pair<string, int> HostManager::getLongestChainHost() {
     string bestHost = "";
     int bestCount = 0;
     for(auto host : this->hosts) {
-        int curr = getCurrentBlockCount(host);
-        if (curr > bestCount) {
-            bestCount = curr;
-            bestHost = host;
+        try {
+            int curr = getCurrentBlockCount(host);
+            if (curr > bestCount) {
+                bestCount = curr;
+                bestHost = host;
+            }
+        } catch (std::exception & e) {
+            continue;
         }
     }
     if (bestHost == "") throw std::runtime_error("Could not get chain length from any host");

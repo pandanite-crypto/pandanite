@@ -14,7 +14,11 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
     while(true) {
         try {
             std::pair<string,int> bestHost = hosts.getLongestChainHost();
-            if (bestHost.first == "") continue;
+            if (bestHost.first == "") {
+                Logger::logStatus("no host found");
+            } else {
+                Logger::logStatus("fetching problem from " + bestHost.first);
+            }
             int bestCount = bestHost.second;
             string host = bestHost.first;
             int nextBlock = bestCount + 1;
@@ -42,7 +46,8 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             newBlock.setNonce(solution);
             // send the solution!
             Logger::logStatus("Submitting solution");
-            cout<<submitBlock(host, newBlock)<<endl;
+            auto result = submitBlock(host, newBlock).dump();
+            Logger::logStatus(result);
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));

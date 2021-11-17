@@ -131,8 +131,14 @@ int main(int argc, char **argv) {
             });
             res->onAborted([]() {});
         } catch(const std::exception &e) {
+            json response;
+            response["error"] = string(e.what())
+            res->end(response.dump());
             Logger::logError("/submit", e.what());
         } catch(...) {
+            json response;
+            response["error"] = "unknown";
+            res->end(response.dump());
             Logger::logError("/submit", "unknown");
         }
     }).get("/mine", [&manager](auto *res, auto *req) {

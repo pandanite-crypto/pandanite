@@ -54,7 +54,6 @@ void key_search() {
             myfile<<"publickey:"<<pubKey<<endl;
             myfile<<"privatekey:"<<privKey<<endl;
             myfile.close();
-            return;
             last = curr;
             break;
         }
