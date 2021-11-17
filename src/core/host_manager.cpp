@@ -46,7 +46,9 @@ void HostManager::refreshHostList() {
         
         this->hosts.clear();
         for(auto host : hostList) {
-            string hostIp = exec("dig +short " + host.substr(7,s.length()-12))
+            string hostStr = string(host);
+            string ipCmd = "dig +short " + hostStr.substr(7,hostStr.length()-12);
+            string hostIp = exec(ipCmd.c_str());
             if (hostIp != myIp) {
                 Logger::logStatus("Adding host: " + string(host));
                 this->hosts.push_back(string(host));
