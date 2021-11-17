@@ -23,6 +23,7 @@ class Block {
         Block(json data);
         Block(const Block& b);
         Block(const BlockHeader&b, vector<Transaction>& transactions);
+        Block(std::pair<char*,size_t> buffer);
         BlockHeader serialize();
         json toJson();
         void addTransaction(Transaction t);

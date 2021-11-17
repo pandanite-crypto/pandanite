@@ -19,7 +19,6 @@ HostManager::HostManager(json config) {
 }
 
 HostManager::HostManager() {
-    this->hosts.push_back("http://localhost:3000");
 }
 
 void HostManager::refreshHostList() {

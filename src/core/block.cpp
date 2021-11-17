@@ -40,6 +40,23 @@ Block::Block(json block) {
     this->computeMerkleTree();
 }
 
+Block::Block(std::pair<char*,size_t> buffer) {
+    BlockHeader b = *((BlockHeader*)buffer.first);
+    char * transactionPtr = buffer.first + sizeof(BlockHeader);
+
+    this->id = b.id;
+    this->timestamp = b.timestamp;
+    this->difficulty = b.difficulty;
+    this->nonce= b.nonce;
+
+    for(int i = 0; i < b.numTransactions; i++) {
+        TransactionInfo t = *((TransactionInfo*)transactionPtr);
+        this->addTransaction(Transaction(t));
+        transactionPtr += sizeof(TransactionInfo);
+    }
+    this->computeMerkleTree();
+}
+
 Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
     this->id = b.id;
     this->timestamp = b.timestamp;

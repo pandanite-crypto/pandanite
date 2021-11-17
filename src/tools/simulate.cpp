@@ -4,6 +4,8 @@
 #include "../core/user.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
+#include "../core/transaction.hpp"
+#include "../core/block.hpp"
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -37,18 +39,20 @@ void simulate_transactions(HostManager& hosts) {
 
 
 int main(int argc, char **argv) {
-    string configFile = DEFAULT_CONFIG_FILE_PATH;
-    if (argc > 1 ) {
-        configFile = string(argv[1]);
-    }
-    json config = readJsonFromFile(configFile);
-    HostManager hosts(config);
-    vector<std::thread> requests;
-    std::thread sim_thread(simulate_transactions, ref(hosts));
-    std::thread sim_thread1(simulate_transactions, ref(hosts));
-    std::thread sim_thread2(simulate_transactions, ref(hosts));
-    std::thread sim_thread3(simulate_transactions, ref(hosts));
-    std::thread sim_thread4(simulate_transactions, ref(hosts));
-    std::thread sim_thread5(simulate_transactions, ref(hosts));
-    sim_thread.join();
+    cout<<sizeof(TransactionInfo)<<endl;
+    cout<<sizeof(BlockHeader)<<endl;
+    // string configFile = DEFAULT_CONFIG_FILE_PATH;
+    // if (argc > 1 ) {
+    //     configFile = string(argv[1]);
+    // }
+    // json config = readJsonFromFile(configFile);
+    // HostManager hosts(config);
+    // vector<std::thread> requests;
+    // std::thread sim_thread(simulate_transactions, ref(hosts));
+    // std::thread sim_thread1(simulate_transactions, ref(hosts));
+    // std::thread sim_thread2(simulate_transactions, ref(hosts));
+    // std::thread sim_thread3(simulate_transactions, ref(hosts));
+    // std::thread sim_thread4(simulate_transactions, ref(hosts));
+    // std::thread sim_thread5(simulate_transactions, ref(hosts));
+    // sim_thread.join();
 }

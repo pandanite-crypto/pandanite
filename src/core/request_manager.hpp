@@ -19,6 +19,7 @@ class RequestManager {
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(json data);
+        std::pair<char*, size_t> getRawBlockData(int index);
         string getBlockCount();
         BlockChain* blockchain;
     protected:

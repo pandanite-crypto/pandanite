@@ -5,7 +5,7 @@ using namespace std;
 class HostManager {
     public:
         HostManager(json config);
-        HostManager(); // only used as mock
+        HostManager(); // only used for  mocks
         std::pair<string,int> getLongestChainHost();
         size_t size();
         void refreshHostList();

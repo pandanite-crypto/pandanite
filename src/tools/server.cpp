@@ -108,6 +108,8 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/mine", "unknown");
         }
+    }).get("/sync/:start/:end", [&manager](auto *res, auto *req) {
+        
     }).post("/add_transaction", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");

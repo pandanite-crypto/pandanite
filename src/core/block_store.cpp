@@ -33,7 +33,7 @@ bool BlockStore::hasBlock(int blockId) {
     return (status.ok());
 }
 
-Block BlockStore::getBlock(int blockId) {
+BlockHeader BlockStore::getBlockHeader(int blockId) {
     leveldb::Slice key = leveldb::Slice((const char*) &blockId, sizeof(int));
     string valueStr;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &valueStr);
@@ -41,21 +41,57 @@ Block BlockStore::getBlock(int blockId) {
     
     BlockHeader value;
     memcpy(&value, valueStr.c_str(), sizeof(BlockHeader));
-    
-    vector<Transaction> transactions;
-    for(int i = 0; i < value.numTransactions; i++) {
+    return value;
+}
+
+vector<TransactionInfo> BlockStore::getBlockTransactions(BlockHeader& block) {
+    vector<TransactionInfo> transactions;
+    for(int i = 0; i < block.numTransactions; i++) {
+        int idx = i;
         int transactionId[2];
-        transactionId[0] = blockId;
-        transactionId[1] = i;
+        transactionId[0] = block.id;
+        transactionId[1] = idx;
         leveldb::Slice key = leveldb::Slice((const char*) transactionId, 2*sizeof(int));
         string valueStr;
         leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &valueStr);
         if(!status.ok()) throw std::runtime_error("Could not read transaction from BlockStore db : " + status.ToString());
         TransactionInfo t;
         memcpy(&t, valueStr.c_str(), sizeof(TransactionInfo));
+        transactions.push_back(t);
+    }
+    return std::move(transactions);
+}
+
+std::pair<char*, size_t> BlockStore::getRawData(int blockId) {
+    BlockHeader block = this->getBlockHeader(blockId);
+    size_t numBytes = sizeof(BlockHeader) + (sizeof(TransactionInfo) * block.numTransactions);
+    char* buffer = (char*)malloc(numBytes);
+    memcpy(buffer,&block, sizeof(BlockHeader));
+    char* transactionBuffer = buffer + sizeof(BlockHeader);
+    char* currTransactionPtr = transactionBuffer;
+    for(int i = 0; i < block.numTransactions; i++) {
+        int idx = i;
+        int transactionId[2];
+        transactionId[0] = blockId;
+        transactionId[1] = idx;
+        leveldb::Slice key = leveldb::Slice((const char*) transactionId, 2*sizeof(int));
+        string value;
+        leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
+        memcpy(currTransactionPtr, value.c_str(), sizeof(TransactionInfo));
+        if (!status.ok()) throw std::runtime_error("Could not read transaction from BlockStore db : " + status.ToString());
+        currTransactionPtr += sizeof(TransactionInfo);
+    }
+    return std::pair<char*, size_t>(buffer, numBytes);
+}
+
+Block BlockStore::getBlock(int blockId) {
+    BlockHeader block = this->getBlockHeader(blockId);
+    vector<TransactionInfo> transactionInfo = this->getBlockTransactions(block);
+    vector<Transaction> transactions;
+    for(auto t : transactionInfo) {
         transactions.push_back(Transaction(t));
     }
-    Block ret(value, transactions);
+    Block ret(block, transactions);
     return ret;
 }
 

@@ -125,6 +125,10 @@ json RequestManager::getProofOfWork() {
 
 }
 
+std::pair<char*, size_t> RequestManager::getRawBlockData(int index) {
+    return this->blockchain->getRaw(index);
+}
+
 size_t RequestManager::getPendingTransactionSize(int block) {
     if (this->transactionQueue.find(block) == this->transactionQueue.end()) return 0;
     return this->transactionQueue[block].size();

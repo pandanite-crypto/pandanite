@@ -22,13 +22,14 @@ class BlockChain {
         void acquire();
         void release();
         void resetChain();
-        Block getBlock(int idx);
+        Block getBlock(int blockId);
         int getDifficulty();
         int getBlockCount();
         SHA256Hash getLastHash();
         Ledger& getLedger();
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(Transaction& t);
+        std::pair<char*, size_t> getRaw(int blockId);
     protected:
         HostManager& hosts;
         int numBlocks;
