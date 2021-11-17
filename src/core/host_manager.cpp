@@ -42,10 +42,12 @@ void HostManager::refreshHostList() {
         }
 
         // if our node is in the host list, remove ourselves:
-        string myUrl = "http://" + exec("host $(curl -s http://checkip.amazonaws.com) | tail -c 51 | head -c 49") + ":3000";
+        string myIp = exec("curl -s http://checkip.amazonaws.com");
+        
         this->hosts.clear();
         for(auto host : hostList) {
-            if (host != myUrl) {
+            string hostIp = exec("dig +short " + host.substr(7,s.length()-12))
+            if (hostIp != myIp) {
                 Logger::logStatus("Adding host: " + string(host));
                 this->hosts.push_back(string(host));
             }

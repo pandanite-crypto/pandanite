@@ -44,9 +44,6 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             SHA256Hash hash = newBlock.getHash(lastHash);
             SHA256Hash solution = mineHash(hash, challengeSize);
             newBlock.setNonce(solution);
-            // send the solution!
-            Logger::logStatus("Submitting solution: " + newBlock.toJson().dump());
-
             auto result = submitBlock(host, newBlock).dump();
             Logger::logStatus(result);
         } catch (const std::exception& e) {

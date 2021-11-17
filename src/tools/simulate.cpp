@@ -26,7 +26,7 @@ void simulate_transactions(HostManager& hosts) {
             int blockId = getCurrentBlockCount(host) + 2;
             Transaction fee = u.mine(blockId);
             User r = randomUsers[rand()%randomUsers.size()];
-            Transaction t = u.send(r, BMB(1 + rand()%5), blockId);
+            Transaction t = u.send(r, 1 + rand()%5, blockId);
             for (auto newHost : hosts.getHosts()) {
                 sendTransaction(newHost, t);
             }
