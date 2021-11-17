@@ -11,14 +11,19 @@ HostManager::HostManager(json config) {
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
-    this->refreshHostList();
+    if (this->hostSources.size() == 0) {
+        this->hosts.push_back("http://localhost:3000");
+    } else {
+        this->refreshHostList();
+    }
 }
 
 HostManager::HostManager() {
-
+    this->hosts.push_back("http://localhost:3000");
 }
 
 void HostManager::refreshHostList() {
+    if (this->hostSources.size() == 0) return;
     json hostList;
     try {
         for (int i = 0; i < this->hostSources.size(); i++) {

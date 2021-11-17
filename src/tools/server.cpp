@@ -119,8 +119,12 @@ int main(int argc, char **argv) {
             Logger::logError("/ledger", "unknown");
         }
     }).post("/submit", [&manager](auto *res, auto *req) {
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
         try {
-        std::string buffer;
+
+            std::string buffer;
             res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
                 buffer.append(data.data(), data.length());
                 if (last) {
@@ -129,10 +133,10 @@ int main(int argc, char **argv) {
                     res->end(response.dump());
                 }
             });
-            res->onAborted([]() {});
+            
         } catch(const std::exception &e) {
             json response;
-            response["error"] = string(e.what())
+            response["error"] = string(e.what());
             res->end(response.dump());
             Logger::logError("/submit", e.what());
         } catch(...) {
@@ -151,6 +155,9 @@ int main(int argc, char **argv) {
             Logger::logError("/mine", "unknown");
         }
     }).post("/add_transaction", [&manager](auto *res, auto *req) {
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
         try {
             std::string buffer;
             res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
@@ -161,7 +168,6 @@ int main(int argc, char **argv) {
                     res->end(response.dump());
                 }
             });
-            res->onAborted([]() {});
         }  catch(const std::exception &e) {
             Logger::logError("/add_transaction", e.what());
         } catch(...) {
@@ -179,7 +185,9 @@ int main(int argc, char **argv) {
                 res->end(response.dump());
             }
         });
-        res->onAborted([]() {});
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
     }).listen(port, [port](auto *token) {
         Logger::logStatus("Started server");
     }).run();
