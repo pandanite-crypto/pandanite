@@ -184,36 +184,43 @@ ExecutionStatus BlockChain::startChainSync() {
     
     int startCount = this->numBlocks + 1;
 
-    if (startCount > this->targetBlockCount) {
+    if (startCount >= this->targetBlockCount) {
         return SUCCESS;
     }
 
+    int needed = this->targetBlockCount - startCount;
+
     // download any remaining blocks in batches
+    time_t start = std::time(0);
     for(int i = startCount; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
         try {
-            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH);
+            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
             bool failure = false;
             ExecutionStatus status;
             BlockChain &bc = *this;
-            readRaw(bestHost, i, end, [&bc,&failure,&status](BlockHeader b, vector<Transaction>& t) {
-                Block toAdd(b, t);
-                ExecutionStatus addResult = bc.addBlock(toAdd);
-                if (addResult != SUCCESS) {
-                    failure = true;
-                    status = addResult;
-                }
+            int count = 0;
+            readRaw(bestHost, i, end, [&bc,&failure,&status, &count](Block& b) {
+                if (!failure) {
+                    ExecutionStatus addResult = bc.addBlock(b);
+                    if (addResult != SUCCESS) {
+                        failure = true;
+                        status = addResult;
+                    }
+                } 
             });
             if (failure) {
-                cout<<"Failure"<<endl;
                 return status;
-            } else {
-                return SUCCESS;
             }
         } catch (const std::exception &e) {
             Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
             return UNKNOWN_ERROR;
         }
     }
+    time_t final = std::time(0);
+    time_t d = final - start;
+    stringstream s;
+    s<<"Downloaded " << needed <<" blocks in " << d << " seconds";
+    if (needed > 1) Logger::logStatus(s.str());
     return SUCCESS;
 }
 

@@ -31,8 +31,6 @@ class Block {
         void setTimestamp(time_t t);
         void setId(int id);
         void setDifficulty(int d);
-        void computeMerkleTree();
-        void freeMerkleTree();
         HashTree* verifyTransaction(Transaction &t);
         SHA256Hash getHash(SHA256Hash lastHash);
         SHA256Hash getNonce();
@@ -41,13 +39,12 @@ class Block {
         vector<Transaction>& getTransactions();
         int getId();
         bool verifyNonce(SHA256Hash lastHash);
-    protected:
+    // protected:
         int id;
         time_t timestamp;
         int difficulty;
         vector<Transaction> transactions;
-        MerkleTree merkleTree;
-        bool hasMerkleTree;
+        SHA256Hash merkleRoot;
         SHA256Hash nonce;
     private:
         friend bool operator==(const Block& a, const Block& b);

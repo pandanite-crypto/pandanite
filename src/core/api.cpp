@@ -50,43 +50,60 @@ json sendTransaction(string host_url, Transaction& t) {
     return json::parse(responseStr);
 }
 struct DataHandler {
-    function<void(BlockHeader,vector<Transaction>&)> callback;
+    function<void(Block&)> callback;
     BlockHeader block;
     bool headerRead;
     int totalBytes;
-    void * startPtr;
     stringstream soFar;
+    int blocksRead;
+    int total;
 
 };
+
+// size_t write_data_async(void *ptr, size_t size, size_t nmemb, void *stream) {
+//     string data((const char*) ptr, (size_t) size * nmemb);
+//     DataHandler * handler = (DataHandler*) stream;
+//     handler->soFar<<data;
+//     if (!handler->headerRead && handler->soFar.str().length() >= sizeof(BlockHeader)) {
+//         memcpy(&handler->block, handler->soFar.str().c_str(), sizeof(BlockHeader));
+//         handler->headerRead = true;
+//         handler->totalBytes = sizeof(BlockHeader) + sizeof(TransactionInfo) * handler->block.numTransactions;
+//     } else if(handler->soFar.str().length() >= handler->totalBytes) {
+//         string s = handler->soFar.str();
+//         handler->soFar.str("");
+//         handler->soFar<<s.substr(handler->totalBytes);
+//         char * buffer = (char*)s.c_str() + sizeof(BlockHeader);
+//         vector<Transaction> transactions;
+//         for(int i = 0; i < handler->block.numTransactions; i++) {
+//             TransactionInfo tmp;
+//             memcpy(&tmp, buffer, sizeof(TransactionInfo));
+//             buffer += sizeof(TransactionInfo);
+//             transactions.push_back(Transaction(tmp));
+//         }
+//         handler->headerRead = false;
+//         try {
+//             Block newBlock(handler->block, transactions);
+//             handler->callback(newBlock);
+//         } catch(...) {
+//             cout<<"BLOCK CREATION FAILED!"<<endl;
+//         }
+//         handler->blocksRead++;
+//     }
+//     handler->total += size*nmemb;
+//     return size * nmemb;
+// }
+
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
     string data((const char*) ptr, (size_t) size * nmemb);
     DataHandler * handler = (DataHandler*) stream;
     handler->soFar<<data;
-    if (!handler->headerRead && handler->soFar.str().length() >= sizeof(BlockHeader)) {
-        memcpy(&handler->block, handler->soFar.str().c_str(), sizeof(BlockHeader));
-        handler->headerRead = true;
-        handler->totalBytes = sizeof(BlockHeader) + sizeof(TransactionInfo) * handler->block.numTransactions;
-    } else if(handler->soFar.str().length() >= handler->totalBytes) {
-        string s = handler->soFar.str();
-        handler->soFar.str("");
-        handler->soFar<<s.substr(handler->totalBytes);
-        char * buffer = (char*)s.c_str() + sizeof(BlockHeader);
-        vector<Transaction> transactions;
-        for(int i = 0; i < handler->block.numTransactions; i++) {
-            TransactionInfo tmp;
-            memcpy(&tmp, buffer, sizeof(TransactionInfo));
-            buffer += sizeof(TransactionInfo);
-            transactions.push_back(Transaction(tmp));
-        }
-        handler->startPtr = buffer + sizeof(TransactionInfo);
-        handler->headerRead = false;
-        handler->callback(handler->block, transactions);
-    }
+    handler->totalBytes+=nmemb;
     return size * nmemb;
 }
 
-void readRaw(string host_url, int startId, int endId, function<void(BlockHeader,vector<Transaction>&)> handler) {
+
+void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
     CURL *curl;
     std::string readBuffer;
     stringstream url;
@@ -96,10 +113,15 @@ void readRaw(string host_url, int startId, int endId, function<void(BlockHeader,
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); 
     curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
+    // curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
     DataHandler d;
+    d.soFar = stringstream();
     d.headerRead = false;
+    d.total = 0;
     d.callback = handler;
     d.totalBytes = 0;
+    d.blocksRead = 0;
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &d);
     /* Perform the request, res will get the return code */
@@ -108,6 +130,30 @@ void readRaw(string host_url, int startId, int endId, function<void(BlockHeader,
     if (res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
+    }
+    string st = d.soFar.str();
+    char* buffer = (char*)st.c_str();
+    char* currPtr = buffer;
+    int bytesRead = 0;
+    int i = 0;
+    int numBlocks = 0;
+    while(true) {
+        BlockHeader b;
+        vector<Transaction> transactions;
+        memcpy(&b, currPtr, sizeof(BlockHeader));
+        currPtr += sizeof(BlockHeader);
+        bytesRead += sizeof(BlockHeader);
+        for(int i = 0; i < b.numTransactions; i++) {
+            TransactionInfo tmp;
+            memcpy(&tmp, currPtr, sizeof(TransactionInfo));
+            currPtr += sizeof(TransactionInfo);
+            bytesRead += sizeof(TransactionInfo);
+            transactions.push_back(Transaction(tmp));
+        }
+        numBlocks++;
+        Block block(b, transactions);
+        d.callback(block);
+        if (bytesRead >= st.size()) break;
     }
     curl_easy_cleanup(curl);
 }

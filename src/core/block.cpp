@@ -13,7 +13,7 @@ Block::Block() {
     this->id = 1;
     this->timestamp = getCurrentTime();
     this->difficulty = MIN_DIFFICULTY;
-    this->hasMerkleTree = false;
+    this->merkleRoot = NULL_SHA256_HASH;
 }
 
 Block::Block(const Block& b) {
@@ -21,15 +21,16 @@ Block::Block(const Block& b) {
     this->id = b.id;
     this->difficulty = b.difficulty;
     this->timestamp = b.timestamp;
+    this->merkleRoot = b.merkleRoot;
     this->transactions = vector<Transaction>();
     for(auto t : b.transactions) {
         this->transactions.push_back(t);
     }
-    this->computeMerkleTree();
 }
 
 Block::Block(json block) {
     this->nonce = stringToSHA256(block["nonce"]);
+    this->merkleRoot = stringToSHA256(block["merkleRoot"]);
     this->id = block["id"];
     this->difficulty = block["difficulty"];
     this->timestamp = stringToTime(block["timestamp"]);
@@ -37,7 +38,6 @@ Block::Block(json block) {
         Transaction curr = Transaction(t);
         this->transactions.push_back(curr);
     }
-    this->computeMerkleTree();
 }
 
 Block::Block(std::pair<char*,size_t> buffer) {
@@ -48,13 +48,13 @@ Block::Block(std::pair<char*,size_t> buffer) {
     this->timestamp = b.timestamp;
     this->difficulty = b.difficulty;
     this->nonce= b.nonce;
+    this->merkleRoot = b.merkleRoot;
 
     for(int i = 0; i < b.numTransactions; i++) {
         TransactionInfo t = *((TransactionInfo*)transactionPtr);
         this->addTransaction(Transaction(t));
         transactionPtr += sizeof(TransactionInfo);
     }
-    this->computeMerkleTree();
 }
 
 Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
@@ -62,37 +62,31 @@ Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
     this->timestamp = b.timestamp;
     this->difficulty = b.difficulty;
     this->nonce= b.nonce;
+    this->merkleRoot = b.merkleRoot;
     for(auto t : transactions) {
         this->addTransaction(t);
     }
-    this->computeMerkleTree();
 }
 
 BlockHeader Block::serialize() {
-    if (!this->hasMerkleTree) {
-        this->computeMerkleTree();
-    }
     BlockHeader b;
     b.id = this->id;
     b.timestamp = this->timestamp;
     b.difficulty = this->difficulty;
     b.numTransactions = this->transactions.size();
-    b.merkleRoot = this->merkleTree.getRootHash();
     b.nonce = this->nonce;
+    b.merkleRoot = this->merkleRoot;
     return b;
 }
 
 json Block::toJson() {
-    if (!this->hasMerkleTree) {
-        this->computeMerkleTree();
-    }
     json result;
     result["id"] = this->id;
     result["difficulty"] = this->difficulty;
     result["nonce"] = SHA256toString(this->nonce);
-    result["merkleRoot"] = SHA256toString(this->merkleTree.getRootHash());
     result["timestamp"] = timeToString(this->timestamp);
     result["transactions"] = json::array();
+    result["merkleRoot"] = SHA256toString(this->merkleRoot);
     
     for(auto t : this->transactions) {
         result["transactions"].push_back(t.toJson());
@@ -118,14 +112,14 @@ void Block::setId(int id) {
 }
 
 HashTree* Block::verifyTransaction(Transaction &t) {
-    if (!this->hasMerkleTree) this->computeMerkleTree();
-    return this->merkleTree.getMerkleProof(t);
+    // if (!this->hasMerkleTree) this->computeMerkleTree();
+    // return this->merkleTree.getMerkleProof(t);
+    return NULL;
 }
 
 void Block::addTransaction(Transaction t) {
     if (t.getBlockId() != this->id) throw std::runtime_error("transactionID does not match blockID");
     this->transactions.push_back(t);
-    this->hasMerkleTree = false;
 }
 
 void Block::setNonce(SHA256Hash s) {
@@ -154,24 +148,12 @@ int Block::getDifficulty() const {
     return this->difficulty;
 }
 
-void Block::computeMerkleTree() {
-    this->hasMerkleTree = true;
-    this->merkleTree.setItems(this->transactions);
-}
-
-void Block::freeMerkleTree() {
-    this->hasMerkleTree = false;
-    vector<Transaction> empty;
-    this->merkleTree.setItems(empty);
-}
-
 SHA256Hash Block::getHash(SHA256Hash previousHash) {
-    if (!this->hasMerkleTree) this->computeMerkleTree();
     stringstream s;
     s<<timeToString(this->timestamp)<<":";
     s<<this->difficulty<<":";
     s<<SHA256toString(previousHash)<<":";  
-    s<<SHA256toString(this->merkleTree.getRootHash())<<":";
+    s<<SHA256toString(this->merkleRoot)<<":";
     string str = s.str();
     SHA256Hash h = SHA256(s.str());
     return h;
@@ -182,6 +164,7 @@ bool operator==(const Block& a, const Block& b) {
     if(b.nonce != a.nonce) return false;
     if(b.timestamp != a.timestamp) return false;
     if(b.difficulty != a.difficulty) return false;
+    if(b.merkleRoot != a.merkleRoot) return false;
     // check transactions equal
     if (a.transactions.size() != b.transactions.size()) return false;
     for(int i =0; i < a.transactions.size(); i++) {
