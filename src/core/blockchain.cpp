@@ -71,6 +71,7 @@ void BlockChain::resetChain() {
 }
 
 std::pair<char*, size_t> BlockChain::getRaw(int blockId) {
+    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore.getRawData(blockId);
 }
 

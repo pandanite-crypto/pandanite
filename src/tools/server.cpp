@@ -2,6 +2,7 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <string_view>
 #include <experimental/filesystem>
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
@@ -11,6 +12,8 @@
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 using namespace std;
+
+#define BLOCKS_PER_FETCH 50
 
 int main(int argc, char **argv) {
     experimental::filesystem::remove_all(LEDGER_FILE_PATH);
@@ -109,7 +112,25 @@ int main(int argc, char **argv) {
             Logger::logError("/mine", "unknown");
         }
     }).get("/sync/:start/:end", [&manager](auto *res, auto *req) {
-        
+        try {
+            int start = std::stoi(string(req->getParameter(0)));
+            int end = std::stoi(string(req->getParameter(1)));
+            if ((end-start) > BLOCKS_PER_FETCH) {
+                Logger::logError("/sync", "invalid range requested");
+                res->end("");
+            }
+            res->writeHeader("Content-Type", "application/octet-stream");
+            for (int i = start; i <=end; i++) {
+                std::pair<char*, size_t> buffer = manager.getRawBlockData(i);
+                std::string_view str(buffer.first, buffer.second);
+                res->write(str);
+            }
+            
+        } catch(const std::exception &e) {
+            Logger::logError("/sync", e.what());
+        } catch(...) {
+            Logger::logError("/sync", "unknown");
+        }
     }).post("/add_transaction", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
