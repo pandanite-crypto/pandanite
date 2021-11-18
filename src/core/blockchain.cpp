@@ -188,14 +188,26 @@ ExecutionStatus BlockChain::startChainSync() {
         return SUCCESS;
     }
 
-    // download any remaining blocks
-    for(int i = startCount; i <= this->targetBlockCount; i++) {
+    // download any remaining blocks in batches
+    for(int i = startCount; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
         try {
-            json block = getBlockData(bestHost, i);
-            Block toAdd(block);
-            ExecutionStatus addResult = this->addBlock(toAdd);
-            if (addResult != SUCCESS) {
-                return addResult;
+            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH);
+            bool failure = false;
+            ExecutionStatus status;
+            BlockChain &bc = *this;
+            readRaw(bestHost, i, end, [&bc,&failure,&status](BlockHeader b, vector<Transaction>& t) {
+                Block toAdd(b, t);
+                ExecutionStatus addResult = bc.addBlock(toAdd);
+                if (addResult != SUCCESS) {
+                    failure = true;
+                    status = addResult;
+                }
+            });
+            if (failure) {
+                cout<<"Failure"<<endl;
+                return status;
+            } else {
+                return SUCCESS;
             }
         } catch (const std::exception &e) {
             Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));

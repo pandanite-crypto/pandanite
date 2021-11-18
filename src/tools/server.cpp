@@ -13,8 +13,6 @@
 #include "../core/crypto.hpp"
 using namespace std;
 
-#define BLOCKS_PER_FETCH 50
-
 int main(int argc, char **argv) {
     experimental::filesystem::remove_all(LEDGER_FILE_PATH);
     experimental::filesystem::remove_all(BLOCK_STORE_FILE_PATH);
@@ -125,12 +123,15 @@ int main(int argc, char **argv) {
                 std::string_view str(buffer.first, buffer.second);
                 res->write(str);
             }
-            
+            res->end("");
         } catch(const std::exception &e) {
             Logger::logError("/sync", e.what());
         } catch(...) {
             Logger::logError("/sync", "unknown");
         }
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
     }).post("/add_transaction", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
