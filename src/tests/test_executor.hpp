@@ -201,7 +201,7 @@ TEST(check_bad_signature) {
 
     // sign with random sig
     User foo;
-    t2.sign(foo.getPrivateKey());
+    t2.sign(foo.getPublicKey(), foo.getPrivateKey());
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);

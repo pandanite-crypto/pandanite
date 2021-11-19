@@ -26,9 +26,14 @@ Transaction::Transaction() {
 Transaction::Transaction(const TransactionInfo& t) {
     this->to = t.to;
     if (!t.isTransactionFee) this->from = t.from;
+#ifdef SECP256K1
     memcpy((void*)this->signature.data, (void*)t.signature, 64);
-    this->nonce = string((char*)t.nonce, TRANSACTION_NONCE_SIZE);
     memcpy((void*)this->signingKey.data, (void*)t.signingKey, 64);
+#else
+    memcpy((void*)this->signature.data(), (void*)t.signature, 64);
+    memcpy((void*)this->signingKey.data(), (void*)t.signingKey, 32);
+#endif
+    this->nonce = string((char*)t.nonce, TRANSACTION_NONCE_SIZE);
     this->amount = t.amount;
     this->isTransactionFee = t.isTransactionFee;
     this->blockId = t.blockId;
@@ -41,8 +46,13 @@ Transaction::Transaction(const TransactionInfo& t) {
 TransactionInfo Transaction::serialize() {
     TransactionInfo t;
     t.blockId = this->blockId;
+#ifdef SECP256K1
     memcpy((void*)t.signature, (void*)this->signature.data, 64);
     memcpy((void*)t.signingKey, (void*)this->signingKey.data, 64);
+#else
+    memcpy((void*)t.signature, (void*)this->signature.data(), 64);
+    memcpy((void*)t.signingKey, (void*)this->signingKey.data(), 32);
+#endif
     memcpy((char*)t.nonce, (char*)this->nonce.c_str(), TRANSACTION_NONCE_SIZE);
     t.timestamp = this->timestamp;
     t.to = this->to;
@@ -215,8 +225,8 @@ string Transaction::toString() const {
     return s.str();
 }
 
-void Transaction::sign(PrivateKey signingKey) {
-    TransactionSignature signature = signWithPrivateKey(this->toString(), signingKey);
+void Transaction::sign(PublicKey pubKey, PrivateKey signingKey) {
+    TransactionSignature signature = signWithPrivateKey(this->toString(), pubKey, signingKey);
     this->signature = signature;
 }
 

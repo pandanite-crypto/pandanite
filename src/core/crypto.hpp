@@ -31,8 +31,8 @@ PrivateKey stringToPrivateKey(string p);
 string signatureToString(TransactionSignature t);
 TransactionSignature stringToSignature(string t);
 
-TransactionSignature signWithPrivateKey(string content, PrivateKey pKey);
-TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PrivateKey pKey);
+TransactionSignature signWithPrivateKey(string content, PublicKey pubKey, PrivateKey privKey);
+TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey pubKey, PrivateKey privKey);
 bool checkSignature(string content, TransactionSignature signature, PublicKey signingKey);
 bool checkSignature(const char* bytes, size_t len, TransactionSignature signature, PublicKey signingKey);
 SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize);

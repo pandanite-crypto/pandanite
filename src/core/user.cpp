@@ -48,5 +48,5 @@ Transaction User::send(User& to, TransactionAmount amount, int blockId) {
 }
 
 void User::signTransaction(Transaction & t) {
-    t.sign(this->privateKey);
+    t.sign(this->publicKey, this->privateKey);
 }

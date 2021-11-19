@@ -8,7 +8,11 @@ TEST(test_key_string_conversion) {
     std::pair<PublicKey,PrivateKey> keys = generateKeyPair();
     PublicKey p = keys.first;
     PrivateKey q = keys.second;
+#ifdef SECP256K1    
     int cmp = memcmp(stringToPublicKey(publicKeyToString(p)).data, p.data, 64);
+#else
+    int cmp = memcmp(stringToPublicKey(publicKeyToString(p)).data(), p.data(), 32);
+#endif
     ASSERT_EQUAL(cmp, 0);
 }
 
@@ -16,8 +20,12 @@ TEST(test_signature_string_conversion) {
     std::pair<PublicKey,PrivateKey> keys = generateKeyPair();
     PublicKey p = keys.first;
     PrivateKey q = keys.second;
-    TransactionSignature t = signWithPrivateKey("FOOBAR", q);
+    TransactionSignature t = signWithPrivateKey("FOOBAR", p, q);
+#ifdef SECP256K1    
     int cmp = memcmp(stringToSignature(signatureToString(t)).data, t.data, 64);
+#else
+     int cmp = memcmp(stringToSignature(signatureToString(t)).data(), t.data(), 64);
+#endif
     ASSERT_EQUAL(cmp, 0);
 }
 
@@ -25,7 +33,7 @@ TEST(test_signature_verifications) {
     std::pair<PublicKey,PrivateKey> keys = generateKeyPair();
     PublicKey p = keys.first;
     PrivateKey q = keys.second;
-    TransactionSignature t = signWithPrivateKey("FOOBAR", q);
+    TransactionSignature t = signWithPrivateKey("FOOBAR", p, q);
     bool status = checkSignature("FOOBAR", t, p);
     ASSERT_EQUAL(status, true);
 
@@ -33,7 +41,7 @@ TEST(test_signature_verifications) {
     std::pair<PublicKey,PrivateKey> keys2 = generateKeyPair();
     PublicKey r = keys2.first;
     PrivateKey s = keys2.second;
-    t = signWithPrivateKey("FOOBAR", s);
+    t = signWithPrivateKey("FOOBAR", r, s);
     status = checkSignature("FOOBAR", t, p);
     ASSERT_EQUAL(status, false);
 }

@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         string host = best.first;
         int blockId = getCurrentBlockCount(host) + 2; // usually send 1 block into the future
         Transaction t(fromWallet, toWallet, amount, blockId, publicKey, fee);
-        t.sign(privateKey);
+        t.sign(publicKey, privateKey);
         cout<<"Creating transaction, current block: "<<blockId<<endl;
         cout<<sendTransaction(host, t)<<endl;
     }

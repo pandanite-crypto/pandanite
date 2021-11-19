@@ -14,9 +14,18 @@ using namespace nlohmann;
 
 typedef std::array<uint8_t, 25> PublicWalletAddress;
 typedef long TransactionAmount;
-typedef secp256k1_ecdsa_signature TransactionSignature;
+
+#ifdef SECP256K1
 typedef secp256k1_pubkey PublicKey;
 typedef std::array<uint8_t, 32> PrivateKey;
+typedef secp256k1_ecdsa_signature TransactionSignature;
+#else
+typedef std::array<uint8_t,32> PublicKey;
+typedef std::array<uint8_t,64> PrivateKey;
+typedef std::array<uint8_t,64> TransactionSignature;
+#endif
+
+
 typedef map<PublicWalletAddress,TransactionAmount> LedgerState;
 typedef std::array<uint8_t, 32> SHA256Hash;
 typedef std::array<uint8_t, 20> RIPEMD160Hash;

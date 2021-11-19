@@ -181,7 +181,6 @@ ExecutionStatus BlockChain::startChainSync() {
     std::pair<string,int> bestHostInfo = this->hosts.getLongestChainHost();
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = bestHostInfo.second;
-    
     int startCount = this->numBlocks + 1;
 
     if (startCount >= this->targetBlockCount) {
@@ -199,7 +198,7 @@ ExecutionStatus BlockChain::startChainSync() {
             ExecutionStatus status;
             BlockChain &bc = *this;
             int count = 0;
-            readRaw(bestHost, i, end, [&bc,&failure,&status, &count](Block& b) {
+            readRaw(bestHost, i, end, [&bc, &failure, &status, &count](Block& b) {
                 if (!failure) {
                     ExecutionStatus addResult = bc.addBlock(b);
                     if (addResult != SUCCESS) {
@@ -209,6 +208,7 @@ ExecutionStatus BlockChain::startChainSync() {
                 } 
             });
             if (failure) {
+                Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
                 return status;
             }
         } catch (const std::exception &e) {

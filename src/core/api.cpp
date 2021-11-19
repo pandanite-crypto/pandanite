@@ -114,7 +114,8 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); 
     curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
     // curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
+    // curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
+    time_t start = std::time(0);
     DataHandler d;
     d.soFar = stringstream();
     d.headerRead = false;
@@ -137,6 +138,9 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
     int bytesRead = 0;
     int i = 0;
     int numBlocks = 0;
+    time_t end = std::time(0);
+    cout<<"Downloaded in " <<end-start<<endl;
+    start = std::time(0);
     while(true) {
         BlockHeader b;
         vector<Transaction> transactions;
@@ -146,14 +150,16 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
         for(int i = 0; i < b.numTransactions; i++) {
             TransactionInfo tmp;
             memcpy(&tmp, currPtr, sizeof(TransactionInfo));
+            transactions.push_back(Transaction(*((TransactionInfo*)currPtr)));
             currPtr += sizeof(TransactionInfo);
             bytesRead += sizeof(TransactionInfo);
-            transactions.push_back(Transaction(tmp));
         }
         numBlocks++;
         Block block(b, transactions);
         d.callback(block);
         if (bytesRead >= st.size()) break;
     }
+    end = std::time(0);
+    cout<<"Parsed in " <<end-start<<endl;
     curl_easy_cleanup(curl);
 }

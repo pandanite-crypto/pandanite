@@ -112,8 +112,6 @@ void Block::setId(int id) {
 }
 
 HashTree* Block::verifyTransaction(Transaction &t) {
-    // if (!this->hasMerkleTree) this->computeMerkleTree();
-    // return this->merkleTree.getMerkleProof(t);
     return NULL;
 }
 
