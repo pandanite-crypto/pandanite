@@ -4,6 +4,7 @@
 #include "../core/transaction.hpp"
 #include "../core/block.hpp"
 #include <iostream>
+#include <ctime>
 using namespace std;
 
 
