@@ -23,7 +23,8 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             int bestCount = bestHost.second;
             string host = bestHost.first;
             int nextBlock = bestCount + 1;
-            json problem = getMiningProblem(host);
+            json problem = getMiningProblem(host); 
+            Logger::logStatus("Got problem. Difficulty=" + to_string(problem["challengeSize"]));
             string lastHashStr = problem["lastHash"];
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
             int challengeSize = problem["challengeSize"];

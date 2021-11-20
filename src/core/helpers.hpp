@@ -2,6 +2,7 @@
 #include <string>
 #include "common.hpp"
 #include <ctime>
+#include <curl/curl.h>
 using namespace std;
 
 string randomString(int length);
@@ -12,3 +13,4 @@ std::time_t getCurrentTime();
 std::string timeToString(const std::time_t& t);
 std::time_t stringToTime(const std::string& input);
 std::string exec(const char* cmd);
+std::string curlGet(string url);

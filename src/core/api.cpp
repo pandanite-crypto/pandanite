@@ -34,9 +34,9 @@ json submitBlock(string host_url, Block& b) {
 }
 
 json getMiningProblem(string host_url) {
-    http::Request request{host_url + "/mine"};
-    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    string url = host_url + "/mine";
+    string response = curlGet(url);
+    return json::parse(response);
 }
 
 json sendTransaction(string host_url, Transaction& t) {
