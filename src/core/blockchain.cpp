@@ -99,7 +99,7 @@ Block BlockChain::getBlock(int blockId) {
     return this->blockStore.getBlock(blockId);
 }
 
-ExecutionStatus BlockChain::verifyTransaction(Transaction& t) {
+ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     if (!t.signatureValid()) return INVALID_SIGNATURE;
     LedgerState deltas;
     // verify the transaction is consistent with ledger

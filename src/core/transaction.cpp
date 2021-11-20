@@ -249,6 +249,10 @@ void Transaction::sign(PublicKey pubKey, PrivateKey signingKey) {
     this->signature = signature;
 }
 
+bool operator<(const Transaction& a, const Transaction& b) {
+    return a.nonce < b.nonce;
+}
+
 bool operator==(const Transaction& a, const Transaction& b) {
     if (a.blockId != b.blockId) return false;
     if( a.nonce != b.nonce) return false;

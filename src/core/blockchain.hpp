@@ -28,7 +28,7 @@ class BlockChain {
         SHA256Hash getLastHash();
         Ledger& getLedger();
         ExecutionStatus addBlock(Block& block);
-        ExecutionStatus verifyTransaction(Transaction& t);
+        ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<char*, size_t> getRaw(int blockId);
     protected:
         HostManager& hosts;

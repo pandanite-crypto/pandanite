@@ -49,6 +49,15 @@ string executionStatusAsString(ExecutionStatus status) {
         case SUCCESS:
             return "SUCCESS";
         break;
+        case QUEUE_FULL:
+            return "QUEUE_FULL";
+        break;
+        case EXPIRED_TRANSACTION:
+            return "EXPIRED_TRANSACTION";
+        break;
+        case BLOCK_ID_TOO_LARGE:
+            return "BLOCK_ID_TOO_LARGE";
+        break;
     }
 }
 

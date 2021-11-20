@@ -9,42 +9,17 @@ using namespace std;
 
 RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts);
-    if (hosts.size()>0) this->blockchain->sync();
+    this->mempool = new MemPool(hosts, *this->blockchain);
+    if (hosts.size()>0) {
+        this->blockchain->sync();
+        this->mempool->sync();
+    }
 }
 
 json RequestManager::addTransaction(json data) {
     Transaction t = Transaction(data["transaction"]);
     json result;
-    this->blockchain->acquire();
-    if (t.getBlockId() == this->blockchain->getBlockCount() + 1) { // case 1: add to latest block queue
-        ExecutionStatus status = this->blockchain->verifyTransaction(t);
-        if (status != SUCCESS) {
-            result["error"] = executionStatusAsString(status);
-        } else {
-            if (this->transactionQueue[t.getBlockId()].size() < MAX_TRANSACTIONS_PER_BLOCK) {
-                this->transactionQueue[t.getBlockId()].push_back(t);
-                result["message"] = "SUCCESS";
-            } else {
-                result["error"] = "QUEUE_FULL";
-            }
-            
-        }
-    } else if (t.getBlockId() > this->blockchain->getBlockCount() + 1){ // case 2: add to future block queue
-        if (t.getBlockId() < this->blockchain->getBlockCount() + 5) {   // limit to queueing up to 5 blocks in future
-            if (this->transactionQueue[t.getBlockId()].size() < MAX_TRANSACTIONS_PER_BLOCK) {
-                result["message"] = "IN_QUEUE";
-                this->transactionQueue[t.getBlockId()].push_back(t);
-            } else {
-                result["error"] = "QUEUE_FULL";
-            }
-            
-        } else {
-            result["error"] = "BLOCK_ID_TOO_LARGE";
-        }
-    } else {
-        result["error"] = "EXPIRED_TRANSACTION";
-    }
-    this->blockchain->release();
+    result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
     return result;
 }
 
@@ -59,21 +34,7 @@ json RequestManager::submitProofOfWork(json request) {
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);
     if (status == SUCCESS) {
-        if (this->transactionQueue.find(newBlock.getId()) != this->transactionQueue.end()) {
-            this->transactionQueue.erase(newBlock.getId());
-        }
-
-        if (this->transactionQueue.find(newBlock.getId()+1) != this->transactionQueue.end()) {
-            // validate transactions further down the queue
-            list<Transaction>& currTransactions =  this->transactionQueue[newBlock.getId()+1];
-            for(auto it = currTransactions.begin(); it != currTransactions.end(); ++it) {
-                ExecutionStatus status = this->blockchain->verifyTransaction(*it);
-                if ((status) != SUCCESS) {
-                    // erase the invalid transaction
-                    currTransactions.erase(it);
-                }
-            }
-        }
+        this->mempool->finishBlock(newBlock.getId());
     }
     this->blockchain->release();
     return result;
@@ -117,7 +78,7 @@ json RequestManager::getProofOfWork() {
     vector<Transaction> transactions;
     // send POW problem + transaction queue item
     result["transactions"] = json::array();
-    list<Transaction>& currTransactions = this->transactionQueue[this->blockchain->getBlockCount() + 1];
+    set<Transaction>& currTransactions = this->mempool->getTransactions(this->blockchain->getBlockCount() + 1);
     for(auto p : currTransactions) result["transactions"].push_back(p.toJson());
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();

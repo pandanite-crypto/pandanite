@@ -2,7 +2,9 @@
 #include "blockchain.hpp"
 #include "transaction.hpp"
 #include "host_manager.hpp"
+#include "mempool.hpp"
 #include "common.hpp"
+#include <mutex>
 #include <vector>
 #include <map>
 #include <list>
@@ -21,9 +23,11 @@ class RequestManager {
         json verifyTransaction(json data);
         std::pair<char*, size_t> getRawBlockData(int index);
         string getBlockCount();
-        BlockChain* blockchain;
     protected:
         HostManager& hosts;
+        BlockChain* blockchain;
+        MemPool* mempool;
+        std::mutex transactionsLock;
         size_t getPendingTransactionSize(int block);
         map<int,list<Transaction>> transactionQueue;
 };

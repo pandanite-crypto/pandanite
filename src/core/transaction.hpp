@@ -71,6 +71,7 @@ class Transaction {
         TransactionAmount fee;
         bool isTransactionFee;
         friend bool operator==(const Transaction& a, const Transaction& b);
+        friend bool operator<(const Transaction& a, const Transaction& b);
 };
 
 bool operator==(const Transaction& a, const Transaction& b);
