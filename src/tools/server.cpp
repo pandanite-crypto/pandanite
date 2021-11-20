@@ -121,7 +121,24 @@ int main(int argc, char **argv) {
                 std::pair<char*, size_t> buffer = manager.getRawBlockData(i);
                 std::string_view str(buffer.first, buffer.second);
                 res->write(str);
+                delete buffer.first;
             }
+            res->end("");
+        } catch(const std::exception &e) {
+            Logger::logError("/sync", e.what());
+        } catch(...) {
+            Logger::logError("/sync", "unknown");
+        }
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+    }).get("/synctx", [&manager](auto *res, auto *req) {
+        try {
+            res->writeHeader("Content-Type", "application/octet-stream");
+            std::pair<char*, size_t> buffer = manager.getRawTransactionData();
+            std::string_view str(buffer.first, buffer.second);
+            res->write(str);
+            delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
             Logger::logError("/sync", e.what());

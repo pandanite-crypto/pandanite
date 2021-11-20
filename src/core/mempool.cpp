@@ -1,14 +1,32 @@
 #include "mempool.hpp"
 #include <iostream>
+#include <sstream>
+#include "logger.hpp"
+#include "api.hpp"
 using namespace std;
 
 #define MAX_FUTURE_BLOCKS 5
 
-void mempool_sync(MemPool& mempool) {
-
+MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 }
 
-MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
+void mempool_sync(MemPool& mempool) {
+    Logger::logStatus("Syncing MemPool");
+    try {
+        for (auto host : mempool.hosts.getHosts()) {
+            int count = 0;
+            readRawTransactions(host, [&mempool, &count](Transaction t) {
+                mempool.addTransaction(t);
+                count++;
+            });
+            stringstream s;
+            s<<"Read "<<count<<" transactions from "<<host;
+            Logger::logStatus(s.str());
+        }
+    } catch (const std::exception &e) {
+        Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 
@@ -18,16 +36,27 @@ void MemPool::sync() {
 
 ExecutionStatus MemPool::addTransaction(Transaction t) {
     ExecutionStatus status;
-    if (t.getBlockId() <= this->blockchain.getBlockCount()) {
+    int currBlockId = t.getBlockId();
+    // If the transaction is already in our queue return immediately
+    this->lock.lock();
+    if (this->transactionQueue.find(currBlockId) != this->transactionQueue.end()) {
+        if(this->transactionQueue[currBlockId].find(t) != this->transactionQueue[currBlockId].end()) {
+            this->lock.unlock();
+            return SUCCESS;
+        }
+    }
+    this->lock.unlock();
+
+    if (currBlockId <= this->blockchain.getBlockCount()) {
         return EXPIRED_TRANSACTION;
-    } else if (t.getBlockId() == this->blockchain.getBlockCount() + 1) { // case 1: add to latest block queue + verify
+    } else if (currBlockId == this->blockchain.getBlockCount() + 1) { // case 1: add to latest block queue + verify
         status = this->blockchain.verifyTransaction(t);
         if (status != SUCCESS) {
             return status;
         } else {
             this->lock.lock();
-            if (this->transactionQueue[t.getBlockId()].size() < MAX_TRANSACTIONS_PER_BLOCK) {
-                this->transactionQueue[t.getBlockId()].insert(t);
+            if (this->transactionQueue[currBlockId].size() < MAX_TRANSACTIONS_PER_BLOCK) {
+                this->transactionQueue[currBlockId].insert(t);
                 status = SUCCESS;
             } else {
                 status = QUEUE_FULL;
@@ -35,12 +64,12 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
             this->lock.unlock();
             return status;
         }
-    } else if (t.getBlockId() > this->blockchain.getBlockCount() + 1){ // case 2: add to a future blocks queue, no verify
-        if (t.getBlockId() < this->blockchain.getBlockCount() + MAX_FUTURE_BLOCKS) {   // limit to queueing up to N blocks in future
+    } else if (currBlockId > this->blockchain.getBlockCount() + 1){ // case 2: add to a future blocks queue, no verify
+        if (currBlockId < this->blockchain.getBlockCount() + MAX_FUTURE_BLOCKS) {   // limit to queueing up to N blocks in future
             this->lock.lock();
-            if (this->transactionQueue[t.getBlockId()].size() < MAX_TRANSACTIONS_PER_BLOCK) {
+            if (this->transactionQueue[currBlockId].size() < MAX_TRANSACTIONS_PER_BLOCK) {
                 status = SUCCESS;
-                this->transactionQueue[t.getBlockId()].insert(t);
+                this->transactionQueue[currBlockId].insert(t);
             } else {
                 status = QUEUE_FULL;
             }
@@ -51,6 +80,25 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
         }
     }
     return UNKNOWN_ERROR;
+}
+
+std::pair<char*, size_t> MemPool::getRaw() {
+    int count = 0;
+    for (auto pair : this->transactionQueue) {
+        for(auto tx : pair.second) {
+            count++;
+        }
+    }
+    size_t len = count*sizeof(TransactionInfo);
+    TransactionInfo* buf = (TransactionInfo*)malloc(len);
+    count = 0;
+    for (auto pair : this->transactionQueue) {
+        for(auto tx : pair.second) {
+            buf[count] = tx.serialize();
+            count++;
+        }
+    }
+    return std::pair<char*, size_t>((char*)buf, len);
 }
 
 void MemPool::finishBlock(int blockId) {

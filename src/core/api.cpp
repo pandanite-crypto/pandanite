@@ -157,3 +157,42 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
     }
     curl_easy_cleanup(curl);
 }
+
+
+void readRawTransactions(string host_url, function<void(Transaction)> handler) {
+    CURL *curl;
+    std::string readBuffer;
+    stringstream url;
+    url<<host_url<<"/synctx";
+    curl = curl_easy_init();
+    curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); 
+    curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
+    DataHandler d;
+    d.soFar = stringstream();
+    d.headerRead = false;
+    d.total = 0;
+    d.totalBytes = 0;
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &d);
+    /* Perform the request, res will get the return code */
+    CURLcode res = curl_easy_perform(curl);
+    /* Check for errors */
+    if (res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(res));
+    }
+    string st = d.soFar.str();
+    char* buffer = (char*)st.c_str();
+    TransactionInfo* curr = (TransactionInfo*)buffer;
+    int numTx = d.totalBytes / sizeof(TransactionInfo);
+    for(int i =0; i < numTx; i++){
+        TransactionInfo t = curr[i];
+        handler(Transaction(t));
+        i++;
+    }
+    curl_easy_cleanup(curl);
+}

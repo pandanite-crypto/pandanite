@@ -90,10 +90,10 @@ std::pair<char*, size_t> RequestManager::getRawBlockData(int index) {
     return this->blockchain->getRaw(index);
 }
 
-size_t RequestManager::getPendingTransactionSize(int block) {
-    if (this->transactionQueue.find(block) == this->transactionQueue.end()) return 0;
-    return this->transactionQueue[block].size();
+std::pair<char*, size_t> RequestManager::getRawTransactionData() {
+    return this->mempool->getRaw();
 }
+
 json RequestManager::getBlock(int index) {
     return this->blockchain->getBlock(index).toJson();
 }
@@ -122,7 +122,8 @@ json RequestManager::getStats() {
     int wallets = this->blockchain->getLedger().size();
     info["num_coins"] = coins;
     info["num_wallets"] = wallets;
-    info["pending_transactions"]= this->getPendingTransactionSize(this->blockchain->getBlockCount()+2);
+    int blockId = this->blockchain->getBlockCount();
+    info["pending_transactions"]= this->mempool->getTransactions(blockId + 1).size();
     
     int idx = this->blockchain->getBlockCount();
     Block a = this->blockchain->getBlock(idx);

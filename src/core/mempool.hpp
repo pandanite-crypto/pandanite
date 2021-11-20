@@ -8,8 +8,6 @@
 #include <thread>
 #include <mutex>
 using namespace std;
-// Should take in and synchornize serialized tx's
-//https://stackoverflow.com/questions/59045074/c-how-can-i-send-binary-dataprotobuf-data-using-http-post-request-through-a
 
 class MemPool {
     public:
@@ -18,6 +16,7 @@ class MemPool {
         ExecutionStatus addTransaction(Transaction t);
         void finishBlock(int blockId);
         set<Transaction>& getTransactions(int blockId);
+        std::pair<char*, size_t> getRaw();
     protected:
         BlockChain & blockchain;
         HostManager & hosts;

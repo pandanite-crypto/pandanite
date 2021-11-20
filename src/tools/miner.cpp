@@ -4,6 +4,7 @@
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/logger.hpp"
+#include "../core/user.hpp"
 #include <iostream>
 #include <mutex>
 #include <set>
@@ -46,6 +47,8 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             newBlock.setNonce(solution);
             auto result = submitBlock(host, newBlock).dump();
             Logger::logStatus(result);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(120000));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -63,7 +66,9 @@ int main(int argc, char **argv) {
     int port = config["port"];
     HostManager hosts(config);
     Logger::logStatus("Running miner");
-    PublicWalletAddress wallet = walletAddressFromPublicKey(stringToPublicKey(config["minerPublicKey"]));
+    string file = "./keys/miner.json";
+    User miner(readJsonFromFile(file));
+    PublicWalletAddress wallet = miner.getAddress();
     std::thread mining_thread(run_mining, wallet, ref(hosts));
     mining_thread.join();
 }

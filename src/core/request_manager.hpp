@@ -22,6 +22,7 @@ class RequestManager {
         json getStats();
         json verifyTransaction(json data);
         std::pair<char*, size_t> getRawBlockData(int index);
+        std::pair<char*, size_t> getRawTransactionData();
         string getBlockCount();
     protected:
         HostManager& hosts;

@@ -11,28 +11,29 @@ using namespace std;
 
 int TOTAL;
 void simulate_transactions(HostManager& hosts) {
-    User miner;
+    string filepath = "./keys/miner.json";
+    User miner(readJsonFromFile(filepath));
     
     vector<User> randomUsers;
     for(int i = 0; i < 40; i++) {
         User u;
         randomUsers.push_back(u);
     }
-    User u;
     std::pair<string,int> best = hosts.getLongestChainHost();
     while(true) {
-        // try {
+        try {
             // if (rand()%1000==0) best = hosts.getLongestChainHost();
             string host = best.first;
             int blockId = getCurrentBlockCount(host) + 2;
-            Transaction fee = u.mine(blockId);
             User r = randomUsers[rand()%randomUsers.size()];
-            Transaction t = u.send(r, 1 + rand()%5, blockId);
-            sendTransaction(host, t);
+            Transaction t = miner.send(r, 1 + rand()%5, blockId);
+            json result = sendTransaction(host, t);
             cout<<"sent: "<< TOTAL<<endl;
+            cout<<result.dump()<<endl;
             TOTAL++;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // } catch (...) {}
+        } catch (...) {
+            cout<<"Timed out"<<endl;
+        }
     }
 }
 
@@ -46,10 +47,10 @@ int main(int argc, char **argv) {
     HostManager hosts(config);
     vector<std::thread> requests;
     std::thread sim_thread(simulate_transactions, ref(hosts));
-    // std::thread sim_thread1(simulate_transactions, ref(hosts));
-    // std::thread sim_thread2(simulate_transactions, ref(hosts));
-    // std::thread sim_thread3(simulate_transactions, ref(hosts));
-    // std::thread sim_thread4(simulate_transactions, ref(hosts));
+    std::thread sim_thread1(simulate_transactions, ref(hosts));
+    std::thread sim_thread2(simulate_transactions, ref(hosts));
+    std::thread sim_thread3(simulate_transactions, ref(hosts));
+    std::thread sim_thread4(simulate_transactions, ref(hosts));
     // std::thread sim_thread5(simulate_transactions, ref(hosts));
     sim_thread.join();
 }
