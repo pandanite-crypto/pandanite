@@ -2,7 +2,6 @@
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "../core/user.hpp"
-#include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "../core/block.hpp"
