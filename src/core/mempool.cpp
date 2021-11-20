@@ -11,22 +11,24 @@ MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 }
 
 void mempool_sync(MemPool& mempool) {
-    Logger::logStatus("Syncing MemPool");
-    try {
-        for (auto host : mempool.hosts.getHosts()) {
-            int count = 0;
-            readRawTransactions(host, [&mempool, &count](Transaction t) {
-                mempool.addTransaction(t);
-                count++;
-            });
-            stringstream s;
-            s<<"Read "<<count<<" transactions from "<<host;
-            Logger::logStatus(s.str());
+    while (true) {
+        Logger::logStatus("Syncing MemPool");
+        try {
+            for (auto host : mempool.hosts.getHosts()) {
+                int count = 0;
+                readRawTransactions(host, [&mempool, &count](Transaction t) {
+                    mempool.addTransaction(t);
+                    count++;
+                });
+                stringstream s;
+                s<<"Read "<<count<<" transactions from "<<host;
+                Logger::logStatus(s.str());
+            }
+        } catch (const std::exception &e) {
+            Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
         }
-    } catch (const std::exception &e) {
-        Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 

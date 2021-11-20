@@ -23,7 +23,7 @@ void simulate_transactions(HostManager& hosts) {
     while(true) {
         try {
             // if (rand()%1000==0) best = hosts.getLongestChainHost();
-            string host = best.first;
+            string host = hosts.getHosts()[0];
             int blockId = getCurrentBlockCount(host) + 2;
             User r = randomUsers[rand()%randomUsers.size()];
             Transaction t = miner.send(r, 1 + rand()%5, blockId);
@@ -47,10 +47,10 @@ int main(int argc, char **argv) {
     HostManager hosts(config);
     vector<std::thread> requests;
     std::thread sim_thread(simulate_transactions, ref(hosts));
-    std::thread sim_thread1(simulate_transactions, ref(hosts));
-    std::thread sim_thread2(simulate_transactions, ref(hosts));
-    std::thread sim_thread3(simulate_transactions, ref(hosts));
-    std::thread sim_thread4(simulate_transactions, ref(hosts));
+    // std::thread sim_thread1(simulate_transactions, ref(hosts));
+    // std::thread sim_thread2(simulate_transactions, ref(hosts));
+    // std::thread sim_thread3(simulate_transactions, ref(hosts));
+    // std::thread sim_thread4(simulate_transactions, ref(hosts));
     // std::thread sim_thread5(simulate_transactions, ref(hosts));
     sim_thread.join();
 }
