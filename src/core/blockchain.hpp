@@ -35,9 +35,9 @@ class BlockChain {
         int numBlocks;
         BlockStore blockStore;
         Ledger ledger;
-        list<LedgerState> deltas;
         SHA256Hash lastHash;
         int difficulty;
+        void popBlock();
         void distributeTaxes(Block& block);
         void updateDifficulty(Block& b);
         ExecutionStatus startChainSync();

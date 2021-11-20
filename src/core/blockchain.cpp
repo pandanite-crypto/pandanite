@@ -22,11 +22,23 @@ using namespace std;
 
 void chain_sync(BlockChain& blockchain) {
     unsigned long i = 0;
+    int failureCount = 0;
     while(true) {
         blockchain.acquire();
         try {
             ExecutionStatus valid;
             valid = blockchain.startChainSync();
+            if (valid != SUCCESS) {
+                failureCount++;
+            }
+            if (failureCount > 3) {
+                std::pair<string, int> best = blockchain.hosts.getLongestChainHost();
+                int toPop = 2 * (blockchain.getBlockCount() - best.second);
+                for(int j = 0; j < toPop; j++) {
+                    blockchain.popBlock();
+                }
+                failureCount = 0;
+            }
         } catch(std::exception & e) {
             Logger::logError("chain_sync", string(e.what()));
         }
@@ -150,6 +162,11 @@ int BlockChain::getDifficulty() {
     return this->difficulty;
 }
 
+void BlockChain::popBlock() {
+    Block last = this->getBlock(this->getBlockCount());
+    Executor::RollbackBlock(block, this->ledger);
+    this->numBlocks--;
+}
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
@@ -163,10 +180,6 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         //revert ledger
         Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
-        if (this->deltas.size() > MAX_HISTORY) {
-            this->deltas.pop_front();
-        }
-        this->deltas.push_back(deltasFromBlock);
         this->blockStore.setBlock(block);
         this->numBlocks++;
         this->lastHash = block.getHash(concatHashes(this->getLastHash(), block.getNonce()));

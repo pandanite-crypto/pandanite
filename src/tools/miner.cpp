@@ -48,7 +48,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             auto result = submitBlock(host, newBlock).dump();
             Logger::logStatus(result);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(120000));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(120000));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
