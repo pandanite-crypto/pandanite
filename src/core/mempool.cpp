@@ -14,7 +14,7 @@ void mempool_sync(MemPool& mempool) {
     while (true) {
         Logger::logStatus("Syncing MemPool");
         try {
-            // get rid of any un-needed blocks:
+            // get rid of any old un-needed blocks:
             mempool.lock.lock();
             int blockId = mempool.blockchain.getBlockCount();
             vector<int> toDelete;
@@ -27,15 +27,15 @@ void mempool_sync(MemPool& mempool) {
                 mempool.transactionQueue.erase(blockId);
             }
             mempool.lock.unlock();
-            // fetch mempool state from other hots
+            // fetch mempool state from other hosts
             for (auto host : mempool.hosts.getHosts()) {
-                mempool.lock.lock();
+                // mempool.lock.lock();
                 int count = 0;
                 readRawTransactions(host, [&mempool, &count](Transaction t) {
                     mempool.addTransaction(t);
                     count++;
                 });
-                mempool.lock.unlock();
+                // mempool.lock.unlock();
                 stringstream s;
                 s<<"Read "<<count<<" transactions from "<<host;
                 Logger::logStatus(s.str());
