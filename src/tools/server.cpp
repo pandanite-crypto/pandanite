@@ -77,29 +77,28 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-        try {
-
-            std::string buffer;
-            res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
-                buffer.append(data.data(), data.length());
-                if (last) {
+        std::string buffer;
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            if (last) {
+                try {
                     json submission = json::parse(buffer);
                     json response = manager.submitProofOfWork(submission);
                     res->end(response.dump());
+                } catch(const std::exception &e) {
+                    json response;
+                    response["error"] = string(e.what());
+                    res->end(response.dump());
+                    Logger::logError("/submit", e.what());
+                } catch(...) {
+                    json response;
+                    response["error"] = "unknown";
+                    res->end(response.dump());
+                    Logger::logError("/submit", "unknown");
                 }
-            });
-            
-        } catch(const std::exception &e) {
-            json response;
-            response["error"] = string(e.what());
-            res->end(response.dump());
-            Logger::logError("/submit", e.what());
-        } catch(...) {
-            json response;
-            response["error"] = "unknown";
-            res->end(response.dump());
-            Logger::logError("/submit", "unknown");
-        }
+                
+            }
+        });
     }).get("/mine", [&manager](auto *res, auto *req) {
         try {
             json response = manager.getProofOfWork();
@@ -136,21 +135,22 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-        try {
-            std::string buffer;
-            res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
-                buffer.append(data.data(), data.length());
-                if (last) {
+        
+        std::string buffer;
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            if (last) {
+                try {
                     json submission = json::parse(buffer);
                     json response = manager.addTransaction(submission);
                     res->end(response.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/add_transaction", e.what());
+                } catch(...) {
+                    Logger::logError("/add_transaction", "unknown");
                 }
-            });
-        }  catch(const std::exception &e) {
-            Logger::logError("/add_transaction", e.what());
-        } catch(...) {
-            Logger::logError("/add_transaction", "unknown");
-        }
+            }
+        });
     }).post("/verify_transaction", [&manager](auto *res, auto *req) {
         /* Allocate automatic, stack, variable as usual */
         std::string buffer;
