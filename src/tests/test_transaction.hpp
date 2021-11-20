@@ -33,7 +33,7 @@ TEST(check_transaction_json_serialization) {
     parsed = json::parse(serialized);
     deserialized = Transaction(parsed);
     ts = t.getTimestamp();
-    ASSERT_TRUE(t.toString() == deserialized.toString());
+    ASSERT_TRUE(t.hashContents() == deserialized.hashContents());
     ASSERT_TRUE(t == deserialized);
     ASSERT_EQUAL(ts, deserialized.getTimestamp());
 }
@@ -61,7 +61,7 @@ TEST(check_transaction_struct_serialization) {
     serialized = t.serialize();
     deserialized = Transaction(serialized);
     ts = t.getTimestamp();
-    ASSERT_TRUE(t.toString() == deserialized.toString());
+    ASSERT_TRUE(t.hashContents() == deserialized.hashContents());
     ASSERT_TRUE(t == deserialized);
     ASSERT_EQUAL(ts, deserialized.getTimestamp());
 }

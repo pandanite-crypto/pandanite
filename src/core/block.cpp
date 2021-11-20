@@ -1,6 +1,7 @@
 #include "block.hpp"
 #include "helpers.hpp"
 #include "crypto.hpp"
+#include "openssl/sha.h"
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
@@ -147,14 +148,15 @@ int Block::getDifficulty() const {
 }
 
 SHA256Hash Block::getHash(SHA256Hash previousHash) {
-    stringstream s;
-    s<<timeToString(this->timestamp)<<":";
-    s<<this->difficulty<<":";
-    s<<SHA256toString(previousHash)<<":";  
-    s<<SHA256toString(this->merkleRoot)<<":";
-    string str = s.str();
-    SHA256Hash h = SHA256(s.str());
-    return h;
+    SHA256Hash ret;
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, (unsigned char*)previousHash.data(), previousHash.size());
+    SHA256_Update(&sha256, (unsigned char*)this->merkleRoot.data(), this->merkleRoot.size());
+    SHA256_Update(&sha256, (unsigned char*)&this->difficulty, sizeof(int));
+    SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(time_t));
+    SHA256_Final(ret.data(), &sha256);
+    return ret;
 }
 
 bool operator==(const Block& a, const Block& b) {

@@ -1,6 +1,7 @@
 #include "transaction.hpp"
 #include "helpers.hpp"
 #include "block.hpp"
+#include "openssl/sha.h"
 #include <sstream>
 #include <iostream>
  #include <cstring>
@@ -194,14 +195,22 @@ void Transaction::setAmount(TransactionAmount amt) {
 
 bool Transaction::signatureValid() const {
     if (this->isFee()) return true;
-    return checkSignature(this->toString(), this->signature, this->signingKey);
+    SHA256Hash hash = this->hashContents();
+    return checkSignature((const char*)hash.data(), hash.size(), this->signature, this->signingKey);
 
 }
 
 SHA256Hash Transaction::getHash() const {
-    string fullStr = this->toString() + "|";
-    if (!this->isTransactionFee) fullStr += signatureToString(this->signature);
-    return SHA256(fullStr);
+    SHA256Hash ret;
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256Hash contentHash = this->hashContents();
+    SHA256_Update(&sha256, (unsigned char*)contentHash.data(), contentHash.size());
+    if (!this->isTransactionFee) {
+        SHA256_Update(&sha256, (unsigned char*)this->signature.data(), this->signature.size());
+    }
+    SHA256_Final(ret.data(), &sha256);
+    return ret;
 }
 
 PublicWalletAddress Transaction::fromWallet() const {
@@ -215,18 +224,28 @@ TransactionAmount Transaction::getAmount() const {
     return this->amount;
 }
 
-string Transaction::toString() const {
-    stringstream s;
-    s<<walletAddressToString(this->toWallet())<<"|";
-    if (!this->isTransactionFee) s<<walletAddressToString(this->fromWallet())<<"|";
-    s<<"|"<<this->getTransactionFee()<<"|";
-    s<<this->amount <<"|" <<this->blockId <<"|";
-    s<<this->nonce<<"|"<<timeToString(this->timestamp)<<"|";
-    return s.str();
+SHA256Hash Transaction::hashContents() const {
+    SHA256Hash ret;
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    PublicWalletAddress wallet = this->toWallet();
+    SHA256_Update(&sha256, (unsigned char*)wallet.data(), wallet.size());
+    if (!this->isTransactionFee) {
+        wallet = this->fromWallet();
+        SHA256_Update(&sha256, (unsigned char*)wallet.data(), wallet.size());
+    }
+    SHA256_Update(&sha256, (unsigned char*)&this->fee, sizeof(TransactionAmount));
+    SHA256_Update(&sha256, (unsigned char*)&this->amount, sizeof(TransactionAmount));
+    SHA256_Update(&sha256, (unsigned char*)this->nonce.c_str(), nonce.length());
+    SHA256_Update(&sha256, (unsigned char*)&this->blockId, sizeof(int));
+    SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(time_t));
+    SHA256_Final(ret.data(), &sha256);
+    return ret;
 }
 
 void Transaction::sign(PublicKey pubKey, PrivateKey signingKey) {
-    TransactionSignature signature = signWithPrivateKey(this->toString(), pubKey, signingKey);
+    SHA256Hash hash = this->hashContents();
+    TransactionSignature signature = signWithPrivateKey((const char*)hash.data(), hash.size(), pubKey, signingKey);
     this->signature = signature;
 }
 

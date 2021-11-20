@@ -52,8 +52,8 @@ class Transaction {
         TransactionAmount getAmount() const;
         void setTimestamp(time_t t);
         time_t getTimestamp();
-        string toString() const;
         SHA256Hash getHash() const;
+        SHA256Hash hashContents() const;
         TransactionSignature getSignature() const;
         bool signatureValid() const;
         bool isFee() const;
