@@ -164,7 +164,7 @@ int BlockChain::getDifficulty() {
 
 void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
-    Executor::RollbackBlock(block, this->ledger);
+    Executor::RollbackBlock(last, this->ledger);
     this->numBlocks--;
 }
 
