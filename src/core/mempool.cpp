@@ -29,13 +29,11 @@ void mempool_sync(MemPool& mempool) {
             mempool.lock.unlock();
             // fetch mempool state from other hosts
             for (auto host : mempool.hosts.getHosts()) {
-                // mempool.lock.lock();
                 int count = 0;
                 readRawTransactions(host, [&mempool, &count](Transaction t) {
                     mempool.addTransaction(t);
                     count++;
                 });
-                // mempool.lock.unlock();
                 stringstream s;
                 s<<"Read "<<count<<" transactions from "<<host;
                 Logger::logStatus(s.str());
