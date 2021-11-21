@@ -16,8 +16,7 @@ RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     }
 }
 
-json RequestManager::addTransaction(json data) {
-    Transaction t = Transaction(data["transaction"]);
+json RequestManager::addTransaction(Transaction& t) {
     json result;
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
     return result;

@@ -1,8 +1,8 @@
 {
     "port": 3000,
     "minerPublicKey": "0335DFCBDA618C2F3386EB523ACC6087D44137FA3803416A40B849C877C0F14562",
-    "hostSources2":[],
-    "hostSources":[ 
+    "hostSources":[],
+    "hostSources2":[ 
         "http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts"
     ]
 }

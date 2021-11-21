@@ -88,19 +88,18 @@ size_t writeFunction(void *ptr, size_t size, size_t nmemb, std::string* data) {
 
 std::string curlGet(string url) {
     auto curl = curl_easy_init();
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-        curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
-        curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
-        
-        std::string response_string;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeFunction);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
-        
-        curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-        curl = NULL;
-        return response_string;
-    }
+    if (!curl) throw std::runtime_error("Could not get curl context");
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
+    curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+    
+    std::string response_string;
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeFunction);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
+    
+    curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    curl = NULL;
+    return response_string;
 }

@@ -41,10 +41,15 @@ json getMiningProblem(string host_url) {
 
 json sendTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/add_transaction");
-    json req;
-    req["transaction"] = t.toJson();
-    const auto response = request.send("POST", req.dump(), {
-        "Content-Type: application/json"
+    TransactionInfo info = t.serialize();
+    vector<uint8_t> bytes;
+    char * ptr = (char*)&info;
+    for(int i = 0; i < sizeof(TransactionInfo); i++) {
+        bytes.push_back(*ptr);
+        ptr++;
+    }
+    const auto response = request.send("POST", bytes, {
+        "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
     return json::parse(responseStr);

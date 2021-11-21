@@ -14,7 +14,7 @@ using namespace std;
 class RequestManager {
     public:
         RequestManager(HostManager& hosts);
-        json addTransaction(json data);
+        json addTransaction(Transaction& t);
         json getProofOfWork();
         json submitProofOfWork(json data);
         json getBlock(int index);

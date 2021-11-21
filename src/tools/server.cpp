@@ -158,8 +158,9 @@ int main(int argc, char **argv) {
             buffer.append(data.data(), data.length());
             if (last) {
                 try {
-                    json submission = json::parse(buffer);
-                    json response = manager.addTransaction(submission);
+                    TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+                    Transaction tx(t);
+                    json response = manager.addTransaction(tx);
                     res->end(response.dump());
                 }  catch(const std::exception &e) {
                     Logger::logError("/add_transaction", e.what());
@@ -174,11 +175,12 @@ int main(int argc, char **argv) {
         /* Move it to storage of lambda */
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
-            if (last) {
-                json submission = json::parse(buffer);
-                json response = manager.verifyTransaction(submission);
-                res->end(response.dump());
-            }
+            // if (last) {
+            //     TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+            //     Transaction tx(t);
+            //     json response = manager.verifyTransaction(tx);
+            //     res->end(response.dump());
+            // }
         });
         res->onAborted([res]() {
             res->end("ABORTED");
