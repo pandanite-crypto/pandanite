@@ -82,8 +82,17 @@ int main(int argc, char **argv) {
             buffer.append(data.data(), data.length());
             if (last) {
                 try {
-                    json submission = json::parse(buffer);
-                    json response = manager.submitProofOfWork(submission);
+                    char * ptr = (char*)buffer.c_str();
+                    BlockHeader blockH = *((BlockHeader*)ptr);
+                    ptr += sizeof(BlockHeader);
+                    vector<Transaction> transactions;
+                    for(int j = 0; j < blockH.numTransactions; j++) {
+                        TransactionInfo t = *((TransactionInfo*)ptr);
+                        ptr += sizeof(TransactionInfo);
+                        transactions.push_back(Transaction(t));
+                    }
+                    Block block(blockH, transactions);
+                    json response = manager.submitProofOfWork(block);
                     res->end(response.dump());
                 } catch(const std::exception &e) {
                     json response;

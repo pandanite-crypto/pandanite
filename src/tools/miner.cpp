@@ -25,22 +25,33 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             int nextBlock = bestCount + 1;
             json problem = getMiningProblem(host); 
             Logger::logStatus("Got problem. Difficulty=" + to_string(problem["challengeSize"]));
+
+            // download transactions
+            int count = 0;
+            vector<Transaction> transactions;
+            readRawTransactions(host, [&count, &transactions](Transaction t) {
+                transactions.push_back(t);
+                count++;
+            });
+            stringstream s;
+            s<<"Read "<<count<<" transactions from "<<host;
+            Logger::logStatus(s.str());
+
             string lastHashStr = problem["lastHash"];
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
             int challengeSize = problem["challengeSize"];
-            
+
             // create fee to our wallet:
             Transaction fee(wallet, nextBlock);
-            vector<Transaction> transactions;
             Block newBlock;
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
             set<string> nonces;
-            for(auto t : problem["transactions"]) {
-                Transaction x(t);
-                if (nonces.find(x.getNonce()) != nonces.end()) continue;
-                newBlock.addTransaction(x);
-                nonces.insert(x.getNonce());
+            for(auto t : transactions) {
+                if (t.getBlockId() != newBlock.getId()) continue;
+                if (nonces.find(t.getNonce()) != nonces.end()) continue;
+                newBlock.addTransaction(t);
+                nonces.insert(t.getNonce());
             }
             newBlock.setDifficulty(challengeSize);
             SHA256Hash hash = newBlock.getHash(lastHash);

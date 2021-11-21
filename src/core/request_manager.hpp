@@ -16,7 +16,7 @@ class RequestManager {
         RequestManager(HostManager& hosts);
         json addTransaction(Transaction& t);
         json getProofOfWork();
-        json submitProofOfWork(json data);
+        json submitProofOfWork(Block & block);
         json getBlock(int index);
         json getLedger(PublicWalletAddress w);
         json getStats();

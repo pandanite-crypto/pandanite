@@ -22,13 +22,10 @@ json RequestManager::addTransaction(Transaction& t) {
     return result;
 }
 
-json RequestManager::submitProofOfWork(json request) {
+json RequestManager::submitProofOfWork(Block& newBlock) {
     json result;
     // build map of all public keys in transaction
     this->blockchain->acquire();
-    // parse and add mining fee 
-    Block newBlock(request["block"]);
-
     // add to the chain!
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);
@@ -75,10 +72,6 @@ json RequestManager::verifyTransaction(json data) {
 json RequestManager::getProofOfWork() {
     json result;
     vector<Transaction> transactions;
-    // send POW problem + transaction queue item
-    result["transactions"] = json::array();
-    set<Transaction>& currTransactions = this->mempool->getTransactions(this->blockchain->getBlockCount() + 1);
-    for(auto p : currTransactions) result["transactions"].push_back(p.toJson());
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
     return result;

@@ -22,13 +22,25 @@ json getBlockData(string host_url, int idx) {
     return json::parse(responseStr);  
 }
 
-json submitBlock(string host_url, Block& b) {
-    json submission;
-    submission["block"] = b.toJson();
-    string miningTransaction = submission.dump();
+json submitBlock(string host_url, Block& block) {
+    BlockHeader b = block.serialize();
+    vector<uint8_t> bytes;
+    char * ptr = (char*)&b;
+    for(int i = 0; i < sizeof(BlockHeader); i++) {
+        bytes.push_back(*ptr);
+        ptr++;
+    }
+    for(auto t : block.getTransactions()) {
+        TransactionInfo tx = t.serialize();
+        char* ptr = (char*)&tx;
+        for(int j = 0; j < sizeof(TransactionInfo); j++) {
+            bytes.push_back(*ptr);
+            ptr++;
+        }
+    }
     http::Request request(host_url + "/submit");
-    const auto response = request.send("POST", miningTransaction, {
-        "Content-Type: application/json"
+    const auto response = request.send("POST", bytes, {
+        "Content-Type: application/octet-stream"
     }, std::chrono::milliseconds{TIMEOUT_MS});
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
@@ -54,49 +66,11 @@ json sendTransaction(string host_url, Transaction& t) {
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
     return json::parse(responseStr);
 }
+
 struct DataHandler {
-    function<void(Block&)> callback;
-    BlockHeader block;
-    bool headerRead;
     int totalBytes;
     stringstream soFar;
-    int blocksRead;
-    int total;
-
 };
-
-// size_t write_data_async(void *ptr, size_t size, size_t nmemb, void *stream) {
-//     string data((const char*) ptr, (size_t) size * nmemb);
-//     DataHandler * handler = (DataHandler*) stream;
-//     handler->soFar<<data;
-//     if (!handler->headerRead && handler->soFar.str().length() >= sizeof(BlockHeader)) {
-//         memcpy(&handler->block, handler->soFar.str().c_str(), sizeof(BlockHeader));
-//         handler->headerRead = true;
-//         handler->totalBytes = sizeof(BlockHeader) + sizeof(TransactionInfo) * handler->block.numTransactions;
-//     } else if(handler->soFar.str().length() >= handler->totalBytes) {
-//         string s = handler->soFar.str();
-//         handler->soFar.str("");
-//         handler->soFar<<s.substr(handler->totalBytes);
-//         char * buffer = (char*)s.c_str() + sizeof(BlockHeader);
-//         vector<Transaction> transactions;
-//         for(int i = 0; i < handler->block.numTransactions; i++) {
-//             TransactionInfo tmp;
-//             memcpy(&tmp, buffer, sizeof(TransactionInfo));
-//             buffer += sizeof(TransactionInfo);
-//             transactions.push_back(Transaction(tmp));
-//         }
-//         handler->headerRead = false;
-//         try {
-//             Block newBlock(handler->block, transactions);
-//             handler->callback(newBlock);
-//         } catch(...) {
-//             cout<<"BLOCK CREATION FAILED!"<<endl;
-//         }
-//         handler->blocksRead++;
-//     }
-//     handler->total += size*nmemb;
-//     return size * nmemb;
-// }
 
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
@@ -122,11 +96,7 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
     DataHandler d;
     d.soFar = stringstream();
-    d.headerRead = false;
-    d.total = 0;
-    d.callback = handler;
     d.totalBytes = 0;
-    d.blocksRead = 0;
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &d);
     /* Perform the request, res will get the return code */
@@ -157,7 +127,7 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
         }
         numBlocks++;
         Block block(b, transactions);
-        d.callback(block);
+        handler(block);
         if (bytesRead >= st.size()) break;
     }
     curl_easy_cleanup(curl);
@@ -178,8 +148,6 @@ void readRawTransactions(string host_url, function<void(Transaction)> handler) {
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
     DataHandler d;
     d.soFar = stringstream();
-    d.headerRead = false;
-    d.total = 0;
     d.totalBytes = 0;
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &d);
