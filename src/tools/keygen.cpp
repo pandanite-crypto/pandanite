@@ -11,9 +11,11 @@ using namespace std;
 
 
 void key_search() {
+#ifdef SECP256K1
     secp256k1_context *ctx = NULL;
     size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
+#endif
     time_t last = std::time(0);
     long i = 0;
     cout<<"=====GENERATE WALLET===="<<endl;
@@ -23,6 +25,7 @@ void key_search() {
     cin>>filename;
     myfile.open(filename);
     while(true) {
+#ifdef SECP256K1
         int res;
         PrivateKey privateKey;
         for(size_t i = 0 ; i < privateKey.size(); i++) {
@@ -34,7 +37,11 @@ void key_search() {
         secp256k1_pubkey publicKey;
         res = secp256k1_ec_pubkey_create(ctx, &publicKey, (uint8_t*)privateKey.data());
         if(!res) continue;
-
+#else
+        std::pair<PublicKey,PrivateKey> pair = generateKeyPair();
+        PublicKey publicKey = pair.first;
+        PrivateKey privateKey = pair.second;
+#endif
         time_t curr = std::time(0);
         PublicWalletAddress w = walletAddressFromPublicKey(publicKey);
         bool found = isFounderWalletPossible(w);
@@ -62,7 +69,9 @@ void key_search() {
             cout<<"searched "<<i<<" keys so far"<<endl;
         }
     } 
+#ifdef SECP256K1
     secp256k1_context_destroy(ctx);
+#endif
 }
 
 int main() {
