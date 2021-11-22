@@ -40,9 +40,6 @@ Transaction::Transaction(const TransactionInfo& t) {
     this->blockId = t.blockId;
     this->timestamp = t.timestamp;
     this->fee = t.fee;
-    if (t.hasMiner) {
-        this->setMinerWallet(t.miner);
-    }
 }
 TransactionInfo Transaction::serialize() {
     TransactionInfo t;
@@ -61,10 +58,6 @@ TransactionInfo Transaction::serialize() {
     t.amount = this->amount;
     t.fee = this->fee;
     t.isTransactionFee = this->isTransactionFee;
-    t.hasMiner = this->hasMiner();
-    if (this->hasMiner()) {
-        t.miner = this->miner.value();
-    }
     return t;
 }
 
@@ -80,7 +73,6 @@ Transaction::Transaction(const Transaction & t) {
     this->timestamp = t.timestamp;
     this->fee = t.fee;
     this->signingKey = t.signingKey;
-    this->miner = t.miner;
 }
 
 Transaction::Transaction(PublicWalletAddress to, int blockId) {
@@ -100,7 +92,6 @@ Transaction::Transaction(json data) {
     this->blockId = data["id"];
     this->nonce = data["nonce"];
     this->fee = data["fee"];
-    if(data["miner"]!="") this->miner = stringToWalletAddress(data["miner"]);
     if(data["from"] == "") {        
         this->amount = MINING_FEE; // TODO: Mining fee should come from function
         this->isTransactionFee = true;
@@ -120,9 +111,6 @@ TransactionAmount Transaction::getTransactionFee() const {
     return this->fee;
 }
 
-bool Transaction::hasMiner() const {
-    return this->miner.has_value();
-}
 
 json Transaction::toJson() {
     json result;
@@ -131,11 +119,6 @@ json Transaction::toJson() {
     result["timestamp"] = timeToString(this->timestamp);
     result["id"] = this->blockId;
     result["nonce"] = this->nonce;
-    if (this->miner.has_value()) {
-        result["miner"] = walletAddressToString(this->miner.value());
-    } else {
-        result["miner"] = "";
-    }
     result["fee"] = this->fee;
     if (!this->isTransactionFee) {
         result["from"] = walletAddressToString(this->fromWallet());
@@ -148,13 +131,6 @@ json Transaction::toJson() {
     return result;
 }
 
-void Transaction::setMinerWallet(PublicWalletAddress addr) {
-    this->miner = addr;
-}
-PublicWalletAddress Transaction::getMinerWallet() const {
-    if (!this->miner.has_value()) throw std::runtime_error("Miner does not exist on transaction");
-    return this->miner.value();
-}
 
 bool Transaction::isFee() const {
     return this->isTransactionFee;
@@ -258,8 +234,6 @@ bool operator==(const Transaction& a, const Transaction& b) {
     if( a.nonce != b.nonce) return false;
     if(a.timestamp != b.timestamp) return false;
     if(a.toWallet() != b.toWallet()) return false;
-    if(a.hasMiner() != b.hasMiner()) return false;
-    if(a.hasMiner() && a.getMinerWallet() != b.getMinerWallet()) return false;
     if(a.getTransactionFee() != b.getTransactionFee()) return false;
     if( a.amount != b.amount) return false;
     if( a.isTransactionFee != b.isTransactionFee) return false;

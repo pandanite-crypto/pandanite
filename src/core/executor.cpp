@@ -92,12 +92,11 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     }
 }
 
-ExecutionStatus updateLedger(Transaction& t, Ledger& ledger, LedgerState & deltas) {
+ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
-    PublicWalletAddress miner;
     
     if (t.isFee()) {
         if (amt ==  MINING_FEE) {
@@ -119,28 +118,24 @@ ExecutionStatus updateLedger(Transaction& t, Ledger& ledger, LedgerState & delta
     }
     withdraw(from, amt, ledger, deltas);
     deposit(to, amt, ledger, deltas);
-    if (fees > 0 && t.hasMiner()) {
-        miner = t.getMinerWallet();
+    if (fees > 0) {
         withdraw(from, fees, ledger, deltas);
         deposit(miner, fees, ledger, deltas);
     }
     return SUCCESS;
 }
 
-void rollbackLedger(Transaction& t, Ledger& ledger) {
+void rollbackLedger(Transaction& t,  PublicWalletAddress& miner, Ledger& ledger) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
-    PublicWalletAddress miner;
-    
     if (t.isFee()) {
         ledger.revertDeposit(to, amt);
     } else {
         ledger.revertDeposit(to, amt);
         ledger.revertSend(from, amt);
-        if (fees > 0 && t.hasMiner()) {
-            miner = t.getMinerWallet();
+        if (fees > 0) {
             ledger.revertDeposit(miner, fees);
             ledger.revertSend(from, fees);
         }
@@ -154,26 +149,55 @@ void Executor::Rollback(Ledger& ledger, LedgerState& deltas) {
 }
 
 void Executor::RollbackBlock(Block& curr, Ledger& ledger) {
+    PublicWalletAddress miner;
+    for(auto t : curr.getTransactions()) {
+        if (t.isFee()) {
+            miner = t.toWallet();
+            break;
+        }
+    }
     for(int i = curr.getTransactions().size() - 1; i >=0; i--) {
         Transaction t = curr.getTransactions()[i];
-        rollbackLedger(t, ledger);
+        rollbackLedger(t, miner, ledger);
     }
 }
 
-ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas) {
+ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  LedgerState& deltas) {
     if (!t.isFee() && !t.signatureValid()) {
         return INVALID_SIGNATURE;
     }
-    if (t.isFee()) {
-        return EXTRA_MINING_FEE; 
-    }
-    return updateLedger(t, ledger, deltas);
+    PublicWalletAddress miner = NULL_ADDRESS;
+    return updateLedger(t, miner, ledger, deltas);
 }
 
 ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState& deltas) {
     // try executing each transaction
     bool foundFee = false;
     set<string> nonces;
+    PublicWalletAddress miner;
+    TransactionAmount miningFee;
+    for(auto t : curr.getTransactions()) {
+        if (t.isFee()) {
+            if (foundFee) return EXTRA_MINING_FEE;
+            miner = t.toWallet();
+            miningFee = t.getAmount();
+            foundFee = true;
+        }
+    }
+
+    if (!foundFee) {
+        return NO_MINING_FEE;
+    }
+
+    if (curr.getId() >= MINING_PAYMENTS_UNTIL) {
+        if (miningFee > 0) {
+            return INCORRECT_MINING_FEE;
+        } 
+    } else {
+        if (miningFee != MINING_FEE) {
+            return INCORRECT_MINING_FEE;
+        }
+    }
 
     for(auto t : curr.getTransactions()) {
         if (nonces.find(t.getNonce())!= nonces.end()) {
@@ -187,19 +211,10 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState&
         if (t.getBlockId() != curr.getId()) {
             return INVALID_BLOCK_ID;
         }
-        if (t.isFee()) {
-            if (foundFee || t.getBlockId() >= MINING_PAYMENTS_UNTIL) {
-                return EXTRA_MINING_FEE;
-            }
-            foundFee = true;
-        }
-        ExecutionStatus updateStatus = updateLedger(t, ledger, deltas);
+        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas);
         if (updateStatus != SUCCESS) {
             return updateStatus;
         }
-    }
-    if (!foundFee && curr.getId() < MINING_PAYMENTS_UNTIL) {
-        return NO_MINING_FEE;
     }
     return SUCCESS;
 }

@@ -127,21 +127,31 @@ TEST(check_miner_fee) {
     
     User miner;
     User receiver;
+    User other;
 
     // add mining transaction twice
     Transaction t = miner.mine(1);
-    b.addTransaction(t);
     Transaction t2 = miner.send(receiver, BMB(20), 1);
-    t2.setTransactionFee(BMB(10));
-    t2.setMinerWallet(receiver.getAddress());
     miner.signTransaction(t2);
-    ASSERT_EQUAL(t2.signatureValid(), true);
+    b.addTransaction(t);
     b.addTransaction(t2);
-
     status = Executor::ExecuteBlock(b, ledger, deltas);
     ASSERT_EQUAL(status, SUCCESS);
-    ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(30)); 
-    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(20)); 
+    
+    Block b2;
+    b2.setId(2);
+    Transaction t3 = miner.mine(2);
+    Transaction t4 = receiver.send(other, BMB(1), 2);
+    receiver.signTransaction(t4);
+    t4.setTransactionFee(BMB(10));
+    b2.addTransaction(t3);
+    b2.addTransaction(t4);
+    status = Executor::ExecuteBlock(b2, ledger, deltas);
+    
+    ASSERT_EQUAL(status, SUCCESS);
+    ASSERT_EQUAL(ledger.getWalletValue(other.getAddress()), BMB(1)); 
+    ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(9)); 
+    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(90)); 
 }
 
 TEST(check_taxes_collected) {
@@ -155,32 +165,9 @@ TEST(check_taxes_collected) {
     ExecutionStatus status;
     
     User miner;
-    User receiver;
-
-    // add mining transaction twice
     Transaction t = miner.mine(1);
     b.addTransaction(t);
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(25));
-    ASSERT_EQUAL(ledger.getTaxCollected(), BMB(25));
-
-    Block c;
-    c.addTransaction(miner.mine(1));
-    Transaction t2 = miner.send(receiver, BMB(20), 1);
-    t2.setTransactionFee(BMB(1));
-    t2.setMinerWallet(receiver.getAddress());
-    miner.signTransaction(t2);
-    c.addTransaction(t2);
-
-    LedgerState deltas2;
-    status = Executor::ExecuteBlock(c, ledger, deltas2);
-    ASSERT_EQUAL(status, SUCCESS);
-    ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(10.5)); 
-    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(29)); 
-    ASSERT_EQUAL(ledger.getTaxCollected(), BMB(60.5));
-
-    // test rollback
-    Executor::RollbackBlock(c, ledger);
     ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(25));
     ASSERT_EQUAL(ledger.getTaxCollected(), BMB(25));
 }

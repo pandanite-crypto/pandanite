@@ -18,13 +18,11 @@ struct TransactionInfo {
 #endif
     time_t timestamp;
     char nonce[TRANSACTION_NONCE_SIZE];
-    PublicWalletAddress miner;
     PublicWalletAddress to;
     PublicWalletAddress from;
     TransactionAmount amount;
     TransactionAmount fee;
     bool isTransactionFee;
-    bool hasMiner;
 };
 
 class Transaction {
@@ -44,8 +42,6 @@ class Transaction {
         void sign(PublicKey pubKey, PrivateKey signingKey);
         void setTransactionFee(TransactionAmount amount);
         TransactionAmount getTransactionFee() const;
-        void setMinerWallet(PublicWalletAddress amount);
-        PublicWalletAddress getMinerWallet() const;
         void setAmount(TransactionAmount amt);
         PublicWalletAddress fromWallet() const;
         PublicWalletAddress toWallet() const;
@@ -57,14 +53,12 @@ class Transaction {
         TransactionSignature getSignature() const;
         bool signatureValid() const;
         bool isFee() const;
-        bool hasMiner() const;
     protected:
         int blockId;
         string nonce;
         TransactionSignature signature;
         PublicKey signingKey;
         time_t timestamp;
-        optional<PublicWalletAddress> miner;
         PublicWalletAddress to;
         PublicWalletAddress from;
         TransactionAmount amount;
