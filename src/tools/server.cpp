@@ -82,6 +82,13 @@ int main(int argc, char **argv) {
             buffer.append(data.data(), data.length());
             if (last) {
                 try {
+                    if (buffer.length() < sizeof(BlockHeader) + sizeof(TransactionInfo)) {
+                        json response;
+                        response["error"] = "Malformed block";
+                        res->end(response.dump());
+                        Logger::logError("/submit","Malformed block");
+                        return;
+                    }
                     char * ptr = (char*)buffer.c_str();
                     BlockHeader blockH = *((BlockHeader*)ptr);
                     ptr += sizeof(BlockHeader);
@@ -174,6 +181,13 @@ int main(int argc, char **argv) {
             buffer.append(data.data(), data.length());
             if (last) {
                 try {
+                    if (buffer.length() < sizeof(TransactionInfo)) {
+                        json response;
+                        response["error"] = "Malformed transaction";
+                        res->end(response.dump());
+                        Logger::logError("/add_transaction","Malformed transaction");
+                        return;
+                    }
                     TransactionInfo t = *((TransactionInfo*)buffer.c_str());
                     Transaction tx(t);
                     json response = manager.addTransaction(tx);
@@ -192,6 +206,13 @@ int main(int argc, char **argv) {
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             if (last) {
+                if (buffer.length() < sizeof(TransactionInfo)) {
+                    json response;
+                    response["error"] = "Malformed transaction";
+                    res->end(response.dump());
+                    Logger::logError("/verify_transaction","Malformed transaction");
+                    return;
+                }
                 TransactionInfo t = *((TransactionInfo*)buffer.c_str());
                 Transaction tx(t);
                 json response = manager.verifyTransaction(tx);
