@@ -29,9 +29,11 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             // download transactions
             int count = 0;
             vector<Transaction> transactions;
-            readRawTransactions(host, [&count, &transactions](Transaction t) {
-                transactions.push_back(t);
-                count++;
+            readRawTransactions(host, [&nextBlock, &count, &transactions](Transaction t) {
+                if (t.getBlockId() == nextBlock) {
+                    transactions.push_back(t);
+                    count++;
+                }
             });
             stringstream s;
             s<<"Read "<<count<<" transactions from "<<host;
@@ -48,7 +50,6 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             newBlock.addTransaction(fee);
             set<string> nonces;
             for(auto t : transactions) {
-                if (t.getBlockId() != newBlock.getId()) continue;
                 if (nonces.find(t.getNonce()) != nonces.end()) continue;
                 newBlock.addTransaction(t);
                 nonces.insert(t.getNonce());
@@ -60,7 +61,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             auto result = submitBlock(host, newBlock).dump();
             Logger::logStatus(result);
 
-            // std::this_thread::sleep_for(std::chrono::milliseconds(120000));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(15000));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));

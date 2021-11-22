@@ -86,14 +86,21 @@ int main(int argc, char **argv) {
                     BlockHeader blockH = *((BlockHeader*)ptr);
                     ptr += sizeof(BlockHeader);
                     vector<Transaction> transactions;
-                    for(int j = 0; j < blockH.numTransactions; j++) {
-                        TransactionInfo t = *((TransactionInfo*)ptr);
-                        ptr += sizeof(TransactionInfo);
-                        transactions.push_back(Transaction(t));
+                    if (blockH.numTransactions > MAX_TRANSACTIONS_PER_BLOCK) {
+                        json response;
+                        response["error"] = "Too many transactions";
+                        res->end(response.dump());
+                        Logger::logError("/submit", e.what());
+                    } else {
+                        for(int j = 0; j < blockH.numTransactions; j++) {
+                            TransactionInfo t = *((TransactionInfo*)ptr);
+                            ptr += sizeof(TransactionInfo);
+                            transactions.push_back(Transaction(t));
+                        }
+                        Block block(blockH, transactions);
+                        json response = manager.submitProofOfWork(block);
+                        res->end(response.dump());
                     }
-                    Block block(blockH, transactions);
-                    json response = manager.submitProofOfWork(block);
-                    res->end(response.dump());
                 } catch(const std::exception &e) {
                     json response;
                     response["error"] = string(e.what());

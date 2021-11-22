@@ -41,7 +41,7 @@ json submitBlock(string host_url, Block& block) {
     http::Request request(host_url + "/submit");
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
-    }, std::chrono::milliseconds{TIMEOUT_MS});
+    }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
