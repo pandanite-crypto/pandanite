@@ -54,7 +54,9 @@ json RequestManager::verifyTransaction(json data) {
     Block b;
     try {
         b = this->blockchain->getBlock(t.getBlockId());
-        HashTree* root = NULL; //b.verifyTransaction(t);
+        MerkleTree m;
+        m.setItems(b.getTransactions());
+        HashTree* root = m.getMerkleProof(t);
         if (root == NULL) {
             response["error"] = "Could not find transaction in block";
         } else {
