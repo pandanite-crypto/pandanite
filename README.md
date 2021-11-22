@@ -18,11 +18,53 @@ PandaCoin's are minted by miners who earn a reward of 50 bamboo per block. Minin
 
 ### Technical Implementation
 PandaCoin is written from the ground up in C++. We want the PandaCoin source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built PandaCoin from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
-* Transactions created and signed on a per-block basis (no need for timestamping)
-* Mempool that allows storage of transactions aimed at future blocks (improved queuing)
-* 30 second block mint time (faster confirmations)
-* Up to 1500 Transactions per block (more transactions per block)
-* Ultra simple REST based interface
+* Switched encryption scheme from [secp256k1](https://github.com/bitcoin-core/secp256k1) (which is used by ETH & BTC) to [ED25519](https://ed25519.cr.yp.to/) -- results in 8x speedup during verification and public keys half the size. 
+* Transactions are created uniquely to each blockID
+* Can queue transactions to execute up to 10 blocks in the future.
+* 5000 transactions per block, 15 second block time
+* Measured transactions per second > 400TPS
+
+### API
+* `GET: /block_count` : Returns the number of blocks in the current chain
+* `GET: /stats` : Statistics on current chain in JSON format
+* `GET: /block/<int:blockId>` : Block information in JSON format
+* `GET: /ledger/<string:walletAddress>` : The balance for the specified wallet in JSON format
+* `GET: /mine` : Returns the last block hash and difficulty in JSON format
+* `GET: /sync/<int:startId>/<int:endId>` : Returns binary serialized blocks within range
+* `GET: /synctx` : Returns binary serialized transactions in mem pool
+* `POST: /submit` : Submits a new block (data must be binary serialized)
+* `POST: /add_transaction` : Submits a new transaction (data must be binary serialized).
+
+### Serialization formats
+```
+struct BlockHeader {
+    int id;
+    time_t timestamp;
+    int difficulty;
+    int numTransactions;
+    char merkleRoot[32];
+    char nonce[32];
+};
+```
+
+```
+struct TransactionInfo {
+    int blockId;
+    char signature[64];
+    char signingKey[32];
+    time_t timestamp;
+    char nonce[8];
+    char miner[25];
+    char to[25];
+    char from[25];
+    long amount;
+    long fee;
+    bool isTransactionFee;
+    bool hasMiner;
+};
+
+```
+
 
 ### Getting Started
 
