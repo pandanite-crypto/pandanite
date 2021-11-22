@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
                         json response;
                         response["error"] = "Too many transactions";
                         res->end(response.dump());
-                        Logger::logError("/submit", e.what());
+                        Logger::logError("/submit","Too many transactions");
                     } else {
                         for(int j = 0; j < blockH.numTransactions; j++) {
                             TransactionInfo t = *((TransactionInfo*)ptr);
