@@ -2,6 +2,7 @@
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
+#include "../core/merkle_tree.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/logger.hpp"
 #include "../core/user.hpp"
@@ -54,6 +55,9 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
                 newBlock.addTransaction(t);
                 nonces.insert(t.getNonce());
             }
+            MerkleTree m;
+            m.setItems(newBlock.getTransactions());
+            newBlock.setMerkleRoot(m.getRootHash());
             newBlock.setDifficulty(challengeSize);
             SHA256Hash hash = newBlock.getHash(lastHash);
             SHA256Hash solution = mineHash(hash, challengeSize);

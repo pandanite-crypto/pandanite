@@ -12,6 +12,7 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
+#include "merkle_tree.hpp"
 #include "logger.hpp"
 #include "blockchain.hpp"
 #include "helpers.hpp"
@@ -62,6 +63,9 @@ BlockChain::BlockChain(HostManager& hosts) : hosts(hosts) {
         genesis.addTransaction(miner.mine(1));
         SHA256Hash nonce = mineHash(NULL_SHA256_HASH, genesis.getDifficulty());
         genesis.setNonce(nonce);
+        MerkleTree m;
+        m.setItems(genesis.getTransactions());
+        genesis.setMerkleRoot(m.getRootHash());
         writeJsonToFile(miner.toJson(), DEFAULT_GENESIS_USER_PATH);
         writeJsonToFile(genesis.toJson(), GENESIS_FILE_PATH);
     }
@@ -174,6 +178,13 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce(this->getLastHash())) return INVALID_NONCE;
+    
+    // compute merkle tree and verify root matches;
+    MerkleTree m;
+    m.setItems(block.getTransactions());
+    SHA256Hash computedRoot = m.getRootHash();
+    if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
+
     LedgerState deltasFromBlock;
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, deltasFromBlock);
     

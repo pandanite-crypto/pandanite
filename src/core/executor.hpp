@@ -21,6 +21,7 @@ enum ExecutionStatus {
     QUEUE_FULL,
     EXPIRED_TRANSACTION,
     BLOCK_ID_TOO_LARGE,
+    INVALID_MERKLE_ROOT,
     SUCCESS
 };
 

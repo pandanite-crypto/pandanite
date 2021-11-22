@@ -58,6 +58,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case BLOCK_ID_TOO_LARGE:
             return "BLOCK_ID_TOO_LARGE";
         break;
+        case INVALID_MERKLE_ROOT:
+            return "INVALID_MERKLE_ROOT";
+        break;
     }
 }
 

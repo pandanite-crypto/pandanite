@@ -52,7 +52,7 @@ TEST(larger_tree_works) {
     User receiver;
 
     vector<Transaction> items;
-    for(int i =0; i < 100; i++) {
+    for(int i =0; i < 4000; i++) {
         items.push_back(miner.send(receiver,i,1));
     }
     m.setItems(items);

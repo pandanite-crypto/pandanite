@@ -112,9 +112,6 @@ void Block::setId(int id) {
     this->id = id;
 }
 
-HashTree* Block::verifyTransaction(Transaction &t) {
-    return NULL;
-}
 
 void Block::addTransaction(Transaction t) {
     if (t.getBlockId() != this->id) throw std::runtime_error("transactionID does not match blockID");
@@ -127,6 +124,14 @@ void Block::setNonce(SHA256Hash s) {
 
 SHA256Hash Block::getNonce() {
     return this->nonce;
+}
+
+void Block::setMerkleRoot(SHA256Hash s) {
+    this->merkleRoot = s;
+}
+
+SHA256Hash Block::getMerkleRoot() {
+    return this->merkleRoot;
 }
 
 vector<Transaction>& Block::getTransactions() {

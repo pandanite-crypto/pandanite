@@ -28,12 +28,13 @@ class Block {
         json toJson();
         void addTransaction(Transaction t);
         void setNonce(SHA256Hash s);
+        void setMerkleRoot(SHA256Hash s);
         void setTimestamp(time_t t);
         void setId(int id);
         void setDifficulty(int d);
-        HashTree* verifyTransaction(Transaction &t);
         SHA256Hash getHash(SHA256Hash lastHash);
         SHA256Hash getNonce();
+        SHA256Hash getMerkleRoot();
         time_t getTimestamp();
         int getDifficulty() const;
         vector<Transaction>& getTransactions();

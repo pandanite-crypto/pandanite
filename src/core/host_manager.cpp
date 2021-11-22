@@ -68,19 +68,23 @@ size_t HostManager::size() {
 
 std::pair<string, int> HostManager::getLongestChainHost() {
     // TODO: make this asynchronous
-    string bestHost = "";
     int bestCount = 0;
+    vector<string> bestHosts;
     for(auto host : this->hosts) {
         try {
             int curr = getCurrentBlockCount(host);
             if (curr > bestCount) {
                 bestCount = curr;
-                bestHost = host;
+                bestHosts.clear();
+                bestHosts.push_back(host);
+            } else if (curr == bestCount) {
+                bestHosts.push_back(host);
             }
         } catch (std::exception & e) {
             continue;
         }
     }
-    if (bestHost == "") throw std::runtime_error("Could not get chain length from any host");
+    if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
+    string bestHost = bestHosts[rand()%bestHosts.size()];
     return std::pair<string, int>(bestHost, bestCount);
 }

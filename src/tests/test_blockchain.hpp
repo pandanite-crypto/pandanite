@@ -1,5 +1,6 @@
 #include "../core/blockchain.hpp"
 #include "../core/helpers.hpp"
+#include "../core/merkle_tree.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/constants.hpp"
 #include "../core/user.hpp"
@@ -8,6 +9,14 @@
 #include <thread>
 using namespace std;
 using namespace std::chrono_literals;
+
+void addMerkleHashToBlock(Block& block) {
+    // compute merkle tree and verify root matches;
+    MerkleTree m;
+    m.setItems(block.getTransactions());
+    SHA256Hash computedRoot = m.getRootHash();
+    block.setMerkleRoot(m.getRootHash());
+}
 
 TEST(check_adding_new_node_with_hash) {
     HostManager h;
@@ -22,6 +31,7 @@ TEST(check_adding_new_node_with_hash) {
     Block newBlock;
     newBlock.setId(2);
     newBlock.addTransaction(fee);
+    addMerkleHashToBlock(newBlock);
     SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
@@ -42,6 +52,7 @@ TEST(check_adding_two_nodes_updates_ledger) {
         Block newBlock;
         newBlock.setId(i);
         newBlock.addTransaction(fee);
+        addMerkleHashToBlock(newBlock);
         SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
         newBlock.setNonce(solution);
@@ -71,9 +82,8 @@ TEST(check_sending_transaction_updates_ledger) {
             Transaction t = miner.send(other, BMB(20.0),i);
             newBlock.addTransaction(t);
         }
-        
+        addMerkleHashToBlock(newBlock);
         SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
-        
         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
         newBlock.setNonce(solution);
         ExecutionStatus status = blockchain->addBlock(newBlock);

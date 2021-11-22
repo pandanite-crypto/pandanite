@@ -1,6 +1,7 @@
 #include "../core/request_manager.hpp"
 #include "../core/user.hpp"
 #include "../core/block.hpp"
+#include "../core/merkle_tree.hpp"
 #include "../core/transaction.hpp"
 #include "../core/host_manager.hpp"
 #include <thread>
@@ -22,11 +23,35 @@ TEST(test_accepts_proof_of_work) {
     Block newBlock;
     newBlock.setId(2);
     newBlock.addTransaction(fee);
+    MerkleTree m;
+    m.setItems(newBlock.getTransactions());
+    newBlock.setMerkleRoot(m.getRootHash());
     SHA256Hash hash = newBlock.getHash(lastHash);
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
-    json submission;
-    submission["block"] = newBlock.toJson();
-    json result = r.submitProofOfWork(submission);
+    json result = r.submitProofOfWork(newBlock);
     ASSERT_EQUAL(result["status"], "SUCCESS");
+}
+
+TEST(test_fails_when_missing_merkle_root) {
+    HostManager hosts;
+    RequestManager r(hosts);
+
+    json pow = r.getProofOfWork();
+    string lastHashStr = pow["lastHash"];
+    SHA256Hash lastHash = stringToSHA256(lastHashStr);
+    int challengeSize = pow["challengeSize"];
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    User miner;
+    // have miner mine the next block
+    Transaction fee = miner.mine(2);
+    vector<Transaction> transactions;
+    Block newBlock;
+    newBlock.setId(2);
+    newBlock.addTransaction(fee);
+    SHA256Hash hash = newBlock.getHash(lastHash);
+    SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+    newBlock.setNonce(solution);
+    json result = r.submitProofOfWork(newBlock);
+    ASSERT_EQUAL(result["status"], "INVALID_MERKLE_ROOT");
 }
