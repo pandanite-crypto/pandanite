@@ -20,7 +20,7 @@ class RequestManager {
         json getBlock(int index);
         json getLedger(PublicWalletAddress w);
         json getStats();
-        json verifyTransaction(json data);
+        json verifyTransaction(Transaction& t);
         std::pair<char*, size_t> getRawBlockData(int index);
         std::pair<char*, size_t> getRawTransactionData();
         string getBlockCount();

@@ -48,8 +48,7 @@ json hashTreeToJson(HashTree* root) {
     return ret;
 }
 
-json RequestManager::verifyTransaction(json data) {
-    Transaction t(data);
+json RequestManager::verifyTransaction(Transaction& t) {
     json response;
     Block b;
     try {
