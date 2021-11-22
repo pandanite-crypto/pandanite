@@ -59,6 +59,7 @@ string SHA256toString(SHA256Hash h) {
     return hexEncode((const char*)h.data(), h.size());
 }
 
+#ifdef SECP256K1
 secp256k1_context* GLOBAL_CONTEXT = NULL;
 secp256k1_context* getSecpContext() {
     if (GLOBAL_CONTEXT == NULL) {
@@ -67,7 +68,7 @@ secp256k1_context* getSecpContext() {
     }
     return GLOBAL_CONTEXT;
 }
-
+#endif
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
     // Based on: https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
