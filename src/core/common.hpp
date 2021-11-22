@@ -1,15 +1,20 @@
 #pragma once
 #include "nlohmann/json.hpp"
-#include <secp256k1.h>
-#include <secp256k1_preallocated.h>
 #include "openssl/sha.h"
  #include "openssl/ripemd.h"
 #include <map>
 #include <vector>
 #include <string>
 #include <array>
+
+#ifdef SECP256K1
+#include <secp256k1.h>
+#include <secp256k1_preallocated.h>
+#endif
+
 using namespace std;
 using namespace nlohmann;
+
 
 
 typedef std::array<uint8_t, 25> PublicWalletAddress;

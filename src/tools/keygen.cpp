@@ -4,8 +4,10 @@
 #include <map>
 #include <functional>
 #include <fstream>
+#ifdef SECP256K1
 #include <secp256k1.h>
 #include <secp256k1_preallocated.h>
+#endif
 #include "../core/crypto.hpp"
 using namespace std;
 

@@ -1,7 +1,9 @@
 #pragma once
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#ifdef SECP256K1
 #include <secp256k1.h>
 #include <secp256k1_preallocated.h>
+#endif
 #include "openssl/sha.h"
 #include "openssl/ripemd.h"
 #include "common.hpp"
