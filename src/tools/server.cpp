@@ -191,12 +191,12 @@ int main(int argc, char **argv) {
         /* Move it to storage of lambda */
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
-            // if (last) {
-            //     TransactionInfo t = *((TransactionInfo*)buffer.c_str());
-            //     Transaction tx(t);
-            //     json response = manager.verifyTransaction(tx);
-            //     res->end(response.dump());
-            // }
+            if (last) {
+                TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+                Transaction tx(t);
+                json response = manager.verifyTransaction(tx);
+                res->end(response.dump());
+            }
         });
         res->onAborted([res]() {
             res->end("ABORTED");

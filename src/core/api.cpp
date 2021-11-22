@@ -67,6 +67,23 @@ json sendTransaction(string host_url, Transaction& t) {
     return json::parse(responseStr);
 }
 
+json verifyTransaction(string host_url, Transaction& t) {
+    http::Request request(host_url + "/verify_transaction");
+    TransactionInfo info = t.serialize();
+    vector<uint8_t> bytes;
+    char * ptr = (char*)&info;
+    for(int i = 0; i < sizeof(TransactionInfo); i++) {
+        bytes.push_back(*ptr);
+        ptr++;
+    }
+    const auto response = request.send("POST", bytes, {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    std::string responseStr = std::string{response.body.begin(), response.body.end()};
+    return json::parse(responseStr);
+}
+
+
 struct DataHandler {
     int totalBytes;
     stringstream soFar;

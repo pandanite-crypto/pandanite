@@ -1,5 +1,6 @@
 #include <map>
 #include <iostream>
+#include <thread>
 #include "../core/user.hpp"
 #include "../core/api.hpp"
 #include "../core/helpers.hpp"
@@ -49,6 +50,20 @@ int main(int argc, char** argv) {
         Transaction t(fromWallet, toWallet, amount, blockId, publicKey, fee);
         t.sign(publicKey, privateKey);
         cout<<"Creating transaction, current block: "<<blockId<<endl;
-        cout<<sendTransaction(host, t)<<endl;
+        json result = sendTransaction(host, t);
+        cout<<result<<endl;
+        if(result["status"] != "SUCCESS") {
+            cout<<"Transaction failed: " << result["status"]<<endl;
+        }
+        cout<<"Waiting for block to complete"<<endl;
+        while(true) {
+            bool added = getCurrentBlockCount(host) >= blockId;
+            if (added) break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        cout<<"Checking proof"<<endl;
+        cout<<verifyTransaction(host, t)<<endl;
+        string cont;
+        cin>>cont;
     }
 }
