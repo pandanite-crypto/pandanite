@@ -18,11 +18,11 @@ PandaCoin's are minted by miners who earn a reward of 50 bamboo per block. Minin
 
 ### Technical Implementation
 PandaCoin is written from the ground up in C++. We want the PandaCoin source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built PandaCoin from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
-* Transactions created and signed on a per-block basis (no need for timestamping)
-* Mempool that allows storage of transactions aimed at future blocks (improved queuing)
-* 30 second block mint time (faster confirmations)
-* Up to 1500 Transactions per block (more transactions per block)
-* Ultra simple REST based interface
+* Switched encryption scheme from [secp256k1](https://github.com/bitcoin-core/secp256k1) (which is used by ETH & BTC) to [ED25519](https://ed25519.cr.yp.to/) -- results in 8x speedup during verification and public keys half the size. 
+* Transactions are created uniquely to each blockID
+* Can queue transactions to execute up to 10 blocks in the future.
+* 5000 transactions per block, 15 second block time
+* Measured transactions per second > 400TPS
 
 ### Getting Started
 
