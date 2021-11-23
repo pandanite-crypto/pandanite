@@ -216,7 +216,7 @@ ExecutionStatus BlockChain::startChainSync() {
 
     // download any remaining blocks in batches
     time_t start = std::time(0);
-    for(int i = startCount; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
+    for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
         try {
             int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
             bool failure = false;
