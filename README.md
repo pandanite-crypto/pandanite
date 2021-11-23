@@ -54,13 +54,11 @@ struct TransactionInfo {
     char signingKey[32];
     time_t timestamp;
     char nonce[8];
-    char miner[25];
     char to[25];
     char from[25];
     long amount;
     long fee;
     bool isTransactionFee;
-    bool hasMiner;
 };
 
 ```
