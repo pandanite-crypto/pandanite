@@ -174,14 +174,14 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).post("/add_transaction", [&manager](auto *res, auto *req) {
+    }).post("/add_transaction", [&manager, &txInProgress](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
         txInProgress++;
         if (txInProgress > 500) res->end("");
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, buffer = std::move(buffer), &manager, &txInProgress](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             if (last) {
                 try {
