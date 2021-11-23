@@ -206,7 +206,7 @@ ExecutionStatus BlockChain::startChainSync() {
     std::pair<string,int> bestHostInfo = this->hosts.getLongestChainHost();
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = bestHostInfo.second;
-    int startCount = this->numBlocks + 1;
+    int startCount = this->numBlocks;
 
     if (startCount >= this->targetBlockCount) {
         return SUCCESS;
