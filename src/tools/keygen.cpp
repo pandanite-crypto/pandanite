@@ -22,9 +22,8 @@ void key_search() {
     long i = 0;
     cout<<"=====GENERATE WALLET===="<<endl;
     ofstream myfile;
-    cout<<"Enter output file name"<<endl;
-    string filename;
-    cin>>filename;
+    cout<<"Output will be written to [keys.json]"<<endl;
+    string filename="./keys.json";
     myfile.open(filename);
     while(true) {
 #ifdef SECP256K1
@@ -46,12 +45,12 @@ void key_search() {
 #endif
         time_t curr = std::time(0);
         PublicWalletAddress w = walletAddressFromPublicKey(publicKey);
-        bool found = isFounderWalletPossible(w);
+        bool found = true; //isFounderWalletPossible(w);
         if (found) {
             string wallet = walletAddressToString(walletAddressFromPublicKey(publicKey));
             string pubKey = publicKeyToString(publicKey);
             string privKey = privateKeyToString(privateKey);
-            cout<<"Found wallet!"<<endl;
+            cout<<"Generated Wallet"<<endl;
             cout<<"========================"<<endl;
             cout<<"Wallet Address:"<<wallet<<endl;
             cout<<"Public Key    :"<<pubKey<<endl;
@@ -59,9 +58,11 @@ void key_search() {
             cout<<"Time (seconds):"<<(curr-last)<<endl;
             cout<<"========================"<<endl;
             cout<<"Output written to "<<filename<<endl;
-            myfile<<"wallet:"<<wallet<<endl;
-            myfile<<"publickey:"<<pubKey<<endl;
-            myfile<<"privatekey:"<<privKey<<endl;
+            json key;
+            key["wallet"] = wallet;
+            key["publicKey"] = pubKey;
+            key["privateKey"] = privKey;
+            myfile<<key.dump(4)<<endl;
             myfile.close();
             last = curr;
             break;

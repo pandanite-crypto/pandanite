@@ -13,6 +13,7 @@
 using namespace std;
 
 void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
+    TransactionAmount allEarnings = 0;
     while(true) {
         try {
             std::pair<string,int> bestHost = hosts.getLongestChainHost();
@@ -50,11 +51,17 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
             set<string> nonces;
+            TransactionAmount total = MINING_FEE;
+            if (newBlock.getId() >= MINING_PAYMENTS_UNTIL) {
+                total = 0;
+            }
             for(auto t : transactions) {
                 if (nonces.find(t.getNonce()) != nonces.end()) continue;
                 newBlock.addTransaction(t);
+                total += t.getTransactionFee();
                 nonces.insert(t.getNonce());
             }
+            allEarnings += total;
             MerkleTree m;
             m.setItems(newBlock.getTransactions());
             newBlock.setMerkleRoot(m.getRootHash());
@@ -62,9 +69,13 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             SHA256Hash hash = newBlock.getHash(lastHash);
             SHA256Hash solution = mineHash(hash, challengeSize);
             newBlock.setNonce(solution);
-            auto result = submitBlock(host, newBlock).dump();
-            Logger::logStatus(result);
-
+            auto result = submitBlock(host, newBlock);
+            Logger::logStatus(result.dump(4));
+            if (string(result["status"]) == "SUCCESS") {
+                Logger::logStatus("================BLOCK ACCEPTED=================");
+                Logger::logStatus("Earned:" + std::to_string(total/DECIMAL_SCALE_FACTOR));
+                Logger::logStatus("Total:" + std::to_string(allEarnings/DECIMAL_SCALE_FACTOR));
+            }
             // std::this_thread::sleep_for(std::chrono::milliseconds(15000));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
@@ -75,6 +86,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
 
 
 int main(int argc, char **argv) {
+#ifdef SERVER
     string configFile = DEFAULT_CONFIG_FILE_PATH;
     if (argc > 1 ) {
         configFile = string(argv[1]);
@@ -86,6 +98,15 @@ int main(int argc, char **argv) {
     string file = "./keys/miner.json";
     User miner(readJsonFromFile(file));
     PublicWalletAddress wallet = miner.getAddress();
+#else
+    json config;
+    config["hostSources"] = json::array();
+    config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
+    HostManager hosts(config);
+    json keys = readJsonFromFile("./keys.json");
+    PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
+#endif
+    Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
     std::thread mining_thread(run_mining, wallet, ref(hosts));
     mining_thread.join();
 }
