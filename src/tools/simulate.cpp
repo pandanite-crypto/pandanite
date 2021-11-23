@@ -24,7 +24,7 @@ void simulate_transactions(HostManager& hosts) {
         try {
             // if (rand()%1000==0) best = hosts.getLongestChainHost();
             string host = best.first;
-            int blockId = getCurrentBlockCount(host) + 2;
+            int blockId = getCurrentBlockCount(host) + 3;
             User r = randomUsers[rand()%randomUsers.size()];
             Transaction t = miner.send(r, 1 + rand()%5, blockId);
             json result = sendTransaction(host, t);

@@ -46,10 +46,10 @@ int main(int argc, char** argv) {
         cin>>fee;
         std::pair<string,int> best = hosts.getLongestChainHost();
         string host = best.first;
-        int blockId = getCurrentBlockCount(host) + 2; // usually send 1 block into the future
+        int blockId = getCurrentBlockCount(host) + 3; // usually send 1 block into the future
         Transaction t(fromWallet, toWallet, amount, blockId, publicKey, fee);
         t.sign(publicKey, privateKey);
-        cout<<"Creating transaction, current block: "<<blockId<<endl;
+        cout<<"Creating transaction, for block: "<<blockId<<endl;
         json result = sendTransaction(host, t);
         cout<<result<<endl;
         if(result["status"] != "SUCCESS") {

@@ -80,6 +80,7 @@ json verifyTransaction(string host_url, Transaction& t) {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
+    cout<<"|"<<responseStr<<"|"<<endl;
     return json::parse(responseStr);
 }
 

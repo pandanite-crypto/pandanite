@@ -136,7 +136,7 @@ json RequestManager::getStats() {
     info["avg_transaction_size"]= totalSent/count;
     info["avg_transaction_fee"]= fees/count;
     info["difficulty"]= a.getDifficulty();
-    info["current_block"]= this->blockchain->getBlockCount();
+    info["current_block"]= a.getId();
     info["last_block_time"]= timeDelta;
     return info;
 }
