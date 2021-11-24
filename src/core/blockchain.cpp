@@ -54,14 +54,16 @@ void chain_sync(BlockChain& blockchain) {
     }
 }
 
-BlockChain::BlockChain(HostManager& hosts) : hosts(hosts) {
+BlockChain::BlockChain(HostManager& hosts, bool deleteDB) : hosts(hosts) {
     // check that genesis block file exists.
     ifstream f(GENESIS_FILE_PATH);
     if (!f.good()) {
         User miner;
         Block genesis;
         genesis.addTransaction(miner.mine(1));
-        SHA256Hash nonce = mineHash(NULL_SHA256_HASH, genesis.getDifficulty());
+        this->lastHash = NULL_SHA256_HASH;
+        genesis.setLastBlockHash(this->getLastHash());
+        SHA256Hash nonce = mineHash(genesis.getHash(), genesis.getDifficulty());
         genesis.setNonce(nonce);
         MerkleTree m;
         m.setItems(genesis.getTransactions());
@@ -69,22 +71,41 @@ BlockChain::BlockChain(HostManager& hosts) : hosts(hosts) {
         writeJsonToFile(miner.toJson(), DEFAULT_GENESIS_USER_PATH);
         writeJsonToFile(genesis.toJson(), GENESIS_FILE_PATH);
     }
+    if (deleteDB) this->deleteDB();
     this->resetChain();
 }
 
 void BlockChain::resetChain() {
     ledger.init(LEDGER_FILE_PATH);
     blockStore.init(BLOCK_STORE_FILE_PATH);
-    for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
-    json data = readJsonFromFile(GENESIS_FILE_PATH);
-    Block genesis(data);
-    this->difficulty = genesis.getDifficulty();
-    this->targetBlockCount = 1;
-    this->numBlocks = 0;
-    ExecutionStatus status = this->addBlock(genesis);
-    if (status != SUCCESS) {
-        throw std::runtime_error("Could not load genesis block");
+    this->taxRate = 0;
+    if (blockStore.hasBlockCount()) {
+        size_t count = blockStore.getBlockCount();
+        this->numBlocks = count;
+        this->targetBlockCount = count;
+        Block lastBlock = blockStore.getBlock(count);
+        this->difficulty = lastBlock.getDifficulty();
+        this->lastHash = lastBlock.getLastBlockHash();
+    } else {
+        for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
+        json data = readJsonFromFile(GENESIS_FILE_PATH);
+        Block genesis(data);
+        this->difficulty = genesis.getDifficulty();
+        this->targetBlockCount = 1;
+        this->numBlocks = 0;
+        this->lastHash = NULL_SHA256_HASH;
+        ExecutionStatus status = this->addBlock(genesis);
+        if (status != SUCCESS) {
+            throw std::runtime_error("Could not load genesis block");
+        }
     }
+}
+
+void BlockChain::deleteDB() {
+    ledger.closeDB();
+    blockStore.closeDB();
+    ledger.deleteDB();
+    blockStore.deleteDB();
 }
 
 std::pair<char*, size_t> BlockChain::getRaw(int blockId) {
@@ -136,6 +157,10 @@ void BlockChain::distributeTaxes(Block& block) {
         ledger.setTaxRate(0);
     } else if (block.getId() % TAX_PAYOUT_FREQUENCY == 0) {
         ledger.payoutTaxes();
+    } 
+
+    if (block.getId() < TAX_PAYOUT_UNTIL) {
+        ledger.setTaxRate(this->taxRate);
     }
 }
 
@@ -177,7 +202,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
-    if (!block.verifyNonce(this->getLastHash())) return INVALID_NONCE;
+    if (!block.verifyNonce()) return INVALID_NONCE;
     
     // compute merkle tree and verify root matches;
     MerkleTree m;
@@ -194,7 +219,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     } else {
         this->blockStore.setBlock(block);
         this->numBlocks++;
-        this->lastHash = block.getHash(concatHashes(this->getLastHash(), block.getNonce()));
+        this->lastHash = block.getHash();
         this->updateDifficulty(block);
         this->distributeTaxes(block);
     }

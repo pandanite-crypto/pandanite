@@ -15,6 +15,7 @@ Block::Block() {
     this->timestamp = getCurrentTime();
     this->difficulty = MIN_DIFFICULTY;
     this->merkleRoot = NULL_SHA256_HASH;
+    this->lastBlockHash = NULL_SHA256_HASH;
 }
 
 Block::Block(const Block& b) {
@@ -23,6 +24,7 @@ Block::Block(const Block& b) {
     this->difficulty = b.difficulty;
     this->timestamp = b.timestamp;
     this->merkleRoot = b.merkleRoot;
+    this->lastBlockHash = b.lastBlockHash;
     this->transactions = vector<Transaction>();
     for(auto t : b.transactions) {
         this->transactions.push_back(t);
@@ -32,6 +34,7 @@ Block::Block(const Block& b) {
 Block::Block(json block) {
     this->nonce = stringToSHA256(block["nonce"]);
     this->merkleRoot = stringToSHA256(block["merkleRoot"]);
+    this->lastBlockHash = stringToSHA256(block["lastBlockHash"]);
     this->id = block["id"];
     this->difficulty = block["difficulty"];
     this->timestamp = stringToTime(block["timestamp"]);
@@ -50,6 +53,7 @@ Block::Block(std::pair<char*,size_t> buffer) {
     this->difficulty = b.difficulty;
     this->nonce= b.nonce;
     this->merkleRoot = b.merkleRoot;
+    this->lastBlockHash = b.lastBlockHash;
 
     for(int i = 0; i < b.numTransactions; i++) {
         TransactionInfo t = *((TransactionInfo*)transactionPtr);
@@ -64,6 +68,7 @@ Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
     this->difficulty = b.difficulty;
     this->nonce= b.nonce;
     this->merkleRoot = b.merkleRoot;
+    this->lastBlockHash = b.lastBlockHash;
     for(auto t : transactions) {
         this->addTransaction(t);
     }
@@ -77,6 +82,7 @@ BlockHeader Block::serialize() {
     b.numTransactions = this->transactions.size();
     b.nonce = this->nonce;
     b.merkleRoot = this->merkleRoot;
+    b.lastBlockHash = this->lastBlockHash;
     return b;
 }
 
@@ -88,6 +94,7 @@ json Block::toJson() {
     result["timestamp"] = timeToString(this->timestamp);
     result["transactions"] = json::array();
     result["merkleRoot"] = SHA256toString(this->merkleRoot);
+    result["lastBlockHash"] = SHA256toString(this->lastBlockHash);
     
     for(auto t : this->transactions) {
         result["transactions"].push_back(t.toJson());
@@ -138,9 +145,9 @@ vector<Transaction>& Block::getTransactions() {
     return this->transactions;
 }
 
-bool Block::verifyNonce(SHA256Hash previousHash) {
-    if (previousHash == NULL_SHA256_HASH) return true;
-    SHA256Hash target = this->getHash(previousHash);
+bool Block::verifyNonce() {
+    if (this->lastBlockHash == NULL_SHA256_HASH) return true;
+    SHA256Hash target = this->getHash();
     return verifyHash(target, this->nonce, this->difficulty);
 }
 
@@ -152,12 +159,20 @@ int Block::getDifficulty() const {
     return this->difficulty;
 }
 
-SHA256Hash Block::getHash(SHA256Hash previousHash) {
+SHA256Hash Block::getLastBlockHash() {
+    return this->lastBlockHash;
+}
+
+void Block::setLastBlockHash(SHA256Hash hash) {
+    this->lastBlockHash = hash;
+}
+
+SHA256Hash Block::getHash() {
     SHA256Hash ret;
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
-    SHA256_Update(&sha256, (unsigned char*)previousHash.data(), previousHash.size());
     SHA256_Update(&sha256, (unsigned char*)this->merkleRoot.data(), this->merkleRoot.size());
+    SHA256_Update(&sha256, (unsigned char*)this->lastBlockHash.data(), this->lastBlockHash.size());
     SHA256_Update(&sha256, (unsigned char*)&this->difficulty, sizeof(int));
     SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(time_t));
     SHA256_Final(ret.data(), &sha256);
@@ -168,6 +183,7 @@ bool operator==(const Block& a, const Block& b) {
     if(b.id != a.id) return false;
     if(b.nonce != a.nonce) return false;
     if(b.timestamp != a.timestamp) return false;
+    if(b.lastBlockHash != a.lastBlockHash) return false;
     if(b.difficulty != a.difficulty) return false;
     if(b.merkleRoot != a.merkleRoot) return false;
     // check transactions equal

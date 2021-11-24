@@ -17,11 +17,12 @@ using namespace std;
 
 class BlockChain {
     public:
-        BlockChain(HostManager& hosts);
+        BlockChain(HostManager& hosts, bool deleteDB=false);
         void sync();
         void acquire();
         void release();
         void resetChain();
+        void setTaxRate(double rate);
         Block getBlock(int blockId);
         int getDifficulty();
         int getBlockCount();
@@ -30,6 +31,7 @@ class BlockChain {
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<char*, size_t> getRaw(int blockId);
+        void deleteDB();
     protected:
         HostManager& hosts;
         int numBlocks;
@@ -37,6 +39,7 @@ class BlockChain {
         Ledger ledger;
         SHA256Hash lastHash;
         int difficulty;
+        double taxRate;
         void popBlock();
         void distributeTaxes(Block& block);
         void updateDifficulty(Block& b);

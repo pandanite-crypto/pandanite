@@ -13,6 +13,7 @@ struct BlockHeader {
     time_t timestamp;
     int difficulty;
     int numTransactions;
+    SHA256Hash lastBlockHash;
     SHA256Hash merkleRoot;
     SHA256Hash nonce;
 };
@@ -32,20 +33,23 @@ class Block {
         void setTimestamp(time_t t);
         void setId(int id);
         void setDifficulty(int d);
-        SHA256Hash getHash(SHA256Hash lastHash);
+        SHA256Hash getHash();
         SHA256Hash getNonce();
         SHA256Hash getMerkleRoot();
+        SHA256Hash getLastBlockHash();
+        void setLastBlockHash(SHA256Hash hash);
         time_t getTimestamp();
         int getDifficulty() const;
         vector<Transaction>& getTransactions();
         int getId();
-        bool verifyNonce(SHA256Hash lastHash);
+        bool verifyNonce();
     // protected:
         int id;
         time_t timestamp;
         int difficulty;
         vector<Transaction> transactions;
         SHA256Hash merkleRoot;
+        SHA256Hash lastBlockHash;
         SHA256Hash nonce;
     private:
         friend bool operator==(const Block& a, const Block& b);

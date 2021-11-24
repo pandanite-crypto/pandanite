@@ -66,7 +66,8 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             m.setItems(newBlock.getTransactions());
             newBlock.setMerkleRoot(m.getRootHash());
             newBlock.setDifficulty(challengeSize);
-            SHA256Hash hash = newBlock.getHash(lastHash);
+            newBlock.setLastBlockHash(lastHash);
+            SHA256Hash hash = newBlock.getHash();
             SHA256Hash solution = mineHash(hash, challengeSize);
             newBlock.setNonce(solution);
             auto result = submitBlock(host, newBlock);

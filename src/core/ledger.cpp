@@ -10,32 +10,30 @@ Ledger::Ledger() {
     this->db = NULL;
 }
 
+void Ledger::deleteDB() {
+    leveldb::Options options;
+    leveldb::Status status = leveldb::DestroyDB(this->path, options);
+    experimental::filesystem::remove_all(this->path); 
+    if(!status.ok()) throw std::runtime_error("Could not close BlockStore db : " + status.ToString());
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+}
+
 void Ledger::init(string path) {
     if (this->db) {
-        this->clearDB();
+        this->closeDB();
     }
     this->path = path;
-    experimental::filesystem::remove_all(this->path); 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     this->taxRate = 0;
     this->totalTax = 0;
     leveldb::Options options;
     options.create_if_missing = true;
-    options.error_if_exists = true;
     leveldb::Status status = leveldb::DB::Open(options, path, &this->db);
     if(!status.ok()) throw std::runtime_error("Could not write ledger db : " + status.ToString());
 }
 
-void Ledger::clearDB() {
+void Ledger::closeDB() {
     delete db;
-    leveldb::Options options;
-    leveldb::Status status = leveldb::DestroyDB(this->path, options);
-    experimental::filesystem::remove_all(this->path); 
-    if(!status.ok()) throw std::runtime_error("Could not close ledger db : " + status.ToString());
-}
-
-Ledger::~Ledger() {
-    if(this->db) this->clearDB();
 }
 
 void Ledger::recordTax(TransactionAmount amt) {

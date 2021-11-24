@@ -28,8 +28,7 @@ int main(int argc, char **argv) {
     }
     HostManager hosts(config);
     RequestManager manager(hosts);
-
-    std::atomic<int> txInProgress = 0;
+    manager.setTaxRate(TAX_RATE);
  
     uWS::App().get("/block_count", [&manager](auto *res, auto *req) {
         try {
@@ -174,14 +173,12 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).post("/add_transaction", [&manager, &txInProgress](auto *res, auto *req) {
+    }).post("/add_transaction", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-        txInProgress++;
-        if (txInProgress > 500) res->end("");
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager, &txInProgress](std::string_view data, bool last) mutable {
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             if (last) {
                 try {
@@ -190,20 +187,16 @@ int main(int argc, char **argv) {
                         response["error"] = "Malformed transaction";
                         res->end(response.dump());
                         Logger::logError("/add_transaction","Malformed transaction");
-                        txInProgress--;
                         return;
                     }
                     TransactionInfo t = *((TransactionInfo*)buffer.c_str());
                     Transaction tx(t);
                     json response = manager.addTransaction(tx);
                     res->end(response.dump());
-                    txInProgress--;
                 }  catch(const std::exception &e) {
                     Logger::logError("/add_transaction", e.what());
-                    txInProgress--;
                 } catch(...) {
                     Logger::logError("/add_transaction", "unknown");
-                    txInProgress--;
                 }
             }
         });

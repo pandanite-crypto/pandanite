@@ -21,6 +21,8 @@ TEST(test_blockstore_stores_block) {
     ASSERT_EQUAL(blocks.hasBlock(2), true);
     Block b = blocks.getBlock(2);
     ASSERT_TRUE(b==a);
+    blocks.closeDB();
+    blocks.deleteDB();
 }
 
 TEST(test_blockstore_stores_multiple) {
@@ -45,6 +47,8 @@ TEST(test_blockstore_stores_multiple) {
         Block b = blocks.getBlock(i+1);
         ASSERT_TRUE(b==a);
     }
+    blocks.closeDB();
+    blocks.deleteDB();
 }
 
 TEST(test_blockstore_returns_valid_raw_data) {
@@ -66,5 +70,6 @@ TEST(test_blockstore_returns_valid_raw_data) {
     std::pair<char*,size_t> buffer = blocks.getRawData(a.getId());
     Block b = Block(buffer);
     ASSERT_TRUE(a==b);
-
+    blocks.closeDB();
+    blocks.deleteDB();
 }

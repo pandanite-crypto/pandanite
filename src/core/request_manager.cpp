@@ -16,6 +16,14 @@ RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     }
 }
 
+RequestManager::setTaxRate(double rate) {
+    this->blockchain->setTaxRate(rate);
+}
+
+void RequestManager::deleteDB() {
+    this->blockchain->deleteDB();
+}
+
 json RequestManager::addTransaction(Transaction& t) {
     json result;
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));

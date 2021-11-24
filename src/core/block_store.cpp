@@ -11,19 +11,55 @@ BlockStore::BlockStore() {
     this->db = NULL;
 }
 
+void BlockStore::closeDB() {
+    delete db;
+}
+
+void BlockStore::deleteDB() {
+    leveldb::Options options;
+    leveldb::Status status = leveldb::DestroyDB(this->path, options);
+    experimental::filesystem::remove_all(this->path); 
+    if(!status.ok()) throw std::runtime_error("Could not close BlockStore db : " + status.ToString());
+}
+
 void BlockStore::init(string path) {
     if (this->db) {
-        this->clearDB();
+        this->closeDB();
     }
     this->path = path;
-    experimental::filesystem::remove_all(this->path);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     this->numBlocks = 0;
     leveldb::Options options;
     options.create_if_missing = true;
-    options.error_if_exists = true;
     leveldb::Status status = leveldb::DB::Open(options, path, &this->db);
     if(!status.ok()) throw std::runtime_error("Could not write BlockStore db : " + status.ToString());
+}
+
+void BlockStore::setBlockCount(size_t count) {
+    string countKey = "BLOCK_COUNT";
+    size_t num = count;
+    leveldb::Slice key = leveldb::Slice(countKey);
+    leveldb::Slice slice = leveldb::Slice((const char*)&num, sizeof(size_t));
+    leveldb::Status status = db->Put(leveldb::WriteOptions(), key, slice);
+    if(!status.ok()) throw std::runtime_error("Could not write block count to DB : " + status.ToString());
+}
+
+size_t BlockStore::getBlockCount() {
+    string countKey = "BLOCK_COUNT";
+    leveldb::Slice key = leveldb::Slice(countKey);
+    string value;
+    leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
+    if(!status.ok()) throw std::runtime_error("Could not read block count from DB : " + status.ToString());
+    size_t ret = *((size_t*)value.c_str());
+    return ret;
+}
+
+bool BlockStore::hasBlockCount() {
+    string countKey = "BLOCK_COUNT";
+    leveldb::Slice key = leveldb::Slice(countKey);
+    string value;
+    leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
+    return (status.ok());
 }
 
 bool BlockStore::hasBlock(int blockId) {
@@ -112,18 +148,5 @@ void BlockStore::setBlock(Block& block) {
         leveldb::Status status = db->Put(leveldb::WriteOptions(), key, slice);
         if(!status.ok()) throw std::runtime_error("Could not write transaction to BlockStore db : " + status.ToString());
     }
-}
-
-
-void BlockStore::clearDB() {
-    delete db;
-    leveldb::Options options;
-    leveldb::Status status = leveldb::DestroyDB(this->path, options);
-    experimental::filesystem::remove_all(this->path); 
-    if(!status.ok()) throw std::runtime_error("Could not close BlockStore db : " + status.ToString());
-}
-
-BlockStore::~BlockStore() {
-    if(this->db) this->clearDB();
 }
 

@@ -20,11 +20,10 @@ void addMerkleHashToBlock(Block& block) {
 
 TEST(check_adding_new_node_with_hash) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h);
+    BlockChain* blockchain = new BlockChain(h, true);
     blockchain->resetChain();
     User miner;
     User other;
-
     // have miner mine the next block
     Transaction fee = miner.mine(2);
     vector<Transaction> transactions;
@@ -32,17 +31,19 @@ TEST(check_adding_new_node_with_hash) {
     newBlock.setId(2);
     newBlock.addTransaction(fee);
     addMerkleHashToBlock(newBlock);
-    SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
+    newBlock.setLastBlockHash(blockchain->getLastHash());
+    SHA256Hash hash = newBlock.getHash();
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
     ExecutionStatus status = blockchain->addBlock(newBlock);
     ASSERT_EQUAL(status, SUCCESS);
+    blockchain->deleteDB();
     delete blockchain;
 }
 
 TEST(check_adding_two_nodes_updates_ledger) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h);
+    BlockChain* blockchain = new BlockChain(h, true);
     blockchain->resetChain();
     User miner;
 
@@ -53,7 +54,8 @@ TEST(check_adding_two_nodes_updates_ledger) {
         newBlock.setId(i);
         newBlock.addTransaction(fee);
         addMerkleHashToBlock(newBlock);
-        SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
+        newBlock.setLastBlockHash(blockchain->getLastHash());
+        SHA256Hash hash = newBlock.getHash();
         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
         newBlock.setNonce(solution);
         ExecutionStatus status = blockchain->addBlock(newBlock);
@@ -62,12 +64,13 @@ TEST(check_adding_two_nodes_updates_ledger) {
     Ledger& ledger = blockchain->getLedger();
     double total = ledger.getWalletValue(miner.getAddress());
     ASSERT_EQUAL(total, BMB(100.0));
+    blockchain->deleteDB();
     delete blockchain;
 }
 
 TEST(check_sending_transaction_updates_ledger) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h);
+    BlockChain* blockchain = new BlockChain(h, true);
     blockchain->resetChain();
     User miner;
     User other;
@@ -83,7 +86,8 @@ TEST(check_sending_transaction_updates_ledger) {
             newBlock.addTransaction(t);
         }
         addMerkleHashToBlock(newBlock);
-        SHA256Hash hash = newBlock.getHash(blockchain->getLastHash());
+        newBlock.setLastBlockHash(blockchain->getLastHash());
+        SHA256Hash hash = newBlock.getHash();
         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
         newBlock.setNonce(solution);
         ExecutionStatus status = blockchain->addBlock(newBlock);
@@ -95,5 +99,6 @@ TEST(check_sending_transaction_updates_ledger) {
 
     ASSERT_EQUAL(minerTotal, BMB(80.0));
     ASSERT_EQUAL(otherTotal, BMB(20.0));
+    blockchain->deleteDB();
     delete blockchain;
 }

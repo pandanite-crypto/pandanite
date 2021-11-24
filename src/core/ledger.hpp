@@ -7,7 +7,6 @@ using namespace std;
 class Ledger {
     public:
         Ledger();
-        ~Ledger();
         void init(string path);
         bool hasWallet(const PublicWalletAddress& wallet);
         TransactionAmount getWalletValue(const PublicWalletAddress& wallet);
@@ -22,12 +21,13 @@ class Ledger {
         TransactionAmount getTaxCollected();
         void payoutTaxes();
         size_t size();
+        void closeDB();
+        void deleteDB();
     protected:
         void setWalletValue(const PublicWalletAddress& wallet, TransactionAmount amount);
         set<PublicWalletAddress> taxRecepients;
         double taxRate;
         TransactionAmount totalTax;
-        void clearDB();
         leveldb::DB *db;
         size_t _size;
         string path;

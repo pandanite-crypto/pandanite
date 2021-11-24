@@ -26,11 +26,13 @@ TEST(test_accepts_proof_of_work) {
     MerkleTree m;
     m.setItems(newBlock.getTransactions());
     newBlock.setMerkleRoot(m.getRootHash());
-    SHA256Hash hash = newBlock.getHash(lastHash);
+    newBlock.setLastBlockHash(lastHash);
+    SHA256Hash hash = newBlock.getHash();
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
     json result = r.submitProofOfWork(newBlock);
     ASSERT_EQUAL(result["status"], "SUCCESS");
+    r.deleteDB();
 }
 
 TEST(test_fails_when_missing_merkle_root) {
@@ -49,9 +51,11 @@ TEST(test_fails_when_missing_merkle_root) {
     Block newBlock;
     newBlock.setId(2);
     newBlock.addTransaction(fee);
-    SHA256Hash hash = newBlock.getHash(lastHash);
+    newBlock.setLastBlockHash(lastHash);
+    SHA256Hash hash = newBlock.getHash();
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
     json result = r.submitProofOfWork(newBlock);
     ASSERT_EQUAL(result["status"], "INVALID_MERKLE_ROOT");
+    r.deleteDB();
 }
