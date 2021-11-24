@@ -70,7 +70,6 @@ struct TransactionInfo {
 Requires:
 * CMake
 * Conan package manager (http://www.conan.io)
-* libsecp256k1 (https://github.com/bitcoin-core/secp256k1)
 * LevelDB
 ```
 git clone https://github.com/mrpandabear/panda-coin.git
@@ -82,28 +81,20 @@ cd ..
 cmake .
 make
 ```
-### Libraries
-* libsecp256k1
-* uWebSockets
-* JSON for modern CPP
-* LevelDB
 ### Usage
-The hosts list is stored hosts.txt. To start a server simply run:
+Start by generating `keys.json`. Keep a copy of this file -- it contains pub/private keys to the wallet that the miner will mint coins to.
 ```
-./bin/server <port>
-```
-
-To start mining, generate a pub/private key as follows:
-```
-mkdir keys
-./bin/cli
-1 [add new user]
-./keys/miner.json [enter the save file path]
+./bin/keygen
 ```
 
-This will create a file called miner.json that is read by the miner. You can run the miner as follows:
+To start mining:
 ```
 ./bin/miner
+```
+
+To host a node:
+```
+./bin/server
 ```
 
 
