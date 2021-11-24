@@ -21,8 +21,7 @@ int main(int argc, char **argv) {
     Ledger ledger;
     ledger.init(LEDGER_FILE_PATH);
     blockStore.init(BLOCK_STORE_FILE_PATH);
-    ledger.setTaxRate(0);
-    for( std::string line; getline( input, line ); ) {
+    for(std::string line; getline( input, line ); ) {
         numBlocks++;
         Block b (json::parse(line));
         blockStore.setBlock(b);

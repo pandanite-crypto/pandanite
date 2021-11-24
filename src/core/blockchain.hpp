@@ -17,12 +17,11 @@ using namespace std;
 
 class BlockChain {
     public:
-        BlockChain(HostManager& hosts, bool deleteDB=false);
+        BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="");
         void sync();
         void acquire();
         void release();
         void resetChain();
-        void setTaxRate(double rate);
         Block getBlock(int blockId);
         int getDifficulty();
         int getBlockCount();
@@ -39,9 +38,7 @@ class BlockChain {
         Ledger ledger;
         SHA256Hash lastHash;
         int difficulty;
-        double taxRate;
         void popBlock();
-        void distributeTaxes(Block& block);
         void updateDifficulty(Block& b);
         ExecutionStatus startChainSync();
         int targetBlockCount;

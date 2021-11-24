@@ -24,8 +24,6 @@ void Ledger::init(string path) {
     }
     this->path = path;
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    this->taxRate = 0;
-    this->totalTax = 0;
     leveldb::Options options;
     options.create_if_missing = true;
     leveldb::Status status = leveldb::DB::Open(options, path, &this->db);
@@ -36,31 +34,6 @@ void Ledger::closeDB() {
     delete db;
 }
 
-void Ledger::recordTax(TransactionAmount amt) {
-    this->totalTax += amt;
-}
-
-void Ledger::resetTax() {
-    this->totalTax = 0;
-}
-
-TransactionAmount Ledger::getTaxCollected() {
-    return this->totalTax;
-}
-
-void Ledger::payoutTaxes() {
-    TransactionAmount total = this->getTaxCollected();
-    TransactionAmount perWallet = total / this->taxRecepients.size();
-    for(auto wallet : this->taxRecepients) {
-        TransactionAmount value = this->getWalletValue(wallet);
-        this->setWalletValue(wallet, value + perWallet);
-    }
-    this->resetTax();
-}
-
-void Ledger::setTaxRate(double rate) {
-    this->taxRate = rate;
-}
 
 leveldb::Slice walletToSlice(const PublicWalletAddress& w) {
     leveldb::Slice s2 = leveldb::Slice((const char*) w.data(), w.size());
@@ -88,13 +61,6 @@ void Ledger::createWallet(const PublicWalletAddress& wallet) {
 }
 
 void Ledger::setWalletValue(const PublicWalletAddress& wallet, TransactionAmount amount) {
-    if (!this->hasWallet(wallet)) {
-        // check if this is a founding wallet:
-        if (isFounderWalletPossible(wallet) && this->taxRecepients.size() < TOTAL_FOUNDERS) {
-            this->taxRecepients.insert(wallet);
-        }
-        _size++;
-    }
     leveldb::Status status = db->Put(leveldb::WriteOptions(), walletToSlice(wallet), amountToSlice(amount));
     if (!status.ok()) throw std::runtime_error("Write failed: " + status.ToString());
 }
@@ -119,15 +85,10 @@ void Ledger::revertSend(const PublicWalletAddress& wallet, TransactionAmount amt
 
 void Ledger::deposit(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
-    TransactionAmount tax = this->taxRate * amt;
-    this->recordTax(tax);
-    this->setWalletValue(wallet, value + amt - tax);
+    this->setWalletValue(wallet, value + amt);
 }
 
 void Ledger::revertDeposit(PublicWalletAddress to, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(to);
-    TransactionAmount tax = this->taxRate * amt;
-    TransactionAmount deposited = amt - tax;
-    this->recordTax(-tax);
-    this->setWalletValue(to, value - deposited);
+    this->setWalletValue(to, value - amt);
 }

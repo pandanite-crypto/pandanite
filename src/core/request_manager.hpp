@@ -21,7 +21,6 @@ class RequestManager {
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(Transaction& t);
-        void setTaxRate(double rate);
         std::pair<char*, size_t> getRawBlockData(int index);
         std::pair<char*, size_t> getRawTransactionData();
         string getBlockCount();

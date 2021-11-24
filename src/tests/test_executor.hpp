@@ -168,25 +168,6 @@ TEST(check_miner_fee) {
     ledger.deleteDB();
 }
 
-TEST(check_taxes_collected) {
-    Block b;
-
-    Ledger ledger;
-    ledger.init("./data/tmpdb");
-    double taxRate = 0.5;
-    ledger.setTaxRate(taxRate);
-    LedgerState deltas;
-    ExecutionStatus status;
-    
-    User miner;
-    Transaction t = miner.mine(1);
-    b.addTransaction(t);
-    status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(25));
-    ASSERT_EQUAL(ledger.getTaxCollected(), BMB(25));
-    ledger.closeDB();
-    ledger.deleteDB();
-}
 
 
 TEST(check_bad_signature) {

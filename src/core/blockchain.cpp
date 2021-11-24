@@ -54,7 +54,11 @@ void chain_sync(BlockChain& blockchain) {
     }
 }
 
-BlockChain::BlockChain(HostManager& hosts, bool deleteDB) : hosts(hosts) {
+BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath) : hosts(hosts) {
+    if (ledgerPath == "") ledgerPath = LEDGER_FILE_PATH;
+    if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
+    ledger.init(ledgerPath);
+    blockStore.init(blockPath);
     // check that genesis block file exists.
     ifstream f(GENESIS_FILE_PATH);
     if (!f.good()) {
@@ -71,14 +75,10 @@ BlockChain::BlockChain(HostManager& hosts, bool deleteDB) : hosts(hosts) {
         writeJsonToFile(miner.toJson(), DEFAULT_GENESIS_USER_PATH);
         writeJsonToFile(genesis.toJson(), GENESIS_FILE_PATH);
     }
-    if (deleteDB) this->deleteDB();
     this->resetChain();
 }
 
 void BlockChain::resetChain() {
-    ledger.init(LEDGER_FILE_PATH);
-    blockStore.init(BLOCK_STORE_FILE_PATH);
-    this->taxRate = 0;
     if (blockStore.hasBlockCount()) {
         Logger::logStatus("BlockStore exists, loading from disk");
         size_t count = blockStore.getBlockCount();
@@ -154,22 +154,6 @@ SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
 }
 
-void BlockChain::setTaxRate(double rate) {
-    this->taxRate = rate;
-}
-
-void BlockChain::distributeTaxes(Block& block) {
-    if (block.getId() >= TAX_PAYOUT_UNTIL) {
-        ledger.setTaxRate(0);
-    } else if (block.getId() % TAX_PAYOUT_FREQUENCY == 0) {
-        ledger.payoutTaxes();
-    } 
-
-    if (block.getId() < TAX_PAYOUT_UNTIL) {
-        ledger.setTaxRate(this->taxRate);
-    }
-}
-
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
         // compute the new difficulty score based on average block time
@@ -228,7 +212,6 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty(block);
-        this->distributeTaxes(block);
     }
     return status;
 }

@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
     string file = "./keys/miner.json";
     User miner(readJsonFromFile(file));
     PublicWalletAddress wallet = miner.getAddress();
+    Logger::logStatus("Mining to wallet: " + walletAddressToString(wallet));
 #else
     json config;
     config["hostSources"] = json::array();

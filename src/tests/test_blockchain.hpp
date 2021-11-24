@@ -10,6 +10,9 @@
 using namespace std;
 using namespace std::chrono_literals;
 
+string ledger = "/tmp/ledger";
+string blocks = "/tmp/blocks";
+
 void addMerkleHashToBlock(Block& block) {
     // compute merkle tree and verify root matches;
     MerkleTree m;
@@ -20,7 +23,8 @@ void addMerkleHashToBlock(Block& block) {
 
 TEST(check_adding_new_node_with_hash) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, true);
+
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
     blockchain->resetChain();
     User miner;
     User other;
@@ -43,7 +47,7 @@ TEST(check_adding_new_node_with_hash) {
 
 TEST(check_adding_two_nodes_updates_ledger) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, true);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
     blockchain->resetChain();
     User miner;
 
@@ -70,7 +74,7 @@ TEST(check_adding_two_nodes_updates_ledger) {
 
 TEST(check_sending_transaction_updates_ledger) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, true);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
     blockchain->resetChain();
     User miner;
     User other;

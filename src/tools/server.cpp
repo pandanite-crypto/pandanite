@@ -25,7 +25,6 @@ int main(int argc, char **argv) {
     }
     HostManager hosts(config);
     RequestManager manager(hosts);
-    manager.setTaxRate(TAX_RATE);
  
     uWS::App().get("/block_count", [&manager](auto *res, auto *req) {
         try {

@@ -16,10 +16,6 @@ RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     }
 }
 
-void RequestManager::setTaxRate(double rate) {
-    this->blockchain->setTaxRate(rate);
-}
-
 void RequestManager::deleteDB() {
     this->blockchain->deleteDB();
 }
