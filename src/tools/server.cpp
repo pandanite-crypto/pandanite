@@ -14,10 +14,7 @@
 #include "../core/crypto.hpp"
 using namespace std;
 
-int main(int argc, char **argv) {
-    experimental::filesystem::remove_all(LEDGER_FILE_PATH);
-    experimental::filesystem::remove_all(BLOCK_STORE_FILE_PATH);
-    
+int main(int argc, char **argv) {    
     json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
 
     int port = config["port"];

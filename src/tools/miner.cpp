@@ -12,6 +12,8 @@
 #include <thread>
 using namespace std;
 
+#define SERVER
+
 void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
     TransactionAmount allEarnings = 0;
     while(true) {
@@ -106,8 +108,8 @@ int main(int argc, char **argv) {
     HostManager hosts(config);
     json keys = readJsonFromFile("./keys.json");
     PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
-#endif
     Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
+#endif
     std::thread mining_thread(run_mining, wallet, ref(hosts));
     mining_thread.join();
 }

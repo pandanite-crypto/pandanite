@@ -80,13 +80,15 @@ void BlockChain::resetChain() {
     blockStore.init(BLOCK_STORE_FILE_PATH);
     this->taxRate = 0;
     if (blockStore.hasBlockCount()) {
+        Logger::logStatus("BlockStore exists, loading from disk");
         size_t count = blockStore.getBlockCount();
         this->numBlocks = count;
         this->targetBlockCount = count;
         Block lastBlock = blockStore.getBlock(count);
         this->difficulty = lastBlock.getDifficulty();
-        this->lastHash = lastBlock.getLastBlockHash();
+        this->lastHash = lastBlock.getHash();
     } else {
+        Logger::logStatus("BlockStore does not exist");
         for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
         json data = readJsonFromFile(GENESIS_FILE_PATH);
         Block genesis(data);
@@ -150,6 +152,10 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
 
 SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
+}
+
+void BlockChain::setTaxRate(double rate) {
+    this->taxRate = rate;
 }
 
 void BlockChain::distributeTaxes(Block& block) {
@@ -219,6 +225,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     } else {
         this->blockStore.setBlock(block);
         this->numBlocks++;
+        this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty(block);
         this->distributeTaxes(block);

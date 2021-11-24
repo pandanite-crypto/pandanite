@@ -1,6 +1,7 @@
 #include "block_store.hpp"
 #include "crypto.hpp"
 #include "transaction.hpp"
+#include "logger.hpp"
 #include <iostream>
 #include <thread>
 #include <experimental/filesystem>
@@ -40,7 +41,9 @@ void BlockStore::setBlockCount(size_t count) {
     size_t num = count;
     leveldb::Slice key = leveldb::Slice(countKey);
     leveldb::Slice slice = leveldb::Slice((const char*)&num, sizeof(size_t));
-    leveldb::Status status = db->Put(leveldb::WriteOptions(), key, slice);
+    leveldb::WriteOptions write_options;
+    write_options.sync = true;
+    leveldb::Status status = db->Put(write_options, key, slice);
     if(!status.ok()) throw std::runtime_error("Could not write block count to DB : " + status.ToString());
 }
 

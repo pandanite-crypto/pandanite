@@ -16,7 +16,7 @@ RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     }
 }
 
-RequestManager::setTaxRate(double rate) {
+void RequestManager::setTaxRate(double rate) {
     this->blockchain->setTaxRate(rate);
 }
 
