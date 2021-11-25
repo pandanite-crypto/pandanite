@@ -11,8 +11,13 @@ using namespace std;
 int getCurrentBlockCount(string host_url) {
     http::Request request{host_url + "/block_count"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    string count = std::string{response.body.begin(), response.body.end()};
     return std::stoi(std::string{response.body.begin(), response.body.end()});
+}
+
+string getName(string host_url) {
+    http::Request request{host_url + "/name"};
+    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
+    return std::string{response.body.begin(), response.body.end()};
 }
 
 json getBlockData(string host_url, int idx) {

@@ -7,7 +7,8 @@
 #include <iostream>
 using namespace std;
 
-HostManager::HostManager(json config) {
+HostManager::HostManager(json config, string myName) {
+    this->myName = myName;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -40,17 +41,22 @@ void HostManager::refreshHostList() {
             if (!foundHost) throw std::runtime_error("Could not fetch host directory.");
         }
 
-        // if our node is in the host list, remove ourselves:
-        string myIp = exec("curl -s http://checkip.amazonaws.com");
-        
+        // if our node is in the host list, remove ourselves:        
         this->hosts.clear();
         for(auto host : hostList) {
-            string hostStr = string(host);
-            string ipCmd = "dig +short " + hostStr.substr(7,hostStr.length()-12);
-            string hostIp = exec(ipCmd.c_str());
-            if (hostIp != myIp) {
-                Logger::logStatus("Adding host: " + string(host));
-                this->hosts.push_back(string(host));
+            try {
+                if (myName == "") {
+                    this->hosts.push_back(string(host));
+                    Logger::logStatus("Adding host: " + string(host));
+                }else {
+                    string hostName = getName(host);
+                    if (hostName != this->myName) {
+                        Logger::logStatus("Adding host: " + string(host));
+                        this->hosts.push_back(string(host));
+                    }
+                }
+            } catch (...) {
+                Logger::logStatus("Host did not respond: " + string(host));
             }
         }
     } catch (std::exception &e) {

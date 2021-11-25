@@ -16,17 +16,19 @@ using namespace std;
 
 int main(int argc, char **argv) {    
     json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
-
+    string myName = ""; //randomString(25);
     int port = config["port"];
 
     if (argc > 1) {
         string logfile = string(argv[1]);
         Logger::file.open(logfile);
     }
-    HostManager hosts(config);
+    HostManager hosts(config, myName);
     RequestManager manager(hosts);
  
-    uWS::App().get("/block_count", [&manager](auto *res, auto *req) {
+    uWS::App().get("/name", [&myName](auto *res, auto *req) {
+        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(myName);
+    }).get("/block_count", [&manager](auto *res, auto *req) {
         try {
             std::string count = manager.getBlockCount();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
