@@ -61,6 +61,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case INVALID_MERKLE_ROOT:
             return "INVALID_MERKLE_ROOT";
         break;
+        case INVALID_LASTBLOCK_HASH:
+            return "INVALID_LASTBLOCK_HASH";
+        break;
     }
 }
 

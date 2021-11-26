@@ -17,19 +17,17 @@ using namespace std;
 int main(int argc, char **argv) {    
     std::ifstream input( "backup.txt" );
     size_t numBlocks = 0;
-    BlockStore blockStore;
-    Ledger ledger;
-    ledger.init(LEDGER_FILE_PATH);
-    blockStore.init(BLOCK_STORE_FILE_PATH);
+    HostManager h;
+    BlockChain blockchain(h);
     for(std::string line; getline( input, line ); ) {
         numBlocks++;
+        if (numBlocks == 1) continue;
         Block b (json::parse(line));
-        blockStore.setBlock(b);
-        blockStore.setBlockCount(numBlocks);
-        LedgerState deltasFromBlock;
-        ExecutionStatus status = Executor::ExecuteBlock(b, ledger, deltasFromBlock);
+        ExecutionStatus status = blockchain.addBlock(b);
         if (status != SUCCESS) {
-            Logger::logStatus("Failed to execute block");
+            Logger::logStatus("Failed to execute block : " + executionStatusAsString(status));
+            Logger::logStatus("Made it to block : " + std::to_string(numBlocks));
+            break;
         }
     }
 }

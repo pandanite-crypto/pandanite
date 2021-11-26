@@ -193,6 +193,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
+    if (block.getId() > FIX_MISSING_HASH_CHECK_BLOCK && block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     
     // compute merkle tree and verify root matches;
     MerkleTree m;
