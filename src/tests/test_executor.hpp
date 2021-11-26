@@ -21,9 +21,9 @@ TEST(checks_invalid_mining_fee) {
     LedgerState deltas;
     ExecutionStatus status;
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(status, INCORRECT_MINING_FEE);     
     ledger.closeDB();
     ledger.deleteDB();
+    ASSERT_EQUAL(status, INCORRECT_MINING_FEE);     
 }
 
 TEST(checks_duplicate_mining_fee) {
@@ -40,9 +40,9 @@ TEST(checks_duplicate_mining_fee) {
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(status, EXTRA_MINING_FEE);    
     ledger.closeDB();
-    ledger.deleteDB(); 
+    ledger.deleteDB();
+    ASSERT_EQUAL(status, EXTRA_MINING_FEE);     
 }
 
 TEST(checks_missing_mining_fee) {
@@ -52,9 +52,9 @@ TEST(checks_missing_mining_fee) {
     LedgerState deltas;
     ExecutionStatus status;
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(status, NO_MINING_FEE);
     ledger.closeDB();
-    ledger.deleteDB();     
+    ledger.deleteDB();   
+    ASSERT_EQUAL(status, NO_MINING_FEE);  
 }
 
 TEST(checks_duplicate_nonce) {
@@ -72,9 +72,9 @@ TEST(checks_duplicate_nonce) {
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(status, INVALID_TRANSACTION_NONCE);   
     ledger.closeDB();
     ledger.deleteDB();  
+    ASSERT_EQUAL(status, INVALID_TRANSACTION_NONCE);   
 }
 
 TEST(check_valid_send) {
@@ -87,10 +87,10 @@ TEST(check_valid_send) {
 
     User miner;
     User receiver;
-
-    Transaction t = miner.mine(1);
+    b.setId(2);
+    Transaction t = miner.mine(2);
     b.addTransaction(t);
-    Transaction t2 = miner.send(receiver, BMB(30), 1);
+    Transaction t2 = miner.send(receiver, BMB(30), 2);
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
@@ -98,7 +98,6 @@ TEST(check_valid_send) {
 
     PublicWalletAddress aKey = miner.getAddress(); 
     PublicWalletAddress bKey = receiver.getAddress();
-
     ASSERT_EQUAL(ledger.getWalletValue(aKey), BMB(20.0))
     ASSERT_EQUAL(ledger.getWalletValue(bKey), BMB(30.0))
     ledger.closeDB();
@@ -115,17 +114,17 @@ TEST(check_low_balance) {
     
     User miner;
     User receiver;
-
-    Transaction t = miner.mine(1);
+    b.setId(2);
+    Transaction t = miner.mine(2);
     b.addTransaction(t);
 
-    Transaction t2 = miner.send(receiver, BMB(100.0), 1);
+    Transaction t2 = miner.send(receiver, BMB(100.0), 2);
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(status, BALANCE_TOO_LOW);
     ledger.closeDB();
-    ledger.deleteDB();     
+    ledger.deleteDB();  
+    ASSERT_EQUAL(status, BALANCE_TOO_LOW);   
 }
 
 
@@ -136,14 +135,14 @@ TEST(check_miner_fee) {
     ledger.init("./data/tmpdb");
     LedgerState deltas;
     ExecutionStatus status;
-    
+    b.setId(2);
     User miner;
     User receiver;
     User other;
 
     // add mining transaction twice
-    Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, BMB(20), 1);
+    Transaction t = miner.mine(2);
+    Transaction t2 = miner.send(receiver, BMB(20), 2);
     miner.signTransaction(t2);
     b.addTransaction(t);
     b.addTransaction(t2);
@@ -151,15 +150,14 @@ TEST(check_miner_fee) {
     ASSERT_EQUAL(status, SUCCESS);
     
     Block b2;
-    b2.setId(2);
-    Transaction t3 = miner.mine(2);
-    Transaction t4 = receiver.send(other, BMB(1), 2);
+    b2.setId(3);
+    Transaction t3 = miner.mine(3);
+    Transaction t4 = receiver.send(other, BMB(1), 3);
     t4.setTransactionFee(BMB(10));
     receiver.signTransaction(t4);
     b2.addTransaction(t3);
     b2.addTransaction(t4);
     status = Executor::ExecuteBlock(b2, ledger, deltas);
-    
     ASSERT_EQUAL(status, SUCCESS);
     ASSERT_EQUAL(ledger.getWalletValue(other.getAddress()), BMB(1)); 
     ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(9)); 
@@ -179,6 +177,7 @@ TEST(check_bad_signature) {
     
     User miner;
     User receiver;
+    b.setId(2);
     Transaction t = miner.mine(b.getId());
     b.addTransaction(t);
     Transaction t2 = miner.send(receiver, BMB(20.0), b.getId());
@@ -189,7 +188,8 @@ TEST(check_bad_signature) {
     b.addTransaction(t2);
 
     status = Executor::ExecuteBlock(b, ledger, deltas);
-    ASSERT_EQUAL(status, INVALID_SIGNATURE);
+
     ledger.closeDB();
     ledger.deleteDB();
+    ASSERT_EQUAL(status, INVALID_SIGNATURE);
 }

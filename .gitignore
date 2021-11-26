@@ -10,3 +10,4 @@ cmake_install.cmake
 CMakeCache.txt
 keys.json
 TODO
+genesis.json

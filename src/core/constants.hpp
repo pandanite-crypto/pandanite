@@ -8,6 +8,7 @@
 
 // Files
 #define GENESIS_FILE_PATH "./genesis.json"
+#define NEW_GENESIS_FILE_PATH "./new_genesis.json"
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
 #define DEFAULT_CONFIG_FILE_PATH "./config.json"
 #define LEDGER_FILE_PATH "./data/ledger"
@@ -17,9 +18,9 @@
 #define MAX_TRANSACTIONS_PER_BLOCK 10000
 #define DIFFICULTY_RESET_FREQUENCY 100
 #define TRANSACTION_NONCE_SIZE 8
-#define FIX_MISSING_HASH_CHECK_BLOCK 8000
+#define FIX_MISSING_HASH_CHECK_BLOCK 7776
 
-// Payments
+// Payments`
 #define MINING_FEE (50 * DECIMAL_SCALE_FACTOR)
 #define MINING_PAYMENTS_UNTIL 2000000
 

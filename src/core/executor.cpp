@@ -109,22 +109,27 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
             return INCORRECT_MINING_FEE;
         }
     }
-    
-    // from account must exist
-    if (!ledger.hasWallet(from)) {
-        return SENDER_DOES_NOT_EXIST;
+
+    if (t.getBlockId() == 1) { // special case genesis block
+        deposit(to, amt, ledger, deltas);
+    } else {
+        // from account must exist
+        if (!ledger.hasWallet(from)) {
+            return SENDER_DOES_NOT_EXIST;
+        }
+        TransactionAmount total = ledger.getWalletValue(from);
+        // must have enough for amt+fees
+        if (total < (amt + fees)) {
+            return BALANCE_TOO_LOW;
+        }
+        withdraw(from, amt, ledger, deltas);
+        deposit(to, amt, ledger, deltas);
+        if (fees > 0) {
+            withdraw(from, fees, ledger, deltas);
+            deposit(miner, fees, ledger, deltas);
+        }
     }
-    TransactionAmount total = ledger.getWalletValue(from);
-    // must have enough for amt+fees
-    if (total < (amt + fees)) {
-        return BALANCE_TOO_LOW;
-    }
-    withdraw(from, amt, ledger, deltas);
-    deposit(to, amt, ledger, deltas);
-    if (fees > 0) {
-        withdraw(from, fees, ledger, deltas);
-        deposit(miner, fees, ledger, deltas);
-    }
+
     return SUCCESS;
 }
 
@@ -208,7 +213,7 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState&
         } else {
             nonces.insert(t.getNonce());
         }
-        if (!t.isFee() && !t.signatureValid()) {
+        if (!t.isFee() && !t.signatureValid() && t.getBlockId() != 1) {
             return INVALID_SIGNATURE;
         }
         if (t.getBlockId() != curr.getId()) {

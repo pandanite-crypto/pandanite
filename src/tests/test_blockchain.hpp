@@ -45,6 +45,30 @@ TEST(check_adding_new_node_with_hash) {
     delete blockchain;
 }
 
+TEST(check_adding_wrong_lastblock_hash_fails) {
+    HostManager h;
+
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
+    blockchain->resetChain();
+    User miner;
+    User other;
+    // have miner mine the next block
+    Transaction fee = miner.mine(2);
+    vector<Transaction> transactions;
+    Block newBlock;
+    newBlock.setId(2);
+    newBlock.addTransaction(fee);
+    addMerkleHashToBlock(newBlock);
+    newBlock.setLastBlockHash(NULL_SHA256_HASH);
+    SHA256Hash hash = newBlock.getHash();
+    SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+    newBlock.setNonce(solution);
+    ExecutionStatus status = blockchain->addBlock(newBlock);
+    ASSERT_EQUAL(status, INVALID_LASTBLOCK_HASH);
+    blockchain->deleteDB();
+    delete blockchain;
+}
+
 TEST(check_adding_two_nodes_updates_ledger) {
     HostManager h;
     BlockChain* blockchain = new BlockChain(h, ledger, blocks);

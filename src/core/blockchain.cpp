@@ -64,14 +64,25 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath) 
     if (!f.good()) {
         User miner;
         Block genesis;
+        json accountBalances = readJsonFromFile(NEW_GENESIS_FILE_PATH);
+        for(auto pair : accountBalances) {
+            PublicWalletAddress to = stringToWalletAddress(pair[0]);
+            TransactionAmount amt = pair[1];
+            PublicWalletAddress from = NULL_ADDRESS;
+            Transaction t(from, to, amt, 1, NULL_KEY, 0);
+            genesis.addTransaction(t);
+        }
         genesis.addTransaction(miner.mine(1));
+
         this->lastHash = NULL_SHA256_HASH;
         genesis.setLastBlockHash(this->getLastHash());
-        SHA256Hash nonce = mineHash(genesis.getHash(), genesis.getDifficulty());
-        genesis.setNonce(nonce);
         MerkleTree m;
         m.setItems(genesis.getTransactions());
         genesis.setMerkleRoot(m.getRootHash());
+
+        SHA256Hash nonce = mineHash(genesis.getHash(), genesis.getDifficulty());
+        genesis.setNonce(nonce);
+        
         writeJsonToFile(miner.toJson(), DEFAULT_GENESIS_USER_PATH);
         writeJsonToFile(genesis.toJson(), GENESIS_FILE_PATH);
     }
@@ -98,7 +109,7 @@ void BlockChain::resetChain() {
         this->lastHash = NULL_SHA256_HASH;
         ExecutionStatus status = this->addBlock(genesis);
         if (status != SUCCESS) {
-            throw std::runtime_error("Could not load genesis block");
+            throw std::runtime_error("Could not load genesis block: " + executionStatusAsString(status));
         }
     }
 }
@@ -193,7 +204,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
-    if (block.getId() > FIX_MISSING_HASH_CHECK_BLOCK && block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
+    if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     
     // compute merkle tree and verify root matches;
     MerkleTree m;
