@@ -63,7 +63,7 @@ Requires:
 * Conan package manager (http://www.conan.io)
 * LevelDB
 ```
-git clone https://github.com/mrpandabear/panda-coin.git
+git clone https://github.com/mr-pandabear/panda-coin.git
 cd panda-coin
 mkdir build
 cd build
