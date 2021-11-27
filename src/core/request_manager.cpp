@@ -1,6 +1,7 @@
 #include "request_manager.hpp"
 #include "helpers.hpp"
 #include "user.hpp"
+#include "logger.hpp"
 #include "merkle_tree.hpp"
 #include <map>
 #include <iostream>

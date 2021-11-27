@@ -85,28 +85,28 @@ int main(int argc, char **argv) {
                     if (buffer.length() < sizeof(BlockHeader) + sizeof(TransactionInfo)) {
                         json response;
                         response["error"] = "Malformed block";
-                        res->end(response.dump());
                         Logger::logError("/submit","Malformed block");
-                        return;
-                    }
-                    char * ptr = (char*)buffer.c_str();
-                    BlockHeader blockH = *((BlockHeader*)ptr);
-                    ptr += sizeof(BlockHeader);
-                    vector<Transaction> transactions;
-                    if (blockH.numTransactions > MAX_TRANSACTIONS_PER_BLOCK) {
-                        json response;
-                        response["error"] = "Too many transactions";
                         res->end(response.dump());
-                        Logger::logError("/submit","Too many transactions");
                     } else {
-                        for(int j = 0; j < blockH.numTransactions; j++) {
-                            TransactionInfo t = *((TransactionInfo*)ptr);
-                            ptr += sizeof(TransactionInfo);
-                            transactions.push_back(Transaction(t));
+                        char * ptr = (char*)buffer.c_str();
+                        BlockHeader blockH = *((BlockHeader*)ptr);
+                        ptr += sizeof(BlockHeader);
+                        vector<Transaction> transactions;
+                        if (blockH.numTransactions > MAX_TRANSACTIONS_PER_BLOCK) {
+                            json response;
+                            response["error"] = "Too many transactions";
+                            res->end(response.dump());
+                            Logger::logError("/submit","Too many transactions");
+                        } else {
+                            for(int j = 0; j < blockH.numTransactions; j++) {
+                                TransactionInfo t = *((TransactionInfo*)ptr);
+                                ptr += sizeof(TransactionInfo);
+                                transactions.push_back(Transaction(t));
+                            }
+                            Block block(blockH, transactions);
+                            json response = manager.submitProofOfWork(block);
+                            res->end(response.dump());
                         }
-                        Block block(blockH, transactions);
-                        json response = manager.submitProofOfWork(block);
-                        res->end(response.dump());
                     }
                 } catch(const std::exception &e) {
                     json response;
@@ -183,14 +183,14 @@ int main(int argc, char **argv) {
                     if (buffer.length() < sizeof(TransactionInfo)) {
                         json response;
                         response["error"] = "Malformed transaction";
-                        res->end(response.dump());
                         Logger::logError("/add_transaction","Malformed transaction");
-                        return;
+                        res->end(response.dump());
+                    } else {
+                        TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+                        Transaction tx(t);
+                        json response = manager.addTransaction(tx);
+                        res->end(response.dump());
                     }
-                    TransactionInfo t = *((TransactionInfo*)buffer.c_str());
-                    Transaction tx(t);
-                    json response = manager.addTransaction(tx);
-                    res->end(response.dump());
                 }  catch(const std::exception &e) {
                     Logger::logError("/add_transaction", e.what());
                 } catch(...) {

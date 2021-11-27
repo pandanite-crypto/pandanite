@@ -4,6 +4,7 @@
 #include <set>
 #include <cmath>
 #include "block.hpp"
+#include "logger.hpp"
 #include "executor.hpp"
 #include "helpers.hpp"
 using namespace std;
@@ -192,7 +193,6 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState&
             foundFee = true;
         }
     }
-
     if (!foundFee) {
         return NO_MINING_FEE;
     }
@@ -206,7 +206,6 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState&
             return INCORRECT_MINING_FEE;
         }
     }
-
     for(auto t : curr.getTransactions()) {
         if (nonces.find(t.getNonce())!= nonces.end()) {
             return INVALID_TRANSACTION_NONCE;

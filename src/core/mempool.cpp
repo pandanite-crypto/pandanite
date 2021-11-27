@@ -12,7 +12,6 @@ MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 
 void mempool_sync(MemPool& mempool) {
     while (true) {
-        Logger::logStatus("Syncing MemPool");
         try {
             // get rid of any old un-needed blocks:
             mempool.lock.lock();
@@ -34,9 +33,6 @@ void mempool_sync(MemPool& mempool) {
                     mempool.addTransaction(t);
                     count++;
                 });
-                stringstream s;
-                s<<"Read "<<count<<" transactions from "<<host;
-                Logger::logStatus(s.str());
             }
         } catch (const std::exception &e) {
             Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
@@ -85,7 +81,8 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
             this->lock.lock();
             if (this->transactionQueue[currBlockId].size() < MAX_TRANSACTIONS_PER_BLOCK) {
                 status = SUCCESS;
-                this->transactionQueue[currBlockId].insert(t);
+                if (t.signatureValid()) this->transactionQueue[currBlockId].insert(t);
+                else status = INVALID_SIGNATURE;
             } else {
                 status = QUEUE_FULL;
             }

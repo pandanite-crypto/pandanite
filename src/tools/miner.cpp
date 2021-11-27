@@ -98,9 +98,9 @@ int main(int argc, char **argv) {
     int port = config["port"];
     HostManager hosts(config);
     Logger::logStatus("Running miner");
-    string file = "./keys/miner.json";
-    User miner(readJsonFromFile(file));
-    PublicWalletAddress wallet = miner.getAddress();
+    string file = "./keys/miner2.json";
+    json info = readJsonFromFile(file);
+    PublicWalletAddress wallet = stringToWalletAddress(info["wallet"]);
     Logger::logStatus("Mining to wallet: " + walletAddressToString(wallet));
 #else
     json config;

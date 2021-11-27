@@ -205,16 +205,13 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
-    
     // compute merkle tree and verify root matches;
     MerkleTree m;
     m.setItems(block.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
-
     LedgerState deltasFromBlock;
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, deltasFromBlock);
-    
     if (status != SUCCESS) {
         //revert ledger
         Executor::Rollback(this->ledger, deltasFromBlock);

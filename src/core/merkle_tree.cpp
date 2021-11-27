@@ -18,16 +18,16 @@ HashTree::~HashTree() {
 HashTree* getProof(HashTree* fringe, HashTree* previousNode=NULL) {
     HashTree* result = new HashTree(fringe->hash);
     if (previousNode != NULL) {
-        if (fringe->left && fringe->left != previousNode) {
-            result->left = fringe->left;
+        if (fringe->left && fringe->left->hash != previousNode->hash) {
+            result->left = new HashTree(fringe->left->hash);
             result->right = previousNode;
-        } else if (fringe->right && fringe->right != previousNode) {
-            result->right = fringe->right;
+        } else if (fringe->right && fringe->right->hash != previousNode->hash) {
+            result->right = new HashTree(fringe->right->hash);
             result->left = previousNode;
         }
     }
     if(fringe->parent) {
-        return getProof(fringe->parent, fringe);
+        return getProof(fringe->parent, result);
     } else {
         return result;
     }
