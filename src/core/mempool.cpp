@@ -158,6 +158,11 @@ void MemPool::finishBlock(int blockId) {
             }
         }
     }
+
+    // reset the bloomfilter with some probability
+    if (rand()%20 == 0) {
+        seenTransactions.clear();
+    }
     this->lock.unlock();
 }
 
