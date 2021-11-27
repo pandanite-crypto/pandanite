@@ -12,6 +12,7 @@
 #include "test_merkle_tree.hpp"
 #include "test_ledger.hpp"
 #include "test_block_store.hpp"
+#include "test_bloomfilter.hpp"
 
 #include <experimental/filesystem>
 using namespace std;

@@ -16,6 +16,7 @@ using namespace std;
 
 void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
     TransactionAmount allEarnings = 0;
+    BloomFilter bf;
     while(true) {
         try {
             std::pair<string,int> bestHost = hosts.getLongestChainHost();
@@ -33,11 +34,9 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             // download transactions
             int count = 0;
             vector<Transaction> transactions;
-            readRawTransactions(host, [&nextBlock, &count, &transactions](Transaction t) {
-                if (t.getBlockId() == nextBlock) {
-                    transactions.push_back(t);
-                    count++;
-                }
+            readRawTransactionsForBlock(host, nextBlock, [&nextBlock, &count, &transactions](Transaction t) {
+                transactions.push_back(t);
+                count++;
             });
             stringstream s;
             s<<"Read "<<count<<" transactions from "<<host;

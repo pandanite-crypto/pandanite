@@ -7,7 +7,6 @@ using namespace std;
 TEST(single_node_works) {
     MerkleTree m;
     User miner;
-    User receiver;
     Transaction a = miner.mine(1);
     vector<Transaction> items;
     items.push_back(a);
@@ -19,7 +18,7 @@ TEST(single_node_works) {
 }
 
 bool checkProofRecursive(HashTree* root) {
-    if (!root->left && ! root->right) {
+    if (!root->left && !root->right) {
         // fringe node
         return true;
     } else {

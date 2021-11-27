@@ -4,6 +4,7 @@
 #include "host_manager.hpp"
 #include "mempool.hpp"
 #include "common.hpp"
+#include "bloomfilter.hpp"
 #include <mutex>
 #include <vector>
 #include <map>
@@ -22,7 +23,8 @@ class RequestManager {
         json getStats();
         json verifyTransaction(Transaction& t);
         std::pair<char*, size_t> getRawBlockData(int index);
-        std::pair<char*, size_t> getRawTransactionData();
+        std::pair<char*, size_t> getRawTransactionData(BloomFilter& seen);
+        std::pair<char*, size_t> getRawTransactionDataForBlock(int blockId);
         string getBlockCount();
         void deleteDB();
     protected:

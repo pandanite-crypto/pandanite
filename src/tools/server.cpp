@@ -9,6 +9,7 @@
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/helpers.hpp"
+#include "../core/bloomfilter.hpp"
 #include "../core/request_manager.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
@@ -122,6 +123,24 @@ int main(int argc, char **argv) {
                 
             }
         });
+    }).get("/gettx/:blockId", [&manager](auto *res, auto *req) {
+        try {
+            int blockId = std::stoi(string(req->getParameter(0)));
+            res->writeHeader("Content-Type", "application/octet-stream");
+            std::pair<char*, size_t> buffer = manager.getRawTransactionDataForBlock(blockId);
+            Logger::logStatus("Sending transactions byte count=" + std::to_string(buffer.second));
+            std::string_view str(buffer.first, buffer.second);
+            res->write(str);
+            delete buffer.first;
+            res->end("");
+        } catch(const std::exception &e) {
+            Logger::logError("/sync", e.what());
+        } catch(...) {
+            Logger::logError("/sync", "unknown");
+        }
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
     }).get("/mine", [&manager](auto *res, auto *req) {
         try {
             json response = manager.getProofOfWork();
@@ -155,21 +174,44 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).get("/synctx", [&manager](auto *res, auto *req) {
-        try {
-            res->writeHeader("Content-Type", "application/octet-stream");
-            std::pair<char*, size_t> buffer = manager.getRawTransactionData();
-            std::string_view str(buffer.first, buffer.second);
-            res->write(str);
-            delete buffer.first;
-            res->end("");
-        } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
-        } catch(...) {
-            Logger::logError("/sync", "unknown");
-        }
+    }).post("/synctx", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
+        });
+        std::string buffer;
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            if (last) {
+                try {
+                    if (buffer.length() < sizeof(BloomFilterInfo)) {
+                        json response;
+                        response["error"] = "Malformed bloomfilter";
+                        Logger::logError("/synctx","Malformed bloomfilter");
+                        res->end(response.dump());
+                    } else {
+                        BloomFilterInfo header = *(BloomFilterInfo*)(buffer.c_str());
+                        int numBytes = header.numBits/8;
+                        if (buffer.length() < (sizeof(BloomFilterInfo) + numBytes)) {
+                            json response;
+                            response["error"] = "Malformed bloomfilter";
+                            Logger::logError("/synctx","Malformed bloomfilter");
+                            res->end(response.dump());
+                        } else {
+                            res->writeHeader("Content-Type", "application/octet-stream");
+                            BloomFilter seen((char*)buffer.c_str());
+                            std::pair<char*, size_t> buffer = manager.getRawTransactionData(seen);
+                            std::string_view str(buffer.first, buffer.second);
+                            res->write(str);
+                            delete buffer.first;
+                            res->end("");
+                        }
+                    }
+                }  catch(const std::exception &e) {
+                    Logger::logError("/synctx", e.what());
+                } catch(...) {
+                    Logger::logError("/synctx", "unknown");
+                }
+            }
         });
     }).post("/add_transaction", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {

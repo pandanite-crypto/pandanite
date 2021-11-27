@@ -29,7 +29,7 @@ void mempool_sync(MemPool& mempool) {
             // fetch mempool state from other hosts
             for (auto host : mempool.hosts.getHosts()) {
                 int count = 0;
-                readRawTransactions(host, [&mempool, &count](Transaction t) {
+                readRawTransactions(host, mempool.seenTransactions, [&mempool, &count](Transaction t) {
                     mempool.addTransaction(t);
                     count++;
                 });
@@ -69,6 +69,7 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
             this->lock.lock();
             if (this->transactionQueue[currBlockId].size() < MAX_TRANSACTIONS_PER_BLOCK) {
                 this->transactionQueue[currBlockId].insert(t);
+                this->seenTransactions.insert(t.getNonce());
                 status = SUCCESS;
             } else {
                 status = QUEUE_FULL;
@@ -81,8 +82,10 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
             this->lock.lock();
             if (this->transactionQueue[currBlockId].size() < MAX_TRANSACTIONS_PER_BLOCK) {
                 status = SUCCESS;
-                if (t.signatureValid()) this->transactionQueue[currBlockId].insert(t);
-                else status = INVALID_SIGNATURE;
+                if (t.signatureValid()) {
+                    this->transactionQueue[currBlockId].insert(t);
+                    this->seenTransactions.insert(t.getNonce());
+                } else status = INVALID_SIGNATURE;
             } else {
                 status = QUEUE_FULL;
             }
@@ -95,11 +98,11 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     return UNKNOWN_ERROR;
 }
 
-std::pair<char*, size_t> MemPool::getRaw() {
+std::pair<char*, size_t> MemPool::getRaw(BloomFilter& seen) {
     int count = 0;
     for (auto pair : this->transactionQueue) {
         for(auto tx : pair.second) {
-            count++;
+            if (!seen.contains(tx.getNonce())) count++;
         }
     }
     size_t len = count*sizeof(TransactionInfo);
@@ -107,9 +110,26 @@ std::pair<char*, size_t> MemPool::getRaw() {
     count = 0;
     for (auto pair : this->transactionQueue) {
         for(auto tx : pair.second) {
-            buf[count] = tx.serialize();
-            count++;
+            if (!seen.contains(tx.getNonce()))  {
+                buf[count] = tx.serialize();
+                count++;
+            }        
         }
+    }
+    return std::pair<char*, size_t>((char*)buf, len);
+}
+
+
+std::pair<char*, size_t> MemPool::getRawForBlock(int blockId) {
+    if (this->transactionQueue.find(blockId) == this->transactionQueue.end()) {
+        return std::pair<char*,size_t> (nullptr, 0);
+    } 
+    size_t len = this->transactionQueue[blockId].size()*sizeof(TransactionInfo);
+    TransactionInfo* buf = (TransactionInfo*)malloc(len);
+    int count = 0;
+    for(auto tx : this->transactionQueue[blockId]) {
+        buf[count] = tx.serialize();
+        count++;
     }
     return std::pair<char*, size_t>((char*)buf, len);
 }
@@ -137,6 +157,11 @@ void MemPool::finishBlock(int blockId) {
                 ++it;
             }
         }
+    }
+
+    // reset the bloomfilter with some probability
+    if (rand()%20 == 0) {
+        seenTransactions.clear();
     }
     this->lock.unlock();
 }

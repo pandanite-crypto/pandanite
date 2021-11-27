@@ -157,38 +157,40 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
 }
 
 
-void readRawTransactions(string host_url, function<void(Transaction)> handler) {
-    CURL *curl;
-    std::string readBuffer;
-    stringstream url;
-    url<<host_url<<"/synctx";
-    curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); 
-    curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
-    DataHandler d;
-    d.soFar = stringstream();
-    d.totalBytes = 0;
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &d);
-    /* Perform the request, res will get the return code */
-    CURLcode res = curl_easy_perform(curl);
-    /* Check for errors */
-    if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                curl_easy_strerror(res));
+void readRawTransactions(string host_url, BloomFilter& bf, function<void(Transaction)> handler) {
+    http::Request request(host_url + "/synctx");
+    std::pair<char*, size_t> bfs = bf.serialize();
+    vector<uint8_t> bytes;
+    for(int i = 0; i < bfs.second; i++) {
+        bytes.push_back(bfs.first[i]);
     }
-    string st = d.soFar.str();
-    char* buffer = (char*)st.c_str();
-    TransactionInfo* curr = (TransactionInfo*)buffer;
-    int numTx = d.totalBytes / sizeof(TransactionInfo);
+    const auto response = request.send("POST", bytes, {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    
+    std::vector<char> responseBytes(response.body.begin(), response.body.end());
+    TransactionInfo* curr = (TransactionInfo*)responseBytes.data();
+    int numTx = responseBytes.size() / sizeof(TransactionInfo);
     for(int i =0; i < numTx; i++){
         TransactionInfo t = curr[i];
         handler(Transaction(t));
-        i++;
     }
-    curl_easy_cleanup(curl);
+    delete bfs.first;
+}
+
+
+void readRawTransactionsForBlock(string host_url, int blockId, function<void(Transaction)> handler) {
+    http::Request request(host_url + "/gettx/" + std::to_string(blockId));
+    const auto response = request.send("GET", "", {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    
+    std::vector<char> bytes(response.body.begin(), response.body.end());
+    cout<<"GOT BYTES"<<bytes.size()<<endl;
+    TransactionInfo* curr = (TransactionInfo*)bytes.data();
+    int numTx = bytes.size() / sizeof(TransactionInfo);
+    for(int i =0; i < numTx; i++){
+        TransactionInfo t = curr[i];
+        handler(Transaction(t));
+    }
 }
