@@ -1,12 +1,8 @@
 #include "bloomfilter.hpp"
+#include "constants.hpp"
 #include <array>
 #include <iostream>
 using namespace std;
-
-struct BloomFilterInfo {
-    int numBits;
-    uint8_t numHashes;
-};
 
 std::array<uint64_t, 2> hashItem(const uint8_t *data,
                              std::size_t len) {
@@ -30,6 +26,13 @@ BloomFilter::BloomFilter(int numBits, uint8_t numHashes) {
     this->numHashes = numHashes;
 }
 
+BloomFilter::BloomFilter() {
+    for(int i =0; i < DEFAULT_BLOOMFILTER_BITS; i++) {
+        bits.push_back(false);
+    }
+    this->numHashes = DEFAULT_BLOOMFILTER_HASHES;
+}
+
 
 BloomFilter::BloomFilter(char* data) {
     BloomFilterInfo* header = (BloomFilterInfo*)data;
@@ -44,12 +47,19 @@ BloomFilter::BloomFilter(char* data) {
     }
 }
 
+void BloomFilter::clear() {
+    for(int i = 0; i < this->bits.size(); i++) {
+        this->bits[i] = false;
+    }
+}
 
-char* BloomFilter::serialize() {
+
+std::pair<char*,size_t> BloomFilter::serialize() {
     BloomFilterInfo info;
     info.numBits = this->bits.size();
     info.numHashes = this->numHashes;
-    void* data = malloc(sizeof(BloomFilterInfo) + this->bits.size()/8 );
+    size_t bytes = sizeof(BloomFilterInfo) + this->bits.size()/8;
+    void* data = malloc(bytes);
     memcpy(data,&info, sizeof(BloomFilterInfo));
     char *ptr = (char*)data + sizeof(BloomFilterInfo);
     memset(ptr, 0, this->bits.size()/8);
@@ -59,7 +69,7 @@ char* BloomFilter::serialize() {
             if (curr) ptr[i] = ptr[i]|1<<j;
         }
     }
-    return (char*)data;
+    return std::pair<char*,size_t>((char*)data, bytes);
 }
 
 void BloomFilter::insert(string item) {

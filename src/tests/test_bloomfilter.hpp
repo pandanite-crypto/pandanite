@@ -7,7 +7,7 @@ using namespace std;
 
 TEST(test_bloomfilter) {
     set<string> s;
-    BloomFilter b(4000, 5);
+    BloomFilter b(8000, 5);
     for(int i = 0; i < 1000; i++) {
         string r = randomString(32);
         s.insert(r);
@@ -40,7 +40,7 @@ TEST(test_bloomfilter) {
     cout<<"False positives: "<< numFalsePositives<<endl;
     cout<<"False negatives: "<< numFalseNegatives<<endl;
 
-    char * serialized = b.serialize();
+    char * serialized = b.serialize().first;
     BloomFilter c(serialized);
     ASSERT_TRUE(b==c);
     free(serialized);

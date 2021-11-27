@@ -3,6 +3,7 @@
 #include "user.hpp"
 #include "logger.hpp"
 #include "merkle_tree.hpp"
+
 #include <map>
 #include <iostream>
 using namespace std;
@@ -88,8 +89,12 @@ std::pair<char*, size_t> RequestManager::getRawBlockData(int index) {
     return this->blockchain->getRaw(index);
 }
 
-std::pair<char*, size_t> RequestManager::getRawTransactionData() {
-    return this->mempool->getRaw();
+std::pair<char*, size_t> RequestManager::getRawTransactionData(BloomFilter & seen) {
+    return this->mempool->getRaw(seen);
+}
+
+std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(int blockId) {
+    return this->mempool->getRawForBlock(blockId);
 }
 
 json RequestManager::getBlock(int index) {
