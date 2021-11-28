@@ -2,6 +2,7 @@
 #include "../external/murmurhash3/MurmurHash3.hpp"
 #include <string>
 #include <vector>
+#include <memory.h>
 using namespace std;
 
 
