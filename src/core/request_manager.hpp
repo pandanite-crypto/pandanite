@@ -23,6 +23,7 @@ class RequestManager {
         json getStats();
         json verifyTransaction(Transaction& t);
         std::pair<char*, size_t> getRawBlockData(int index);
+        std::pair<char*, size_t> getRawTransactionData();
         std::pair<char*, size_t> getRawTransactionData(BloomFilter& seen);
         std::pair<char*, size_t> getRawTransactionDataForBlock(int blockId);
         string getBlockCount();

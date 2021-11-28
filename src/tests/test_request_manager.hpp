@@ -31,8 +31,8 @@ TEST(test_accepts_proof_of_work) {
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
     json result = r.submitProofOfWork(newBlock);
-    ASSERT_EQUAL(result["status"], "SUCCESS");
     r.deleteDB();
+    ASSERT_EQUAL(result["status"], "SUCCESS");
 }
 
 TEST(test_fails_when_missing_merkle_root) {
@@ -56,6 +56,6 @@ TEST(test_fails_when_missing_merkle_root) {
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
     json result = r.submitProofOfWork(newBlock);
-    ASSERT_EQUAL(result["status"], "INVALID_MERKLE_ROOT");
     r.deleteDB();
+    ASSERT_EQUAL(result["status"], "INVALID_MERKLE_ROOT");
 }

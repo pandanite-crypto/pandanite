@@ -7,63 +7,60 @@ using namespace std;
 
 
 HashTree::HashTree(SHA256Hash hash) {
-    parent = left = right = NULL;
+    parent = left = right = nullptr;
     this->hash = hash;
 }
 HashTree::~HashTree() {
-    if (this->left) delete this->left;
-    if (this->right) delete this->right;
 }
 
-HashTree* getProof(HashTree* fringe, HashTree* previousNode=NULL) {
-    HashTree* result = new HashTree(fringe->hash);
+shared_ptr<HashTree> getProof(shared_ptr<HashTree> fringe, shared_ptr<HashTree> previousNode=NULL) {
+    shared_ptr<HashTree> result = make_shared<HashTree>(fringe->hash);
     if (previousNode != NULL) {
-        if (fringe->left && fringe->left->hash != previousNode->hash) {
-            result->left = new HashTree(fringe->left->hash);
+        if (fringe->left && fringe->left != previousNode) {
+            result->left = fringe->left;
             result->right = previousNode;
-        } else if (fringe->right && fringe->right->hash != previousNode->hash) {
-            result->right = new HashTree(fringe->right->hash);
+        } else if (fringe->right && fringe->right != previousNode) {
+            result->right = fringe->right;
             result->left = previousNode;
         }
     }
     if(fringe->parent) {
-        return getProof(fringe->parent, result);
+        return getProof(fringe->parent, fringe);
     } else {
         return result;
     }
 }
 
 MerkleTree::MerkleTree() {
-    this->root = NULL;
+    this->root = nullptr;
 }
 
 MerkleTree::~MerkleTree() {
-    delete this->root;
+    this->root = nullptr;
 }
 
 void MerkleTree::setItems(vector<Transaction>& items) {
-    if (this->root) delete this->root;
     std::sort(items.begin(), items.end(), [](const Transaction & a, const Transaction & b) -> bool { 
         return SHA256toString(a.getHash()) > SHA256toString(b.getHash());
     });
-    queue<HashTree*> q;
+    queue<shared_ptr<HashTree>> q;
     for(auto item : items) {
         SHA256Hash h = item.getHash();
-        this->fringeNodes[h] = new HashTree(h);
+        this->fringeNodes[h] =  make_shared<HashTree>(h);
         q.push(this->fringeNodes[h]);
     }
 
     if (q.size()%2 == 1) {
-        auto repeat = new HashTree(q.back()->hash);
+        auto repeat = make_shared<HashTree>(q.back()->hash);
         q.push(repeat);
     }
     
     while(q.size()>1) {
-        HashTree* a = q.front();
+        shared_ptr<HashTree> a = q.front();
         q.pop();
-        HashTree* b = q.front();
+        shared_ptr<HashTree> b = q.front();
         q.pop();
-        HashTree* root = new HashTree(NULL_SHA256_HASH);
+        shared_ptr<HashTree> root = make_shared<HashTree>(NULL_SHA256_HASH);
         root->left = a;
         root->right = b;
         a->parent = root;
@@ -78,7 +75,7 @@ SHA256Hash MerkleTree::getRootHash() {
     return this->root->hash;
 }
 
-HashTree* MerkleTree::getMerkleProof(Transaction t) {
+shared_ptr<HashTree> MerkleTree::getMerkleProof(Transaction t) {
     SHA256Hash hash = t.getHash();
     if (this->fringeNodes.find(hash) == this->fringeNodes.end()) return NULL;
     return getProof(this->fringeNodes[hash]);

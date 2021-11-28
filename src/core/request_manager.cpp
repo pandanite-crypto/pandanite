@@ -42,7 +42,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     return result;
 }
 
-json hashTreeToJson(HashTree* root) {
+json hashTreeToJson(shared_ptr<HashTree> root) {
     json ret;
     ret["hash"] = SHA256toString(root->hash);
     if (root->left) {
@@ -61,14 +61,12 @@ json RequestManager::verifyTransaction(Transaction& t) {
         b = this->blockchain->getBlock(t.getBlockId());
         MerkleTree m;
         m.setItems(b.getTransactions());
-        HashTree* root = m.getMerkleProof(t);
+        shared_ptr<HashTree> root = m.getMerkleProof(t);
         if (root == NULL) {
             response["error"] = "Could not find transaction in block";
         } else {
-            // convert to a JSON tree of hashes
             response["status"] = "SUCCESS";
             response["proof"] = hashTreeToJson(root);
-            delete root;
         }
     } catch(...) {
         response["error"] = "Could not find block";
@@ -89,12 +87,17 @@ std::pair<char*, size_t> RequestManager::getRawBlockData(int index) {
     return this->blockchain->getRaw(index);
 }
 
+
+std::pair<char*, size_t> RequestManager::getRawTransactionData() {
+    return this->mempool->getRaw();
+}
+
 std::pair<char*, size_t> RequestManager::getRawTransactionData(BloomFilter & seen) {
     return this->mempool->getRaw(seen);
 }
 
 std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(int blockId) {
-    return this->mempool->getRawForBlock(blockId);
+    return this->mempool->getRaw(blockId);
 }
 
 json RequestManager::getBlock(int index) {

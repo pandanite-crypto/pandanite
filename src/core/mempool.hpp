@@ -17,8 +17,9 @@ class MemPool {
         ExecutionStatus addTransaction(Transaction t);
         void finishBlock(int blockId);
         set<Transaction>& getTransactions(int blockId);
+        std::pair<char*, size_t> getRaw();
         std::pair<char*, size_t> getRaw(BloomFilter& seen);
-        std::pair<char*, size_t> getRawForBlock(int blockId);
+        std::pair<char*, size_t> getRaw(int blockId);
     protected:
         BloomFilter seenTransactions;
         BlockChain & blockchain;

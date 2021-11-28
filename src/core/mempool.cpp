@@ -98,6 +98,25 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     return UNKNOWN_ERROR;
 }
 
+std::pair<char*, size_t> MemPool::getRaw() {
+    int count = 0;
+    for (auto pair : this->transactionQueue) {
+        for(auto tx : pair.second) {
+            count++;
+        }
+    }
+    size_t len = count*sizeof(TransactionInfo);
+    TransactionInfo* buf = (TransactionInfo*)malloc(len);
+    count = 0;
+    for (auto pair : this->transactionQueue) {
+        for(auto tx : pair.second) {
+            buf[count] = tx.serialize();
+            count++;
+        }
+    }
+    return std::pair<char*, size_t>((char*)buf, len);
+}
+
 std::pair<char*, size_t> MemPool::getRaw(BloomFilter& seen) {
     int count = 0;
     for (auto pair : this->transactionQueue) {
@@ -120,7 +139,7 @@ std::pair<char*, size_t> MemPool::getRaw(BloomFilter& seen) {
 }
 
 
-std::pair<char*, size_t> MemPool::getRawForBlock(int blockId) {
+std::pair<char*, size_t> MemPool::getRaw(int blockId) {
     if (this->transactionQueue.find(blockId) == this->transactionQueue.end()) {
         return std::pair<char*,size_t> (nullptr, 0);
     } 
