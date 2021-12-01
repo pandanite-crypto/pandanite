@@ -34,7 +34,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 std::pair<string, int> best = blockchain.hosts.getLongestChainHost();
-                int toPop = 2 * (best.second - blockchain.getBlockCount());
+                int toPop = min(2 * (best.second - blockchain.getBlockCount()), blockchain.getBlockCount() - 1);
                 Logger::logStatus("chain_sync: out of sync, removing " + to_string(toPop) + " blocks and re-trying.");
                 for(int j = 0; j < toPop; j++) {
                     blockchain.popBlock();
@@ -59,33 +59,6 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath) 
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
     ledger.init(ledgerPath);
     blockStore.init(blockPath);
-    // check that genesis block file exists.
-    ifstream f(GENESIS_FILE_PATH);
-    if (!f.good()) {
-        User miner;
-        Block genesis;
-        json accountBalances = readJsonFromFile(NEW_GENESIS_FILE_PATH);
-        for(auto pair : accountBalances) {
-            PublicWalletAddress to = stringToWalletAddress(pair[0]);
-            TransactionAmount amt = pair[1];
-            PublicWalletAddress from = NULL_ADDRESS;
-            Transaction t(from, to, amt, 1, NULL_KEY, 0);
-            genesis.addTransaction(t);
-        }
-        genesis.addTransaction(miner.mine(1));
-
-        this->lastHash = NULL_SHA256_HASH;
-        genesis.setLastBlockHash(this->getLastHash());
-        MerkleTree m;
-        m.setItems(genesis.getTransactions());
-        genesis.setMerkleRoot(m.getRootHash());
-
-        SHA256Hash nonce = mineHash(genesis.getHash(), genesis.getDifficulty());
-        genesis.setNonce(nonce);
-        
-        writeJsonToFile(miner.toJson(), DEFAULT_GENESIS_USER_PATH);
-        writeJsonToFile(genesis.toJson(), GENESIS_FILE_PATH);
-    }
     this->resetChain();
 }
 
@@ -253,6 +226,7 @@ ExecutionStatus BlockChain::startChainSync() {
                     if (addResult != SUCCESS) {
                         failure = true;
                         status = addResult;
+                        Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
                     }
                 } 
             });

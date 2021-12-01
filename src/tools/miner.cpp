@@ -12,7 +12,6 @@
 #include <thread>
 using namespace std;
 
-#define SERVER
 
 void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
     TransactionAmount allEarnings = 0;

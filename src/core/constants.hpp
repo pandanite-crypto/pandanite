@@ -10,7 +10,6 @@
 
 // Files
 #define GENESIS_FILE_PATH "./genesis.json"
-#define NEW_GENESIS_FILE_PATH "./new_genesis.json"
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
 #define DEFAULT_CONFIG_FILE_PATH "./config.json"
 #define LEDGER_FILE_PATH "./data/ledger"

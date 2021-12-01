@@ -186,7 +186,6 @@ void readRawTransactionsForBlock(string host_url, int blockId, function<void(Tra
     },std::chrono::milliseconds{TIMEOUT_MS});
     
     std::vector<char> bytes(response.body.begin(), response.body.end());
-    cout<<"GOT BYTES"<<bytes.size()<<endl;
     TransactionInfo* curr = (TransactionInfo*)bytes.data();
     int numTx = bytes.size() / sizeof(TransactionInfo);
     for(int i =0; i < numTx; i++){
