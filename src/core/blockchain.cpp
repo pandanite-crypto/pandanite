@@ -34,7 +34,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 std::pair<string, int> best = blockchain.hosts.getLongestChainHost();
-                int toPop = min(2 * (best.second - blockchain.getBlockCount()), blockchain.getBlockCount() - 1);
+                int toPop = min(2*(best.second - blockchain.getBlockCount()), blockchain.getBlockCount() - 1);
                 Logger::logStatus("chain_sync: out of sync, removing " + to_string(toPop) + " blocks and re-trying.");
                 for(int j = 0; j < toPop; j++) {
                     blockchain.popBlock();
