@@ -103,7 +103,7 @@ std::pair<string, uint64_t> HostManager::getBestHost() {
                 }
                 lock.unlock();
             } catch (std::exception & e) {
-                continue;
+                //pass
             }
         }));
         // block until all requests finish
