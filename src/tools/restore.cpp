@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
             Logger::logStatus("Made it to block : " + std::to_string(numBlocks));
             break;
         }
+        Logger::logStatus("Made it to block : " + std::to_string(numBlocks));
     }
+    blockchain.closeDB();
 }
 

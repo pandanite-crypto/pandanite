@@ -33,6 +33,7 @@ class BlockChain {
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         std::pair<uint8_t*, size_t>  getBlockHeaders(uint32_t start, uint32_t end);
         void deleteDB();
+        void closeDB();
     protected:
         HostManager& hosts;
         uint32_t numBlocks;

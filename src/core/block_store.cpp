@@ -87,6 +87,7 @@ bool BlockStore::hasBlockCount() {
     leveldb::Slice key = leveldb::Slice(countKey);
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
+    size_t ret = *((size_t*)value.c_str());
     return (status.ok());
 }
 

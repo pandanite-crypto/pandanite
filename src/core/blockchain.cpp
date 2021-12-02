@@ -89,9 +89,13 @@ void BlockChain::resetChain() {
     }
 }
 
-void BlockChain::deleteDB() {
+void BlockChain::closeDB() {
     ledger.closeDB();
     blockStore.closeDB();
+}
+
+void BlockChain::deleteDB() {
+    this->closeDB();
     ledger.deleteDB();
     blockStore.deleteDB();
 }
