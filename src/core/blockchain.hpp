@@ -31,6 +31,7 @@ class BlockChain {
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
+        std::pair<uint8_t*, size_t>  getBlockHeaders();
         void deleteDB();
     protected:
         HostManager& hosts;

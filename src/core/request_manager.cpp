@@ -83,8 +83,12 @@ json RequestManager::getProofOfWork() {
 
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(int index) {
+std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t index) {
     return this->blockchain->getRaw(index);
+}
+
+std::pair<uint8_t*, size_t> RequestManager::getBlockHeaders() {
+    return this->blockchain->getBlockHeaders();
 }
 
 
@@ -96,11 +100,11 @@ std::pair<char*, size_t> RequestManager::getRawTransactionData(BloomFilter & see
     return this->mempool->getRaw(seen);
 }
 
-std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(int blockId) {
+std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(uint32_t blockId) {
     return this->mempool->getRaw(blockId);
 }
 
-json RequestManager::getBlock(int index) {
+json RequestManager::getBlock(uint32_t index) {
     return this->blockchain->getBlock(index).toJson();
 }
 json RequestManager::getLedger(PublicWalletAddress w) {

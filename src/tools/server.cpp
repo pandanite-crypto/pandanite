@@ -183,6 +183,24 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
+    }).get("/block_headers", [&manager](auto *res, auto *req) {
+        try {
+            res->writeHeader("Content-Type", "application/octet-stream");
+            for (int i = start; i <=end; i++) {
+                std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders();
+                std::string_view str((char*)buffer.first, buffer.second);
+                res->write(str);
+                delete buffer.first;
+            }
+            res->end("");
+        } catch(const std::exception &e) {
+            Logger::logError("/block_headers", e.what());
+        } catch(...) {
+            Logger::logError("/block_headers", "unknown");
+        }
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
     }).get("/synctx", [&manager](auto *res, auto *req) {
         try {
             res->writeHeader("Content-Type", "application/octet-stream");

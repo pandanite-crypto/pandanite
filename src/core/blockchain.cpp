@@ -101,6 +101,10 @@ std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
     return this->blockStore.getRawData(blockId);
 }
 
+std::pair<uint8_t*, size_t> BlockChain::getBlockHeaders() {
+    return this->blockStore.getBlockHeaders();
+}
+
 void BlockChain::sync() {
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
