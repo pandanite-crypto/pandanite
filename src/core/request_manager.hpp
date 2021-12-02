@@ -22,11 +22,12 @@ class RequestManager {
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(Transaction& t);
-        std::pair<char*, size_t> getRawBlockData(int index);
+        std::pair<uint8_t*, size_t> getRawBlockData(int index);
         std::pair<char*, size_t> getRawTransactionData();
         std::pair<char*, size_t> getRawTransactionData(BloomFilter& seen);
         std::pair<char*, size_t> getRawTransactionDataForBlock(int blockId);
         string getBlockCount();
+        string getTotalWork();
         void deleteDB();
     protected:
         HostManager& hosts;

@@ -292,19 +292,15 @@ bool checkSignature(const char* bytes, size_t len, TransactionSignature signatur
 #endif
 }
 
-SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b) {
-    vector<uint8_t> concat;
-    for(size_t i = 0; i < a.size(); i++) {
-        concat.push_back(a[i]);
-    }
-    for(size_t i = 0; i < b.size(); i++) {
-        concat.push_back(b[i]);
-    }
-    SHA256Hash fullHash  = SHA256((const char*)concat.data(), concat.size());
+SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b) {
+    char data[64];
+    memcpy(data, (char*)a.data(), 32);
+    memcpy(&data[32], (char*)b.data(), 32);
+    SHA256Hash fullHash  = SHA256((const char*)data, 64);
     return fullHash;
 }
 
-bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize) {
+bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize) {
     int bytes = challengeSize / 8;
     const uint8_t * a = hash.data();
     if (bytes == 0) {
@@ -321,7 +317,7 @@ bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize) {
 }
 
 
-bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize) {
+bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize) {
     SHA256Hash fullHash  = concatHashes(target, nonce);
     return checkLeadingZeroBits(fullHash, challengeSize);
 }

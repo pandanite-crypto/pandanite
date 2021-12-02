@@ -83,7 +83,7 @@ json RequestManager::getProofOfWork() {
 
 }
 
-std::pair<char*, size_t> RequestManager::getRawBlockData(int index) {
+std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(int index) {
     return this->blockchain->getRaw(index);
 }
 
@@ -114,8 +114,13 @@ json RequestManager::getLedger(PublicWalletAddress w) {
     return result;
 }
 string RequestManager::getBlockCount() {
-    int count = this->blockchain->getBlockCount();
+    uint32_t count = this->blockchain->getBlockCount();
     return std::to_string(count);
+}
+
+string RequestManager::getTotalWork() {
+    uint64_t totalWork = this->blockchain->getTotalWork();
+    return std::to_string(totalWork);
 }
 
 json RequestManager::getStats() {

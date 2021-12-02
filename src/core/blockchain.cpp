@@ -33,7 +33,7 @@ void chain_sync(BlockChain& blockchain) {
                 failureCount++;
             }
             if (failureCount > 3) {
-                std::pair<string, int> best = blockchain.hosts.getLongestChainHost();
+                std::pair<string, int> best = blockchain.hosts.getBestHost();
                 int toPop = min(2*(best.second - blockchain.getBlockCount()), blockchain.getBlockCount() - 1);
                 Logger::logStatus("chain_sync: out of sync, removing " + to_string(toPop) + " blocks and re-trying.");
                 for(int j = 0; j < toPop; j++) {
@@ -69,6 +69,7 @@ void BlockChain::resetChain() {
         this->numBlocks = count;
         this->targetBlockCount = count;
         Block lastBlock = blockStore.getBlock(count);
+        this->totalWork = blockStore.getTotalWork();
         this->difficulty = lastBlock.getDifficulty();
         this->lastHash = lastBlock.getHash();
     } else {
@@ -79,6 +80,7 @@ void BlockChain::resetChain() {
         this->difficulty = genesis.getDifficulty();
         this->targetBlockCount = 1;
         this->numBlocks = 0;
+        this->totalWork = 0;
         this->lastHash = NULL_SHA256_HASH;
         ExecutionStatus status = this->addBlock(genesis);
         if (status != SUCCESS) {
@@ -94,7 +96,7 @@ void BlockChain::deleteDB() {
     blockStore.deleteDB();
 }
 
-std::pair<char*, size_t> BlockChain::getRaw(int blockId) {
+std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
     if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore.getRawData(blockId);
 }
@@ -114,11 +116,15 @@ Ledger& BlockChain::getLedger() {
     return this->ledger;
 }
 
-int BlockChain::getBlockCount() {
+uint32_t BlockChain::getBlockCount() {
     return this->numBlocks;
 }
 
-Block BlockChain::getBlock(int blockId) {
+uint64_t BlockChain::getTotalWork() {
+    return this->totalWork;
+}
+
+Block BlockChain::getBlock(uint32_t blockId) {
     if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore.getBlock(blockId);
 }
@@ -141,28 +147,30 @@ SHA256Hash BlockChain::getLastHash() {
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
         // compute the new difficulty score based on average block time
-        double average = 0;
-        int total = 0;
+        long average = 0;
+        uint32_t total = 0;
         // ignore genesis block time
-        int first = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
-        int last = this->numBlocks - 1;
-        for(int i = last; i >= first; i--) {
+        uint32_t first = max(3, (int)this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
+        uint32_t last = this->numBlocks - 1;
+        for(uint32_t i = last; i >= first; i--) {
             Block b1 = this->blockStore.getBlock(i-1);
             Block b2 = this->blockStore.getBlock(i-2);
-            int currTs = (int)b1.getTimestamp();
-            int lastTs = (int)b2.getTimestamp();
+            uint32_t currTs = (uint32_t)b1.getTimestamp();
+            uint32_t lastTs = (uint32_t)b2.getTimestamp();
             average += (double)(currTs - lastTs);
             total++;
         }
+        long scaleFactor = 1000000000;
+        average *= scaleFactor;
         average /= total;
-        double ratio = average/DESIRED_BLOCK_TIME_SEC;
+        long ratio = average/(DESIRED_BLOCK_TIME_SEC * scaleFactor);
         int delta = -round(log2(ratio));
         this->difficulty += delta;
-        this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
+        this->difficulty = min(max((int)this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
     }
 }
 
-int BlockChain::getDifficulty() {
+uint8_t BlockChain::getDifficulty() {
     return this->difficulty;
 }
 
@@ -191,6 +199,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     } else {
         this->blockStore.setBlock(block);
         this->numBlocks++;
+        this->totalWork += block.getDifficulty();
+        this->blockStore.setTotalWork(this->totalWork);
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty(block);
@@ -200,7 +210,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // iterate through each of the hosts and pick the longest one:
-    std::pair<string,int> bestHostInfo = this->hosts.getLongestChainHost();
+    std::pair<string,int> bestHostInfo = this->hosts.getBestHost();
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = bestHostInfo.second;
     int startCount = this->numBlocks;

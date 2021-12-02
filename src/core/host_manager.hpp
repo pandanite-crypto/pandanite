@@ -6,7 +6,7 @@ class HostManager {
     public:
         HostManager(json config, string myName="");
         HostManager(); // only used for  mocks
-        std::pair<string,int> getLongestChainHost();
+        std::pair<string,uint64_t> getBestHost();
         size_t size();
         void refreshHostList();
         vector<string> getHosts();

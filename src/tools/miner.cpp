@@ -18,7 +18,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
     BloomFilter bf;
     while(true) {
         try {
-            std::pair<string,int> bestHost = hosts.getLongestChainHost();
+            std::pair<string,int> bestHost = hosts.getBestHost();
             if (bestHost.first == "") {
                 Logger::logStatus("no host found");
             } else {
@@ -61,7 +61,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
                 total += t.getTransactionFee();
                 nonces.insert(t.getNonce());
             }
-            allEarnings += total;
+            
             MerkleTree m;
             m.setItems(newBlock.getTransactions());
             newBlock.setMerkleRoot(m.getRootHash());
@@ -73,6 +73,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             auto result = submitBlock(host, newBlock);
             Logger::logStatus(result.dump(4));
             if (string(result["status"]) == "SUCCESS") {
+                allEarnings += total;
                 Logger::logStatus("================BLOCK ACCEPTED=================");
                 Logger::logStatus("Earned:" + std::to_string(total/DECIMAL_SCALE_FACTOR));
                 Logger::logStatus("Total:" + std::to_string(allEarnings/DECIMAL_SCALE_FACTOR));
@@ -109,6 +110,7 @@ int main(int argc, char **argv) {
     PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
     Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
 #endif
+
     std::thread mining_thread(run_mining, wallet, ref(hosts));
     mining_thread.join();
 }

@@ -47,6 +47,10 @@ TEST(test_blockstore_stores_multiple) {
         Block b = blocks.getBlock(i+1);
         ASSERT_TRUE(b==a);
     }
+    blocks.setBlockCount(30);
+    blocks.setTotalWork(30*MIN_DIFFICULTY);
+    ASSERT_TRUE(blocks.getBlockCount() == 30);
+    ASSERT_TRUE(blocks.getTotalWork() == 30*MIN_DIFFICULTY);
     blocks.closeDB();
     blocks.deleteDB();
 }
@@ -67,7 +71,7 @@ TEST(test_blockstore_returns_valid_raw_data) {
         a.addTransaction(t);
     }
     blocks.setBlock(a);
-    std::pair<char*,size_t> buffer = blocks.getRawData(a.getId());
+    std::pair<uint8_t*,size_t> buffer = blocks.getRawData(a.getId());
     Block b = Block(buffer);
     ASSERT_TRUE(a==b);
     blocks.closeDB();

@@ -17,8 +17,8 @@ SHA256Hash stringToSHA256(string hex);
 string SHA256toString(SHA256Hash h);
 std::vector<uint8_t> hexDecode(const string& hex);
 string hexEncode(const char* buffer, size_t len);
-SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b);
-bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize);
+SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b);
+bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize);
 
 bool isFounderWalletPossible(PublicWalletAddress w);
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);
@@ -38,6 +38,6 @@ TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey
 bool checkSignature(string content, TransactionSignature signature, PublicKey signingKey);
 bool checkSignature(const char* bytes, size_t len, TransactionSignature signature, PublicKey signingKey);
 SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize);
-bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize);
+bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize);
 
 

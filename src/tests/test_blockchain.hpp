@@ -23,7 +23,6 @@ void addMerkleHashToBlock(Block& block) {
 
 TEST(check_adding_new_node_with_hash) {
     HostManager h;
-
     BlockChain* blockchain = new BlockChain(h, ledger, blocks);
     blockchain->resetChain();
     User miner;
@@ -47,7 +46,6 @@ TEST(check_adding_new_node_with_hash) {
 
 TEST(check_adding_wrong_lastblock_hash_fails) {
     HostManager h;
-
     BlockChain* blockchain = new BlockChain(h, ledger, blocks);
     blockchain->resetChain();
     User miner;
@@ -124,7 +122,8 @@ TEST(check_sending_transaction_updates_ledger) {
     Ledger& ledger = blockchain->getLedger();
     double minerTotal = ledger.getWalletValue(miner.getAddress());
     double otherTotal = ledger.getWalletValue(other.getAddress());
-
+    uint64_t totalWork = blockchain->getTotalWork();
+    ASSERT_EQUAL(totalWork, 3*16);
     ASSERT_EQUAL(minerTotal, BMB(80.0));
     ASSERT_EQUAL(otherTotal, BMB(20.0));
     blockchain->deleteDB();

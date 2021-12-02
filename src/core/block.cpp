@@ -44,9 +44,9 @@ Block::Block(json block) {
     }
 }
 
-Block::Block(std::pair<char*,size_t> buffer) {
+Block::Block(std::pair<uint8_t*,size_t> buffer) {
     BlockHeader b = *((BlockHeader*)buffer.first);
-    char * transactionPtr = buffer.first + sizeof(BlockHeader);
+    uint8_t * transactionPtr = buffer.first + sizeof(BlockHeader);
 
     this->id = b.id;
     this->timestamp = b.timestamp;
@@ -111,11 +111,11 @@ time_t Block::getTimestamp() {
     return this->timestamp;
 }
 
-int Block::getId() {
+uint32_t Block::getId() {
     return this->id;
 }
 
-void Block::setId(int id) {
+void Block::setId(uint32_t id) {
     this->id = id;
 }
 
@@ -151,11 +151,11 @@ bool Block::verifyNonce() {
     return verifyHash(target, this->nonce, this->difficulty);
 }
 
-void Block::setDifficulty(int d) {
+void Block::setDifficulty(uint8_t d) {
     this->difficulty = d;
 }
 
-int Block::getDifficulty() const {
+uint8_t Block::getDifficulty() const {
     return this->difficulty;
 }
 

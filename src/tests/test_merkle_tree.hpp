@@ -15,7 +15,8 @@ TEST(single_node_works) {
     shared_ptr<HashTree> proof = m.getMerkleProof(a);
     ASSERT_TRUE(proof->left->hash == a.getHash());
     ASSERT_TRUE(proof->right->hash == a.getHash());
-    ASSERT_TRUE(proof->hash == concatHashes(a.getHash(), a.getHash()));
+    SHA256Hash ha = a.getHash();
+    ASSERT_TRUE(proof->hash == concatHashes(ha,ha));
 }
 
 bool checkProofRecursive(shared_ptr<HashTree> root) {

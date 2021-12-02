@@ -9,10 +9,10 @@
 using namespace std;
 
 struct BlockHeader {
-    int id;
+    uint32_t id;
     time_t timestamp;
-    int difficulty;
-    int numTransactions;
+    uint32_t difficulty;
+    uint32_t numTransactions;
     SHA256Hash lastBlockHash;
     SHA256Hash merkleRoot;
     SHA256Hash nonce;
@@ -24,29 +24,29 @@ class Block {
         Block(json data);
         Block(const Block& b);
         Block(const BlockHeader&b, vector<Transaction>& transactions);
-        Block(std::pair<char*,size_t> buffer);
+        Block(std::pair<uint8_t*,size_t> buffer);
         BlockHeader serialize();
         json toJson();
         void addTransaction(Transaction t);
         void setNonce(SHA256Hash s);
         void setMerkleRoot(SHA256Hash s);
         void setTimestamp(time_t t);
-        void setId(int id);
-        void setDifficulty(int d);
+        void setId(uint32_t id);
+        void setDifficulty(uint8_t d);
         SHA256Hash getHash();
         SHA256Hash getNonce();
         SHA256Hash getMerkleRoot();
         SHA256Hash getLastBlockHash();
         void setLastBlockHash(SHA256Hash hash);
         time_t getTimestamp();
-        int getDifficulty() const;
+        uint8_t getDifficulty() const;
         vector<Transaction>& getTransactions();
-        int getId();
+        uint32_t getId();
         bool verifyNonce();
     // protected:
-        int id;
+        uint32_t id;
         time_t timestamp;
-        int difficulty;
+        uint32_t difficulty;
         vector<Transaction> transactions;
         SHA256Hash merkleRoot;
         SHA256Hash lastBlockHash;

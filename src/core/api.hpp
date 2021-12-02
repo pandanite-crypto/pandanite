@@ -7,7 +7,9 @@
 using namespace std;
 
 
-int getCurrentBlockCount(string host_url);
+
+uint64_t getTotalWork(string host_url);
+uint32_t getCurrentBlockCount(string host_url);
 string getName(string host_url);
 json getBlockData(string host_url, int idx);
 json getMiningProblem(string host_url);

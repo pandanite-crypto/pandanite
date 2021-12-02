@@ -29,6 +29,15 @@ int main(int argc, char **argv) {
  
     uWS::App().get("/name", [&myName](auto *res, auto *req) {
         res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(myName);
+    }).get("/total_work", [&manager](auto *res, auto *req) {
+        try {
+            std::string count = manager.getTotalWork();
+            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
+        } catch(const std::exception &e) {
+            Logger::logError("/total_work", e.what());
+        } catch(...) {
+            Logger::logError("/total_work", "unknown");
+        }
     }).get("/block_count", [&manager](auto *res, auto *req) {
         try {
             std::string count = manager.getBlockCount();
@@ -160,8 +169,8 @@ int main(int argc, char **argv) {
             }
             res->writeHeader("Content-Type", "application/octet-stream");
             for (int i = start; i <=end; i++) {
-                std::pair<char*, size_t> buffer = manager.getRawBlockData(i);
-                std::string_view str(buffer.first, buffer.second);
+                std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i);
+                std::string_view str((char*)buffer.first, buffer.second);
                 res->write(str);
                 delete buffer.first;
             }

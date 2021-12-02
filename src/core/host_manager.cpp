@@ -5,6 +5,8 @@
 #include "logger.hpp"
 #include "../external/http.hpp"
 #include <iostream>
+#include <thread>
+#include <future>
 using namespace std;
 
 HostManager::HostManager(json config, string myName) {
@@ -26,8 +28,8 @@ void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     json hostList;
     try {
+        bool foundHost = false;
         for (int i = 0; i < this->hostSources.size(); i++) {
-            bool foundHost = false;
             try {
                 string hostUrl = this->hostSources[i];
                 http::Request request{hostUrl};
@@ -38,27 +40,36 @@ void HostManager::refreshHostList() {
             } catch (...) {
                 continue;
             }
-            if (!foundHost) throw std::runtime_error("Could not fetch host directory.");
         }
+        if (!foundHost) throw std::runtime_error("Could not fetch host directory.");
 
         // if our node is in the host list, remove ourselves:        
         this->hosts.clear();
+        vector<future<void>> reqs;
         for(auto host : hostList) {
             try {
                 if (myName == "") {
                     this->hosts.push_back(string(host));
                     Logger::logStatus("Adding host: " + string(host));
                 }else {
-                    string hostName = getName(host);
-                    if (hostName != this->myName) {
-                        Logger::logStatus("Adding host: " + string(host));
-                        this->hosts.push_back(string(host));
-                    }
+                    HostManager& hm = *this;
+                    reqs.push_back(std::async([&host, &hm](){
+                        string hostName = getName(host);
+                        if (hostName != hm.myName) {
+                            Logger::logStatus("Adding host: " + string(host));
+                            hm.hosts.push_back(string(host));
+                        }
+                    }));
                 }
             } catch (...) {
                 Logger::logStatus("Host did not respond: " + string(host));
             }
         }
+        // block until all requests finish or timeout
+        for(int i = 0; i < reqs.size(); i++) {
+            reqs[i].get();
+        }
+
     } catch (std::exception &e) {
         Logger::logError("HostManager::refreshHostList", string(e.what()));
     }
@@ -72,18 +83,18 @@ size_t HostManager::size() {
     return this->hosts.size();
 }
 
-std::pair<string, int> HostManager::getLongestChainHost() {
+std::pair<string, uint64_t> HostManager::getBestHost() {
     // TODO: make this asynchronous
-    int bestCount = 0;
+    uint64_t bestWork = 0;
     vector<string> bestHosts;
     for(auto host : this->hosts) {
         try {
-            int curr = getCurrentBlockCount(host);
-            if (curr > bestCount) {
-                bestCount = curr;
+            uint64_t curr = getTotalWork(host);
+            if (curr > bestWork) {
+                bestWork = curr;
                 bestHosts.clear();
                 bestHosts.push_back(host);
-            } else if (curr == bestCount) {
+            } else if (curr == bestWork) {
                 bestHosts.push_back(host);
             }
         } catch (std::exception & e) {
@@ -92,5 +103,5 @@ std::pair<string, int> HostManager::getLongestChainHost() {
     }
     if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
     string bestHost = bestHosts[rand()%bestHosts.size()];
-    return std::pair<string, int>(bestHost, bestCount);
+    return std::pair<string, uint64_t>(bestHost, bestWork);
 }

@@ -8,10 +8,16 @@
 #include "helpers.hpp"
 using namespace std;
 
-int getCurrentBlockCount(string host_url) {
+uint32_t getCurrentBlockCount(string host_url) {
     http::Request request{host_url + "/block_count"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
     return std::stoi(std::string{response.body.begin(), response.body.end()});
+}
+
+uint64_t getTotalWork(string host_url) {
+    http::Request request{host_url + "/total_work"};
+    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
+    return std::stol(std::string{response.body.begin(), response.body.end()});
 }
 
 string getName(string host_url) {

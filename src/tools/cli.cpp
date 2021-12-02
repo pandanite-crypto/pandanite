@@ -13,7 +13,6 @@ using namespace std;
 
 int main(int argc, char** argv) {
     map<string,User*> users;
-
     string configFile = DEFAULT_CONFIG_FILE_PATH;
     if (argc > 1 ) {
         configFile = string(argv[1]);
@@ -45,7 +44,7 @@ int main(int argc, char** argv) {
         cout<<"Enter the mining fee (or 0):"<<endl;
         TransactionAmount fee;
         cin>>fee;
-        std::pair<string,int> best = hosts.getLongestChainHost();
+        std::pair<string,int> best = hosts.getBestHost();
         string host = best.first;
         int blockId = getCurrentBlockCount(host) + 1; // usually send 1 block into the future
         Transaction t(fromWallet, toWallet, amount, blockId, publicKey, fee);

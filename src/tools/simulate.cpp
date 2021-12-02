@@ -19,10 +19,10 @@ void simulate_transactions(HostManager& hosts) {
         User u;
         randomUsers.push_back(u);
     }
-    std::pair<string,int> best = hosts.getLongestChainHost();
+    std::pair<string,int> best = hosts.getBestHost();
     while(true) {
         try {
-            // if (rand()%1000==0) best = hosts.getLongestChainHost();
+            // if (rand()%1000==0) best = hosts.getBestHost();
             string host = best.first;
             int blockId = getCurrentBlockCount(host) + 3;
             User r = randomUsers[rand()%randomUsers.size()];
