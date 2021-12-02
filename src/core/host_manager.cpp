@@ -87,18 +87,28 @@ std::pair<string, uint64_t> HostManager::getBestHost() {
     // TODO: make this asynchronous
     uint64_t bestWork = 0;
     vector<string> bestHosts;
+    vector<future<void>> reqs;
+    std::mutex lock;
     for(auto host : this->hosts) {
-        try {
-            uint64_t curr = getTotalWork(host);
-            if (curr > bestWork) {
-                bestWork = curr;
-                bestHosts.clear();
-                bestHosts.push_back(host);
-            } else if (curr == bestWork) {
-                bestHosts.push_back(host);
+        reqs.push_back(std::async([&host, &bestHosts, &bestWork, &lock]() {
+            try {
+                uint64_t curr = getTotalWork(host);
+                lock.lock();
+                if (curr > bestWork) {
+                    bestWork = curr;
+                    bestHosts.clear();
+                    bestHosts.push_back(host);
+                } else if (curr == bestWork) {
+                    bestHosts.push_back(host);
+                }
+                lock.unlock();
+            } catch (std::exception & e) {
+                continue;
             }
-        } catch (std::exception & e) {
-            continue;
+        }));
+        // block until all requests finish
+        for(int i = 0; i < reqs.size(); i++) {
+            reqs[i].get();
         }
     }
     if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
