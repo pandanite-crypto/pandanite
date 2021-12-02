@@ -37,7 +37,7 @@ TransactionSignature signWithPrivateKey(string content, PublicKey pubKey, Privat
 TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey pubKey, PrivateKey privKey);
 bool checkSignature(string content, TransactionSignature signature, PublicKey signingKey);
 bool checkSignature(const char* bytes, size_t len, TransactionSignature signature, PublicKey signingKey);
-SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize);
+SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize, function<bool()> problemValid = [](){ return true; });
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize);
 
 

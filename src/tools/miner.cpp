@@ -12,8 +12,21 @@
 #include <thread>
 using namespace std;
 
+void get_status( HostManager& hosts, std::mutex& statusLock, uint64_t& latestBlockId) {
+    while(true) {
+        try {
+            std::pair<string,uint64_t> bestHost = hosts.getBestHost();
+            statusLock.lock();
+            latestBlockId = bestHost.second;
+            statusLock.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        } catch(...) {
+        }
+    }
+}
 
-void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
+
+void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& statusLock, uint64_t& latestBlockId) {
     TransactionAmount allEarnings = 0;
     BloomFilter bf;
     while(true) {
@@ -68,7 +81,21 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts) {
             newBlock.setDifficulty(challengeSize);
             newBlock.setLastBlockHash(lastHash);
             SHA256Hash hash = newBlock.getHash();
-            SHA256Hash solution = mineHash(hash, challengeSize);
+            bool doSubmit = true;
+            SHA256Hash solution = mineHash(hash, challengeSize, [&statusLock, &nextBlock, &latestBlockId, &doSubmit]() {
+                statusLock.lock();
+                if (nextBlock != (latestBlockId + 1)) {
+                    doSubmit = false;
+                }
+                bool ret = nextBlock == (latestBlockId + 1);
+                statusLock.unlock();
+                return ret;
+            });
+            if (!doSubmit) {
+                Logger::logStatus("==============BLOCK ALREADY SOLVED==============");
+                Logger::logStatus("Stopping mining and fetching new block.");   
+                continue;
+            }
             newBlock.setNonce(solution);
             auto result = submitBlock(host, newBlock);
             Logger::logStatus(result.dump(4));
@@ -110,7 +137,9 @@ int main(int argc, char **argv) {
     PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
     Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
 #endif
-
-    std::thread mining_thread(run_mining, wallet, ref(hosts));
+    std::mutex statusLock;
+    uint64_t latestBlockId;
+    std::thread status_thread(get_status, ref(hosts), ref(statusLock), ref(latestBlockId));
+    std::thread mining_thread(run_mining, wallet, ref(hosts), ref(statusLock), ref(latestBlockId));
     mining_thread.join();
 }

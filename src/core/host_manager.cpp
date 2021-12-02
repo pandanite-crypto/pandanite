@@ -90,9 +90,9 @@ std::pair<string, uint64_t> HostManager::getBestHost() {
     vector<future<void>> reqs;
     std::mutex lock;
     for(auto host : this->hosts) {
-        reqs.push_back(std::async([&host, &bestHosts, &bestWork, &lock]() {
+        reqs.push_back(std::async([host, &bestHosts, &bestWork, &lock]() {
             try {
-                uint64_t curr = getTotalWork(host);
+                uint64_t curr = getCurrentBlockCount(host); //getTotalWork(host);
                 lock.lock();
                 if (curr > bestWork) {
                     bestWork = curr;
@@ -103,14 +103,15 @@ std::pair<string, uint64_t> HostManager::getBestHost() {
                 }
                 lock.unlock();
             } catch (std::exception & e) {
-                //pass
+                lock.unlock();
             }
         }));
-        // block until all requests finish
-        for(int i = 0; i < reqs.size(); i++) {
-            reqs[i].get();
-        }
+    }    
+    // block until all requests finish
+    for(int i = 0; i < reqs.size(); i++) {
+        reqs[i].get();
     }
+
     if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
     string bestHost = bestHosts[rand()%bestHosts.size()];
     return std::pair<string, uint64_t>(bestHost, bestWork);

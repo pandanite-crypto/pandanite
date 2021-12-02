@@ -8,6 +8,55 @@
 using namespace std;
 
 
+
+SHA256Hash concatHashes(SHA256Hash a, SHA256Hash b) {
+    vector<uint8_t> concat;
+    for(size_t i = 0; i < a.size(); i++) {
+        concat.push_back(a[i]);
+    }
+    for(size_t i = 0; i < b.size(); i++) {
+        concat.push_back(b[i]);
+    }
+    SHA256Hash fullHash  = SHA256((const char*)concat.data(), concat.size());
+    return fullHash;
+}
+
+bool checkLeadingZeroBits(SHA256Hash hash, unsigned int challengeSize) {
+    int bytes = challengeSize / 8;
+    const uint8_t * a = hash.data();
+    if (bytes == 0) {
+        return a[0]>>(8-challengeSize) == 0;
+    } else {
+        for (int i = 0; i < bytes; i++) {
+            if (a[i] != 0) return false;
+        }
+        int remainingBits = challengeSize - 8*bytes;
+        if (remainingBits > 0) return a[bytes + 1]>>(8-remainingBits) == 0;
+        else return true;
+    }
+    return false;
+}
+
+
+bool verifyHash(SHA256Hash target, SHA256Hash nonce, unsigned char challengeSize) {
+    SHA256Hash fullHash  = concatHashes(target, nonce);
+    return checkLeadingZeroBits(fullHash, challengeSize);
+}
+
+SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize) {
+    while(true) {
+        SHA256Hash solution;
+        for(size_t i = 0; i < solution.size(); i++) {
+            solution[i] = rand()%256;
+        }
+        bool found = verifyHash(targetHash, solution, challengeSize);
+        if (found) {
+            return solution;
+        }
+    }
+}
+
+
 int main(int argc, char **argv) {
     double averageValidationTime = 0;
     double averageCreationTime = 0;

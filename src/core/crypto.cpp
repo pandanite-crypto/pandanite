@@ -322,7 +322,7 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSi
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
-SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize) {
+SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize, function<bool()> problemValid) {
     while(true) {
         SHA256Hash solution;
         for(size_t i = 0; i < solution.size(); i++) {
@@ -332,5 +332,7 @@ SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize) {
         if (found) {
             return solution;
         }
+        if (!problemValid()) break;
     }
+    return NULL_SHA256_HASH;
 }
