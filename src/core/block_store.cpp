@@ -148,12 +148,12 @@ std::pair<uint8_t*, size_t> BlockStore::getRawData(uint32_t blockId) {
     return std::pair<uint8_t*, size_t>((uint8_t*)buffer, numBytes);
 }
 
-std::pair<uint8_t*, size_t> BlockStore::getBlockHeaders() {
-    uint32_t count = this->getBlockCount();
-    size_t sz = sizeof(BlockHeader)*count;
+std::pair<uint8_t*, size_t> BlockStore::getBlockHeaders(uint32_t start, uint32_t end) {
+    
+    size_t sz = sizeof(BlockHeader)*(end - start);
     uint8_t* buffer = (uint8_t*)malloc(sz);
-    for(int i = 1; i <= count; i++) {
-        buffer[i] = this->getBlockHeader(i);
+    for(int i = start; i <= end; i++) {
+        buffer[i-start] = this->getBlockHeader(i);
     }
     return std::pair<uint8_t*,size_t>(buffer, sz);
 }

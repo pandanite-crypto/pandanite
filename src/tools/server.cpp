@@ -183,11 +183,13 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).get("/block_headers", [&manager](auto *res, auto *req) {
+    }).get("/block_headers/:start/:end", [&manager](auto *res, auto *req) {
         try {
+            uint32_t start = std::stoi(string(req->getParameter(0)));
+            uint32_t end = std::stoi(string(req->getParameter(1)));
             res->writeHeader("Content-Type", "application/octet-stream");
             for (int i = start; i <=end; i++) {
-                std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders();
+                std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
                 std::string_view str((char*)buffer.first, buffer.second);
                 res->write(str);
                 delete buffer.first;
