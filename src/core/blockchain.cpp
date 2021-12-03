@@ -178,6 +178,12 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
+    // if we are greater than block 20700 check timestamps
+    if (block.getId() > TIMESTAMP_VERIFICATION_START) {
+        Block lastBlock = blockStore.getBlock(this->getBlockCount());
+        if (block.getTimestamp() < lastBlock.getTimestamp()) return BLOCK_TIMESTAMP_TOO_OLD;
+    }
+
     // compute merkle tree and verify root matches;
     MerkleTree m;
     m.setItems(block.getTransactions());

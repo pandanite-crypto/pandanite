@@ -65,6 +65,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case INVALID_LASTBLOCK_HASH:
             return "INVALID_LASTBLOCK_HASH";
         break;
+        case BLOCK_TIMESTAMP_TOO_OLD:
+            return "BLOCK_TIMESTAMP_TOO_OLD";
+        break;
     }
 }
 
