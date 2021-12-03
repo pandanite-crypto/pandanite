@@ -70,8 +70,21 @@ cd build
 conan install ..
 cd ..
 cmake .
-make
 ```
+To compile the miner run the following command:
+```
+make miner
+```
+You will also need the keygen app to create a wallet for your miner:
+```
+make keygen
+```
+
+To compile the node server:
+```
+make server
+```
+
 ### Usage
 Start by generating `keys.json`. Keep a copy of this file -- it contains pub/private keys to the wallet that the miner will mint coins to.
 ```
