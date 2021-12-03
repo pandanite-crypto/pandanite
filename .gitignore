@@ -10,6 +10,5 @@ cmake_install.cmake
 CMakeCache.txt
 keys.json
 TODO
-genesis.json
 .DS_Store
 backup.txt
