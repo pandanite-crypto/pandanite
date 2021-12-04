@@ -5,14 +5,15 @@
 #include <vector>
 #include <map>
 #include <mutex>
-#include "block.hpp"
-#include "api.hpp"
-#include "constants.hpp"
+#include "../core/block.hpp"
+#include "../core/api.hpp"
+#include "../core/constants.hpp"
+#include "../core/common.hpp"
+#include "../core/host_manager.hpp"
 #include "executor.hpp"
-#include "common.hpp"
 #include "block_store.hpp"
 #include "ledger.hpp"
-#include "host_manager.hpp"
+
 using namespace std;
 
 class BlockChain {
@@ -36,12 +37,12 @@ class BlockChain {
         void closeDB();
     protected:
         HostManager& hosts;
-        uint32_t numBlocks;
+        int numBlocks;
         uint64_t totalWork;
         BlockStore blockStore;
         Ledger ledger;
         SHA256Hash lastHash;
-        uint8_t difficulty;
+        int difficulty;
         void popBlock();
         void updateDifficulty(Block& b);
         ExecutionStatus startChainSync();

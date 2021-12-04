@@ -1,13 +1,14 @@
 #pragma once
-#include "host_manager.hpp"
-#include "transaction.hpp"
-#include "blockchain.hpp"
-#include "executor.hpp"
-#include "bloomfilter.hpp"
+
 #include <set>
 #include <map>
 #include <thread>
 #include <mutex>
+#include "../core/host_manager.hpp"
+#include "../core/transaction.hpp"
+#include "../core/bloomfilter.hpp"
+#include "blockchain.hpp"
+#include "executor.hpp"
 using namespace std;
 
 class MemPool {

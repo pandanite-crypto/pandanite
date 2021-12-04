@@ -1,14 +1,14 @@
 #pragma once
-#include "blockchain.hpp"
-#include "transaction.hpp"
-#include "host_manager.hpp"
-#include "mempool.hpp"
-#include "common.hpp"
-#include "bloomfilter.hpp"
 #include <mutex>
 #include <vector>
 #include <map>
 #include <list>
+#include "../core/transaction.hpp"
+#include "../core/host_manager.hpp"
+#include "../core/bloomfilter.hpp"
+#include "../core/common.hpp"
+#include "blockchain.hpp"
+#include "mempool.hpp"
 using namespace std;
 
 

@@ -3,10 +3,10 @@
 #include <iostream>
 #include <set>
 #include <cmath>
-#include "block.hpp"
-#include "logger.hpp"
+#include "../core/block.hpp"
+#include "../core/logger.hpp"
+#include "../core/helpers.hpp"
 #include "executor.hpp"
-#include "helpers.hpp"
 using namespace std;
 
 string executionStatusAsString(ExecutionStatus status) {

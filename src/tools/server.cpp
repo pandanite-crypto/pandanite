@@ -10,9 +10,9 @@
 #include "../core/host_manager.hpp"
 #include "../core/helpers.hpp"
 #include "../core/bloomfilter.hpp"
-#include "../core/request_manager.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
+#include "../server/request_manager.hpp"
 using namespace std;
 
 int main(int argc, char **argv) {    

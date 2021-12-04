@@ -12,12 +12,12 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
-#include "merkle_tree.hpp"
-#include "logger.hpp"
+#include "../core/merkle_tree.hpp"
+#include "../core/logger.hpp"
+#include "../core/helpers.hpp"
+#include "../core/api.hpp"
 #include "blockchain.hpp"
-#include "helpers.hpp"
-#include "user.hpp"
-#include "api.hpp"
+
 
 using namespace std;
 
@@ -155,26 +155,24 @@ SHA256Hash BlockChain::getLastHash() {
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
         // compute the new difficulty score based on average block time
-        long average = 0;
-        uint32_t total = 0;
+        double average = 0;
+        int total = 0;
         // ignore genesis block time
-        uint32_t first = max(3, (int)this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
-        uint32_t last = this->numBlocks - 1;
-        for(uint32_t i = last; i >= first; i--) {
+        int first = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
+        int last = this->numBlocks - 1;
+        for(int i = last; i >= first; i--) {
             Block b1 = this->blockStore.getBlock(i-1);
             Block b2 = this->blockStore.getBlock(i-2);
-            uint32_t currTs = (uint32_t)b1.getTimestamp();
-            uint32_t lastTs = (uint32_t)b2.getTimestamp();
+            int currTs = (int)b1.getTimestamp();
+            int lastTs = (int)b2.getTimestamp();
             average += (double)(currTs - lastTs);
             total++;
         }
-        long scaleFactor = 1000000000;
-        average *= scaleFactor;
         average /= total;
-        long ratio = average/(DESIRED_BLOCK_TIME_SEC * scaleFactor);
+        double ratio = average/DESIRED_BLOCK_TIME_SEC;
         int delta = -round(log2(ratio));
         this->difficulty += delta;
-        this->difficulty = min(max((int)this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
+        this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
     }
 }
 
@@ -186,12 +184,21 @@ void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
     Executor::RollbackBlock(last, this->ledger);
     this->numBlocks--;
+    this->totalWork -= last.getDifficulty();
+    this->blockStore.setTotalWork(this->totalWork);
+    this->blockStore.setBlockCount(this->numBlocks);
+    Block newLast = this->getBlock(this->getBlockCount() - 1);
+    this->updateDifficulty(newLast);
+    this->lastHash = newLast.getHash();
 }
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
+    if (block.getDifficulty() != this->difficulty) {
+        Logger::logStatus("Added block difficulty: " + std::to_string(block.getDifficulty()) + " chain difficulty: " + to_string(this->difficulty));
+        return INVALID_DIFFICULTY;
+    }
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     // if we are greater than block 20700 check timestamps

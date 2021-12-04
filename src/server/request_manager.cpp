@@ -1,11 +1,9 @@
-#include "request_manager.hpp"
-#include "helpers.hpp"
-#include "user.hpp"
-#include "logger.hpp"
-#include "merkle_tree.hpp"
-
 #include <map>
 #include <iostream>
+#include "../core/helpers.hpp"
+#include "../core/logger.hpp"
+#include "../core/merkle_tree.hpp"
+#include "request_manager.hpp"
 using namespace std;
 
 

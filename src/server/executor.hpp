@@ -1,7 +1,7 @@
 #pragma once
-#include "block.hpp"
-#include "constants.hpp"
-#include "common.hpp"
+#include "../core/block.hpp"
+#include "../core/constants.hpp"
+#include "../core/common.hpp"
 #include "ledger.hpp"
 using namespace std;
 

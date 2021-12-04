@@ -115,28 +115,20 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
 
 
 int main(int argc, char **argv) {
-#ifdef SERVER
-    string configFile = DEFAULT_CONFIG_FILE_PATH;
-    if (argc > 1 ) {
-        configFile = string(argv[1]);
-    }
-    json config = readJsonFromFile(configFile);
-    int port = config["port"];
-    HostManager hosts(config);
-    Logger::logStatus("Running miner");
-    string file = "./keys/miner2.json";
-    json info = readJsonFromFile(file);
-    PublicWalletAddress wallet = stringToWalletAddress(info["wallet"]);
-    Logger::logStatus("Mining to wallet: " + walletAddressToString(wallet));
-#else
     json config;
     config["hostSources"] = json::array();
     config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
     HostManager hosts(config);
-    json keys = readJsonFromFile("./keys.json");
+    json keys;
+    try {
+        keys = readJsonFromFile("./keys.json");
+    } catch(...) {
+        Logger::logStatus("Could not read ./keys.json");
+        return 0;
+    }
+    
     PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
     Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
-#endif
     std::mutex statusLock;
     uint64_t latestBlockId;
     std::thread status_thread(get_status, ref(hosts), ref(statusLock), ref(latestBlockId));

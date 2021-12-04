@@ -1,7 +1,7 @@
 #pragma once
 #include "leveldb/db.h"
-#include "common.hpp"
-#include "block.hpp"
+#include "../core/common.hpp"
+#include "../core/block.hpp"
 
 class BlockStore {
     public:

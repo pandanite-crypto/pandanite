@@ -1,7 +1,7 @@
 #pragma once
-#include "common.hpp"
-#include "leveldb/db.h"
 #include <set>
+#include "leveldb/db.h"
+#include "../core/common.hpp"
 using namespace std;
 
 class Ledger {
