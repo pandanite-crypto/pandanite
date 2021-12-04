@@ -22,7 +22,6 @@ class BlockChain {
         void sync();
         void acquire();
         void release();
-        void resetChain();
         Block getBlock(uint32_t blockId);
         uint64_t getTotalWork();
         uint8_t getDifficulty();
@@ -33,6 +32,9 @@ class BlockChain {
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         std::pair<uint8_t*, size_t>  getBlockHeaders(uint32_t start, uint32_t end);
+        void initChain();
+        void resetChain();
+        void popBlock();
         void deleteDB();
         void closeDB();
     protected:
@@ -43,7 +45,6 @@ class BlockChain {
         Ledger ledger;
         SHA256Hash lastHash;
         int difficulty;
-        void popBlock();
         void updateDifficulty(Block& b);
         ExecutionStatus startChainSync();
         int targetBlockCount;

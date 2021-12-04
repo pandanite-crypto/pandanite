@@ -1,6 +1,6 @@
-#include "../core/block_store.hpp"
 #include "../core/crypto.hpp"
 #include "../core/user.hpp"
+#include "../server/block_store.hpp"
 using namespace std;
 
 TEST(test_blockstore_stores_block) {

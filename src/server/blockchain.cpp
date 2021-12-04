@@ -34,11 +34,17 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 std::pair<string, int> best = blockchain.hosts.getBestHost();
-                int toPop = min(2*(best.second - blockchain.getBlockCount()), blockchain.getBlockCount() - 1);
-                Logger::logStatus("chain_sync: out of sync, removing " + to_string(toPop) + " blocks and re-trying.");
-                for(int j = 0; j < toPop; j++) {
-                    blockchain.popBlock();
+                int toPop = 2*(best.second - blockchain.getBlockCount());
+                if (blockchain.getBlockCount() - toPop <=10) {
+                    Logger::logStatus("chain_sync: out of sync, resetting chain.");
+                    blockchain.resetChain();
+                } else {
+                    Logger::logStatus("chain_sync: out of sync, removing " + to_string(toPop) + " blocks and re-trying.");
+                    for(int j = 0; j < toPop; j++) {
+                        blockchain.popBlock();
+                    }
                 }
+                
                 failureCount = 0;
             }
         } catch(std::exception & e) {
@@ -59,10 +65,10 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath) 
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
     ledger.init(ledgerPath);
     blockStore.init(blockPath);
-    this->resetChain();
+    this->initChain();
 }
 
-void BlockChain::resetChain() {
+void BlockChain::initChain() {
     if (blockStore.hasBlockCount()) {
         Logger::logStatus("BlockStore exists, loading from disk");
         size_t count = blockStore.getBlockCount();
@@ -73,19 +79,23 @@ void BlockChain::resetChain() {
         this->difficulty = lastBlock.getDifficulty();
         this->lastHash = lastBlock.getHash();
     } else {
-        Logger::logStatus("BlockStore does not exist");
-        for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
-        json data = readJsonFromFile(GENESIS_FILE_PATH);
-        Block genesis(data);
-        this->difficulty = genesis.getDifficulty();
-        this->targetBlockCount = 1;
-        this->numBlocks = 0;
-        this->totalWork = 0;
-        this->lastHash = NULL_SHA256_HASH;
-        ExecutionStatus status = this->addBlock(genesis);
-        if (status != SUCCESS) {
-            throw std::runtime_error("Could not load genesis block: " + executionStatusAsString(status));
-        }
+        this->resetChain();
+    }
+}
+
+void BlockChain::resetChain() {
+    Logger::logStatus("BlockStore does not exist");
+    for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
+    json data = readJsonFromFile(GENESIS_FILE_PATH);
+    Block genesis(data);
+    this->difficulty = genesis.getDifficulty();
+    this->targetBlockCount = 1;
+    this->numBlocks = 0;
+    this->totalWork = 0;
+    this->lastHash = NULL_SHA256_HASH;
+    ExecutionStatus status = this->addBlock(genesis);
+    if (status != SUCCESS) {
+        throw std::runtime_error("Could not load genesis block: " + executionStatusAsString(status));
     }
 }
 
@@ -133,7 +143,7 @@ uint64_t BlockChain::getTotalWork() {
 }
 
 Block BlockChain::getBlock(uint32_t blockId) {
-    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore.getBlock(blockId);
 }
 
@@ -187,9 +197,14 @@ void BlockChain::popBlock() {
     this->totalWork -= last.getDifficulty();
     this->blockStore.setTotalWork(this->totalWork);
     this->blockStore.setBlockCount(this->numBlocks);
-    Block newLast = this->getBlock(this->getBlockCount() - 1);
-    this->updateDifficulty(newLast);
-    this->lastHash = newLast.getHash();
+    if (this->getBlockCount() > 1) {
+        Block newLast = this->getBlock(this->getBlockCount() - 1);
+        this->updateDifficulty(newLast);
+        this->lastHash = newLast.getHash();
+    } else {
+        this->resetChain();
+    }
+    
 }
 
 ExecutionStatus BlockChain::addBlock(Block& block) {

@@ -1,5 +1,5 @@
-#include "../core/ledger.hpp"
 #include "../core/crypto.hpp"
+#include "../server/ledger.hpp"
 using namespace std;
 
 TEST(test_ledger_stores_wallets) {

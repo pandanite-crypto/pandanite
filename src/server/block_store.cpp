@@ -102,7 +102,7 @@ BlockHeader BlockStore::getBlockHeader(uint32_t blockId) {
     leveldb::Slice key = leveldb::Slice((const char*) &blockId, sizeof(uint32_t));
     string valueStr;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &valueStr);
-    if(!status.ok()) throw std::runtime_error("Could not read block header from BlockStore db : " + status.ToString());
+    if(!status.ok()) throw std::runtime_error("Could not read block header " + to_string(blockId) + " from BlockStore db : " + status.ToString());
     
     BlockHeader value;
     memcpy(&value, valueStr.c_str(), sizeof(BlockHeader));
