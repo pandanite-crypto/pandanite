@@ -4379,7 +4379,7 @@ void from_json(const BasicJsonType& j, std::unordered_map<Key, Value, Hash, KeyE
     }
 }
 
-#ifdef JSON_HAS_CPP_17
+#if FALSE
 template<typename BasicJsonType>
 void from_json(const BasicJsonType& j, std::filesystem::path& p)
 {
@@ -5002,7 +5002,7 @@ void to_json(BasicJsonType& j, const T& t)
     to_json_tuple_impl(j, t, make_index_sequence<std::tuple_size<T>::value> {});
 }
 
-#ifdef JSON_HAS_CPP_17
+#if FALSE
 template<typename BasicJsonType>
 void to_json(BasicJsonType& j, const std::filesystem::path& p)
 {
