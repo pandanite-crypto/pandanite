@@ -1,6 +1,5 @@
 #include <chrono>
 #include <iostream>
-#include <curl/curl.h>
 #include <sstream>
 #include "api.hpp"
 #include "../external/http.hpp"
@@ -58,8 +57,9 @@ json submitBlock(string host_url, Block& block) {
 
 json getMiningProblem(string host_url) {
     string url = host_url + "/mine";
-    string response = curlGet(url);
-    return json::parse(response);
+    http::Request request(url);
+    const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
+    return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
 json sendTransaction(string host_url, Transaction& t) {
@@ -96,47 +96,15 @@ json verifyTransaction(string host_url, Transaction& t) {
 }
 
 
-struct DataHandler {
-    int totalBytes;
-    stringstream soFar;
-};
-
-
-size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
-    string data((const char*) ptr, (size_t) size * nmemb);
-    DataHandler * handler = (DataHandler*) stream;
-    handler->soFar<<data;
-    handler->totalBytes+=nmemb;
-    return size * nmemb;
-}
 
 
 void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
-    CURL *curl;
-    std::string readBuffer;
-    stringstream url;
-    url<<host_url<<"/sync/"<<startId<<"/"<<endId;
-    curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); 
-    curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
-    DataHandler d;
-    d.soFar = stringstream();
-    d.totalBytes = 0;
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &d);
-    /* Perform the request, res will get the return code */
-    CURLcode res = curl_easy_perform(curl);
-    /* Check for errors */
-    if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                curl_easy_strerror(res));
-    }
-    string st = d.soFar.str();
-    char* buffer = (char*)st.c_str();
+    http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
+    const auto response = request.send("GET", "", {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    std::vector<char> bytes(response.body.begin(), response.body.end());
+    char* buffer = (char*)bytes.data();
     char* currPtr = buffer;
     int bytesRead = 0;
     int i = 0;
@@ -157,9 +125,8 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
         numBlocks++;
         Block block(b, transactions);
         handler(block);
-        if (bytesRead >= st.size()) break;
+        if (bytesRead >= bytes.size()) break;
     }
-    curl_easy_cleanup(curl);
 }
 
 

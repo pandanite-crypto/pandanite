@@ -1,5 +1,5 @@
 #pragma once
-#include "nlohmann/json.hpp"
+#include "../external/json.hpp"
 #include "openssl/sha.h"
  #include "openssl/ripemd.h"
 #include <map>

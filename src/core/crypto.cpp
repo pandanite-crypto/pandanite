@@ -14,7 +14,7 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
 }
 
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
-    std::array<uint8_t, 20> ret;
+    RIPEMD160Hash ret;
     RIPEMD160_CTX ripemd;
     RIPEMD160_Init(&ripemd);
     RIPEMD160_Update(&ripemd, buffer, len);
@@ -59,34 +59,10 @@ string SHA256toString(SHA256Hash h) {
     return hexEncode((const char*)h.data(), h.size());
 }
 
-#ifdef SECP256K1
-secp256k1_context* GLOBAL_CONTEXT = NULL;
-secp256k1_context* getSecpContext() {
-    if (GLOBAL_CONTEXT == NULL) {
-        size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-        GLOBAL_CONTEXT = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    }
-    return GLOBAL_CONTEXT;
-}
-#endif
-
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
     // Based on: https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
     SHA256Hash hash;
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    int res;
-    size_t len;
-    
-    uint8_t pub[33];
-    len = sizeof(pub);
-    secp256k1_ec_pubkey_serialize(ctx, pub, &len, &inputKey, SECP256K1_EC_COMPRESSED);
-    hash = SHA256((const char*)pub, len);
-    
-#else
     hash = SHA256((const char*)inputKey.data(), inputKey.size());
-#endif
-    
     RIPEMD160Hash hash2 = RIPEMD160((const char*)hash.data(), hash.size());
     SHA256Hash hash3 = SHA256((const char*)hash2.data(),hash2.size());
     SHA256Hash hash4 = SHA256((const char*)hash3.data(),hash3.size());
@@ -106,31 +82,12 @@ PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
 }
 
 std::pair<PublicKey,PrivateKey> generateKeyPair() {
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    int res;
-    PrivateKey secret;
-    for(size_t i = 0 ; i < secret.size(); i++) {
-        secret[i] = rand()%256;
-    }
-    
-    res = secp256k1_ec_seckey_verify(ctx, (uint8_t*) secret.data());
-    if(!res) throw std::runtime_error("Private keygen failed");
-    secp256k1_pubkey pubkey;
-    res = secp256k1_ec_pubkey_create(ctx, &pubkey, (uint8_t*)secret.data());
-    if(!res) throw std::runtime_error("Public keygen failed");
-    
-    return std::pair<PublicKey, PrivateKey>(pubkey, secret);
-#else
     char buf[32];
     ed25519_create_seed((unsigned char*)buf);
     PublicKey pubKey;
     PrivateKey privKey;
     ed25519_create_keypair((unsigned char*)pubKey.data(), (unsigned char*)privKey.data(), (unsigned char*)buf);
     return std::pair<PublicKey, PrivateKey>(pubKey, privKey);
-#endif
 }
 
 
@@ -164,40 +121,15 @@ PrivateKey stringToPrivateKey(string p) {
 }
 
 string publicKeyToString(PublicKey pubKey) {
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    int8_t pub[33];
-    size_t len = sizeof(pub);
-    secp256k1_ec_pubkey_serialize(ctx, (unsigned char*)pub, &len, &pubKey, SECP256K1_EC_COMPRESSED);
-    
-    return hexEncode((const char*) pub,33);
-#else
     return hexEncode((const char*) pubKey.data(),pubKey.size());
-#endif
 }
 PublicKey stringToPublicKey(string p) {
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    int res;
-    size_t len;
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    vector<uint8_t> data = hexDecode(p);
-    secp256k1_pubkey pubkey;
-    res = secp256k1_ec_pubkey_parse(ctx, &pubkey, &data[0], 33);
-    if(!res) throw std::runtime_error("invalid key string");
-    
-    return pubkey;
-#else
     vector<uint8_t> data = hexDecode(p);
     PublicKey pubKey;
     for(int i = 0; i < data.size(); i++) {
         pubKey[i] = data[i];
     }
     return pubKey;
-#endif
 }   
 
 TransactionSignature signWithPrivateKey(string content, PublicKey pubKey, PrivateKey privKey) {
@@ -205,18 +137,6 @@ TransactionSignature signWithPrivateKey(string content, PublicKey pubKey, Privat
 }
 
 TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey pubKey, PrivateKey privKey) {
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    int res;
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    SHA256Hash hash = SHA256(bytes, len);
-    secp256k1_ecdsa_signature sig;
-    res = secp256k1_ecdsa_sign(ctx, &sig, (uint8_t*)hash.data(), (uint8_t*)privKey.data(), NULL, NULL);
-    if(!res) std::runtime_error("Can't sign");
-    
-    return sig;
-#else
     TransactionSignature t;
     ed25519_sign(
         (unsigned char *)t.data(), 
@@ -225,49 +145,18 @@ TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey
         (const unsigned char *) privKey.data()
     );
     return t;
-#endif
 }
 
 string signatureToString(TransactionSignature t) {
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    int res;
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    uint8_t der[72];
-    size_t len = sizeof(der);
-    res = secp256k1_ecdsa_signature_serialize_der(ctx, der, &len, &t);
-    string derHex = hexEncode((const char*) der, len);
-    string length = std::to_string(len);
-    string ret = length + "|" + derHex;
-    
-    return ret;
-#else
     return hexEncode((const char*) t.data(), t.size());
-#endif
 }
 TransactionSignature stringToSignature(string t) {
-#ifdef SECP256K1
-    secp256k1_context *ctx = getSecpContext();
-    std::string delimiter = "|";
-    size_t idx = t.find(delimiter);
-    int len = std::stoi(t.substr(0, idx));
-    vector<uint8_t> bytes = hexDecode(t.substr(idx+1));
-
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    TransactionSignature ret;   
-    secp256k1_ecdsa_signature_parse_der(ctx, &ret, bytes.data(),len);
-    
-    return ret;
-#else
     vector<uint8_t> data = hexDecode(t);
     TransactionSignature decoded;
     for(int i = 0; i < data.size(); i++) {
         decoded[i] = data[i];
     }
     return decoded;
-#endif
 }
 
 bool checkSignature(string content, TransactionSignature signature, PublicKey signingKey) {
@@ -275,21 +164,10 @@ bool checkSignature(string content, TransactionSignature signature, PublicKey si
 }
 
 bool checkSignature(const char* bytes, size_t len, TransactionSignature signature, PublicKey signingKey) {
-#ifdef SECP256K1
-     secp256k1_context *ctx = getSecpContext();
-    int res;
-    size_t context_size = secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    SHA256Hash hash = SHA256(bytes, len);
-    res = secp256k1_ecdsa_verify(ctx, &signature, (unsigned char*) hash.data(), &signingKey);
-    
-    return res == 1;
-#else
     int status = ed25519_verify((const unsigned char *) signature.data(),
                    (const unsigned char *) bytes, len,
                    (const unsigned char *) signingKey.data());
     return status == 1;
-#endif
 }
 
 SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b) {
