@@ -198,7 +198,7 @@ void BlockChain::popBlock() {
     this->blockStore.setTotalWork(this->totalWork);
     this->blockStore.setBlockCount(this->numBlocks);
     if (this->getBlockCount() > 1) {
-        Block newLast = this->getBlock(this->getBlockCount() - 1);
+        Block newLast = this->getBlock(this->getBlockCount());
         this->updateDifficulty(newLast);
         this->lastHash = newLast.getHash();
     } else {
