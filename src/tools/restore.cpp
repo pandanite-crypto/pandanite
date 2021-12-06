@@ -9,9 +9,10 @@
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/helpers.hpp"
-#include "../core/request_manager.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
+#include "../server/request_manager.hpp"
+#include <iostream>
 using namespace std;
 
 int main(int argc, char **argv) {    
@@ -31,6 +32,6 @@ int main(int argc, char **argv) {
         }
         Logger::logStatus("Made it to block : " + std::to_string(numBlocks));
     }
-    blockchain.closeDB();
+    // blockchain.closeDB();
 }
 

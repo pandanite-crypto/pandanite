@@ -30,16 +30,17 @@ void chain_sync(BlockChain& blockchain) {
             ExecutionStatus valid;
             valid = blockchain.startChainSync();
             if (valid != SUCCESS) {
+                Logger::logStatus("chain_sync: failed: " + executionStatusAsString(valid));
                 failureCount++;
             }
             if (failureCount > 3) {
                 std::pair<string, int> best = blockchain.hosts.getBestHost();
-                int toPop = 2*(best.second - blockchain.getBlockCount());
+                int toPop = blockchain.getBlockCount() / 2;
                 if (blockchain.getBlockCount() - toPop <=10) {
-                    Logger::logStatus("chain_sync: out of sync, resetting chain.");
+                    Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                     blockchain.resetChain();
                 } else {
-                    Logger::logStatus("chain_sync: out of sync, removing " + to_string(toPop) + " blocks and re-trying.");
+                    Logger::logStatus("chain_sync: 3 failures, removing " + to_string(toPop) + " blocks and re-trying.");
                     for(int j = 0; j < toPop; j++) {
                         blockchain.popBlock();
                     }
@@ -162,27 +163,67 @@ SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
 }
 
+int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
+    uint32_t newDifficulty = currentDifficulty;
+    if (elapsedTime > expectedTime) {
+            int k = 2;
+            int lastK = 1;
+            while(newDifficulty > 16) {
+                if(abs(elapsedTime/k - expectedTime) > abs(elapsedTime/lastK - expectedTime) ) {
+            break;
+            }
+            newDifficulty--;
+            lastK = k;
+            k*=2;
+        }
+        return newDifficulty;
+    } else {
+        int k = 2;
+        int lastK = 1;
+        while(newDifficulty < 255) {
+            if(abs(elapsedTime*k - expectedTime) > abs(elapsedTime*lastK - expectedTime) ) {
+                break;
+            }
+            newDifficulty++;
+            lastK = k;
+            k*=2;
+        }
+        return newDifficulty;
+    }
+}
+
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
-        // compute the new difficulty score based on average block time
-        double average = 0;
-        int total = 0;
-        // ignore genesis block time
-        int first = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
-        int last = this->numBlocks - 1;
-        for(int i = last; i >= first; i--) {
-            Block b1 = this->blockStore.getBlock(i-1);
-            Block b2 = this->blockStore.getBlock(i-2);
-            int currTs = (int)b1.getTimestamp();
-            int lastTs = (int)b2.getTimestamp();
-            average += (double)(currTs - lastTs);
-            total++;
+        if (block.getId() > NEW_DIFFICULTY_COMPUTATION_BLOCK) {
+            int firstID = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
+            int lastID = this->numBlocks - 1;
+            Block first = this->getBlock(firstID);
+            Block last = this->getBlock(lastID);
+            int32_t elapsed = last.getTimestamp() - first.getTimestamp();
+            int32_t target = DIFFICULTY_RESET_FREQUENCY * DESIRED_BLOCK_TIME_SEC;
+            int32_t difficulty = last.getDifficulty();
+            this->difficulty = computeDifficulty(difficulty, elapsed, target);
+        } else {
+            // compute the new difficulty score based on average block time
+            double average = 0;
+            int total = 0;
+            // ignore genesis block time
+            int first = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
+            int last = this->numBlocks - 1;
+            for(int i = last; i >= first; i--) {
+                Block b1 = this->blockStore.getBlock(i-1);
+                Block b2 = this->blockStore.getBlock(i-2);
+                int currTs = (int)b1.getTimestamp();
+                int lastTs = (int)b2.getTimestamp();
+                average += (double)(currTs - lastTs);
+                total++;
+            }
+            average /= total;
+            double ratio = average/DESIRED_BLOCK_TIME_SEC;
+            int delta = -round(log2(ratio));
+            this->difficulty += delta;
+            this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
         }
-        average /= total;
-        double ratio = average/DESIRED_BLOCK_TIME_SEC;
-        int delta = -round(log2(ratio));
-        this->difficulty += delta;
-        this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
     }
 }
 
