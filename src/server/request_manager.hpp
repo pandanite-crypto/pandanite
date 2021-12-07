@@ -22,7 +22,7 @@ class RequestManager {
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(Transaction& t);
-        std::pair<uint8_t*, size_t> getBlockHeaders(uint32_t start, uint32_t end);
+        std::pair<uint8_t*, size_t> getBlockHeaders();
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t index);
         std::pair<char*, size_t> getRawTransactionData();
         std::pair<char*, size_t> getRawTransactionData(BloomFilter& seen);

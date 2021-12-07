@@ -7,6 +7,10 @@
 #include "helpers.hpp"
 using namespace std;
 
+json safeParseJson(string s) {
+    return json::parse(s);
+}
+
 uint32_t getCurrentBlockCount(string host_url) {
     http::Request request{host_url + "/block_count"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
@@ -29,7 +33,7 @@ json getBlockData(string host_url, int idx) {
     http::Request request{host_url + "/block/" + std::to_string(idx)};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
     string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);  
+    return safeParseJson(responseStr);  
 }
 
 json submitBlock(string host_url, Block& block) {
@@ -52,14 +56,14 @@ json submitBlock(string host_url, Block& block) {
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    return safeParseJson(std::string{response.body.begin(), response.body.end()});
 }
 
 json getMiningProblem(string host_url) {
     string url = host_url + "/mine";
     http::Request request(url);
     const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    return safeParseJson(std::string{response.body.begin(), response.body.end()});
 }
 
 json sendTransaction(string host_url, Transaction& t) {
@@ -75,7 +79,7 @@ json sendTransaction(string host_url, Transaction& t) {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);
+    return safeParseJson(responseStr);
 }
 
 json verifyTransaction(string host_url, Transaction& t) {
@@ -91,14 +95,29 @@ json verifyTransaction(string host_url, Transaction& t) {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    cout<<"|"<<responseStr<<"|"<<endl;
-    return json::parse(responseStr);
+    return safeParseJson(responseStr);
+}
+
+void readBlockHeaders(string host_url,function<void(BlockHeader)> handler) {
+    http::Request request(host_url + "/block_headers"); 
+    const auto response = request.send("GET", "", {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    std::vector<char> bytes(response.body.begin(), response.body.end());
+    int numHeaders = bytes.size() / sizeof(BlockHeader);
+    BlockHeader* curr = (BlockHeader*)bytes.data();
+    for(int i =0; i < numHeaders; i++){
+        BlockHeader t = curr[i];
+        handler(BlockHeader(t));
+    }
 }
 
 
 
-
 void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
+    /*
+     *      UNSAFE : This code needs to handle malicious inputs
+     */
     http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
