@@ -65,6 +65,7 @@ void HostManager::refreshHostList() {
         this->hosts.clear();
         vector<future<void>> reqs;
         for(auto host : hostList) {
+            if (this->isBanned(host)) continue;
             try {
                 if (myName == "") {
                     this->hosts.push_back(string(host));
@@ -73,7 +74,7 @@ void HostManager::refreshHostList() {
                     HostManager& hm = *this;
                     reqs.push_back(std::async([&host, &hm](){
                         string hostName = getName(host);
-                        if (hostName != hm.myName && !hm.isBanned(host)) {
+                        if (hostName != hm.myName) {
                             Logger::logStatus("Adding host: " + string(host));
                             hm.hosts.push_back(string(host));
                         }
