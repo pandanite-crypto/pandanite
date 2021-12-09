@@ -64,6 +64,7 @@ Requires:
 * LevelDB
 ```
 git clone https://github.com/mr-pandabear/panda-coin.git
+git checkout stable
 cd panda-coin
 mkdir build
 cd build
