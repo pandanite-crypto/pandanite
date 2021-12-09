@@ -22,6 +22,8 @@ class RequestManager {
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(Transaction& t);
+        json getPeers();
+        void addPeer(string host);
         std::pair<uint8_t*, size_t> getBlockHeaders();
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t index);
         std::pair<char*, size_t> getRawTransactionData();

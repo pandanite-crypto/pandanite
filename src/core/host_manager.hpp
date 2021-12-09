@@ -1,6 +1,8 @@
 #pragma once
+#include "block.hpp"
 #include "common.hpp"
 #include <set>
+#include <mutex>
 using namespace std;
 
 class HostManager {
@@ -8,19 +10,26 @@ class HostManager {
         HostManager(json config, string myName="");
         HostManager(); // only used for  mocks
         string getBestHost();
+        uint32_t getBestChainLength();
         size_t size();
         void refreshHostList();
         vector<string> getHosts();
         void banHost(string host);
         bool isBanned(string host);
+        void addPeer(string host);
+        void propagateBlock(Block& b);
     protected:
+        set<string> sampleHosts(uint32_t num);
+        std::mutex lock;
         set<string> bannedHosts;
-        void initBestHost();
+        set<string> hosts;
+        void findBestHost();
         uint64_t downloadAndVerifyChain(string host);
-        string bestHost;
-        string myName;
         vector<string> hostSources;
-        vector<string> hosts;
-        vector<string> verifiedHosts;
+        string bestHost;
+        uint32_t bestChainLength;
+        string myName;
+        
+        
 };
 

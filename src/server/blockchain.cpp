@@ -54,10 +54,9 @@ void chain_sync(BlockChain& blockchain) {
                     blockchain.popBlock();
                 }
             }
-            
             failureCount = 0;
         }
-
+        // check if chain download complete:
         blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
@@ -249,7 +248,6 @@ void BlockChain::popBlock() {
     } else {
         this->resetChain();
     }
-    
 }
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
@@ -285,6 +283,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty(block);
+        this->hosts.propagateBlock(block);
     }
     return status;
 }

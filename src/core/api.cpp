@@ -36,6 +36,15 @@ json getBlockData(string host_url, int idx) {
     return safeParseJson(responseStr);  
 }
 
+json addPeer(string host_url, string peer_url) {
+    http::Request request{host_url + "/add_peer"};
+    const auto response = request.send("POST",peer_url,{
+        "Content-Type: text/plain"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    string responseStr = std::string{response.body.begin(), response.body.end()};
+    return safeParseJson(responseStr);  
+}
+
 json submitBlock(string host_url, Block& block) {
     BlockHeader b = block.serialize();
     vector<uint8_t> bytes;

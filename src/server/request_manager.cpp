@@ -28,7 +28,6 @@ json RequestManager::addTransaction(Transaction& t) {
 
 json RequestManager::submitProofOfWork(Block& newBlock) {
     json result;
-    // build map of all public keys in transaction
     this->blockchain->acquire();
     // add to the chain!
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
@@ -79,6 +78,20 @@ json RequestManager::getProofOfWork() {
     result["challengeSize"] = this->blockchain->getDifficulty();
     return result;
 
+}
+
+json RequestManager::getPeers() {
+    json peers = json::array();
+    for(auto h : this->hosts.getHosts()) {
+        peers.push_back(h);
+    }
+    return peers;
+}
+
+void RequestManager::addPeer(string host) {
+    this->hosts.addPeer(host);
+    json ret;
+    ret["status"] = executionStatusAsString(SUCCESS);
 }
 
 std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t index) {
