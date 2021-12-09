@@ -64,8 +64,8 @@ Requires:
 * LevelDB
 ```
 git clone https://github.com/mr-pandabear/panda-coin.git
-git checkout stable
 cd panda-coin
+git checkout stable
 mkdir build
 cd build
 conan install ..
