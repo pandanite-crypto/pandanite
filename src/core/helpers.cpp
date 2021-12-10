@@ -77,7 +77,7 @@ std::string exec(const char* cmd) {
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
         result += buffer.data();
     }
-    return result;
+    return result.substr(0, result.size() - 1);
 }
 
 size_t writeFunction(void *ptr, size_t size, size_t nmemb, std::string* data) {
