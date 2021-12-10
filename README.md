@@ -113,6 +113,7 @@ To host a node:
 ```
 ./bin/server
 ```
+NOTE: you will need to make a folder `~/panda-coin/data` under panda-coin to store the nodes data
 
 
 
