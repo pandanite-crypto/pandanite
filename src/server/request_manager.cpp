@@ -85,8 +85,8 @@ std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t index) {
     return this->blockchain->getRaw(index);
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getBlockHeaders(uint32_t start, uint32_t end) {
-    return this->blockchain->getBlockHeaders(start, end);
+std::pair<uint8_t*, size_t> RequestManager::getBlockHeaders() {
+    return this->blockchain->getBlockHeaders();
 }
 
 

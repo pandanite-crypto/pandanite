@@ -152,7 +152,7 @@ std::pair<uint8_t*, size_t> BlockStore::getRawData(uint32_t blockId) {
 std::pair<uint8_t*, size_t> BlockStore::getBlockHeaders(uint32_t start, uint32_t end) {
     if (end <= start) throw std::runtime_error("BlockStore::getBlockHeaders: Invalid range");
     size_t sz = sizeof(BlockHeader)*(end - start);
-    BlockHeader* buffer = (BlockHeader*)malloc(end-start);
+    BlockHeader* buffer = (BlockHeader*) malloc(sz);
     for(int i = start; i <= end; i++) {
         buffer[i-start] = this->getBlockHeader(i);
     }

@@ -15,9 +15,9 @@ using namespace std;
 void get_status( HostManager& hosts, std::mutex& statusLock, uint64_t& latestBlockId) {
     while(true) {
         try {
-            std::pair<string,uint64_t> bestHost = hosts.getBestHost();
+            string bestHost = hosts.getBestHost();
             statusLock.lock();
-            latestBlockId = bestHost.second;
+            latestBlockId = hosts.getBestChainLength();
             statusLock.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch(...) {
@@ -31,17 +31,17 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
     BloomFilter bf;
     while(true) {
         try {
-            std::pair<string,int> bestHost = hosts.getBestHost();
-            if (bestHost.first == "") {
+            string bestHost = hosts.getBestHost();
+            if (bestHost == "") {
                 Logger::logStatus("no host found");
             } else {
-                Logger::logStatus("fetching problem from " + bestHost.first);
+                Logger::logStatus("fetching problem from " + bestHost);
             }
-            int bestCount = bestHost.second;
-            string host = bestHost.first;
+            int bestCount = hosts.getBestChainLength();
+            string host = bestHost;
             int nextBlock = bestCount + 1;
             json problem = getMiningProblem(host); 
-            Logger::logStatus("Got problem. Difficulty=" + to_string(problem["challengeSize"]));
+            Logger::logStatus("Got problem for block " + to_string(nextBlock) +  ". Difficulty=" + to_string(problem["challengeSize"]));
 
             // download transactions
             int count = 0;

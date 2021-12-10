@@ -17,7 +17,7 @@ using namespace std;
 
 int main(int argc, char **argv) {    
     json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
-    string myName = ""; //randomString(25);
+    string myName = randomString(25);
     int port = config["port"];
 
     if (argc > 1) {
@@ -38,6 +38,10 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/total_work", "unknown");
         }
+    }).get("/add_peer", [&manager](auto *res, auto *req) {
+         res->end(string(res->getRemoteAddressAsText()));
+    }).get("/peers", [&manager](auto *res, auto *req) {
+         res->end(string(res->getRemoteAddressAsText()));
     }).get("/block_count", [&manager](auto *res, auto *req) {
         try {
             std::string count = manager.getBlockCount();
@@ -143,9 +147,9 @@ int main(int argc, char **argv) {
             delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
+            Logger::logError("/gettx", e.what());
         } catch(...) {
-            Logger::logError("/sync", "unknown");
+            Logger::logError("/gettx", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
@@ -183,17 +187,14 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).get("/block_headers/:start/:end", [&manager](auto *res, auto *req) {
+    }).get("/block_headers", [&manager](auto *res, auto *req) {
         try {
-            uint32_t start = std::stoi(string(req->getParameter(0)));
-            uint32_t end = std::stoi(string(req->getParameter(1)));
+            Logger::logStatus("Returning block headers");
             res->writeHeader("Content-Type", "application/octet-stream");
-            for (int i = start; i <=end; i++) {
-                std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
-                std::string_view str((char*)buffer.first, buffer.second);
-                res->write(str);
-                delete buffer.first;
-            }
+            std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders();
+            std::string_view str((char*)buffer.first, buffer.second);
+            res->write(str);
+            delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
             Logger::logError("/block_headers", e.what());

@@ -33,29 +33,32 @@ void chain_sync(BlockChain& blockchain) {
                 Logger::logStatus("chain_sync: failed: " + executionStatusAsString(valid));
                 failureCount++;
             }
-            if (failureCount > 3) {
-                std::pair<string, int> best = blockchain.hosts.getBestHost();
-                int toPop = blockchain.getBlockCount() / 2;
-                if (blockchain.getBlockCount() - toPop <=10) {
-                    Logger::logStatus("chain_sync: 3 failures,resetting chain.");
-                    blockchain.resetChain();
-                } else {
-                    Logger::logStatus("chain_sync: 3 failures, removing " + to_string(toPop) + " blocks and re-trying.");
-                    for(int j = 0; j < toPop; j++) {
-                        blockchain.popBlock();
-                    }
-                }
-                
-                failureCount = 0;
-            }
         } catch(std::exception & e) {
+            failureCount++;
             Logger::logError("chain_sync", string(e.what()));
         }
-        blockchain.release();
-        if (i%2000 == 0) { // refresh host list roughly every 3 min
-            Logger::logStatus("chain_sync: Refreshing host list");
+
+        if (failureCount > 3) {
+            // ban current host
+            blockchain.hosts.banHost(blockchain.hosts.getBestHost());
+            // fetch a new host:
             blockchain.hosts.refreshHostList();
+            // pop off 20% of blocks
+            int toPop = blockchain.getBlockCount() / 5;
+            if (blockchain.getBlockCount() - toPop <=10) {
+                Logger::logStatus("chain_sync: 3 failures,resetting chain.");
+                blockchain.resetChain();
+            } else {
+                Logger::logStatus("chain_sync: 3 failures, removing " + to_string(toPop) + " blocks and re-trying.");
+                for(int j = 0; j < toPop; j++) {
+                    blockchain.popBlock();
+                }
+            }
+            
+            failureCount = 0;
         }
+
+        blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
     }
@@ -116,8 +119,9 @@ std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
     return this->blockStore.getRawData(blockId);
 }
 
-std::pair<uint8_t*, size_t> BlockChain::getBlockHeaders(uint32_t start, uint32_t end) {
-    return this->blockStore.getBlockHeaders(start, end);
+std::pair<uint8_t*, size_t> BlockChain::getBlockHeaders() {
+    int numBlocks = this->getBlockCount();
+    return this->blockStore.getBlockHeaders(1, numBlocks);
 }
 
 void BlockChain::sync() {
@@ -287,9 +291,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // iterate through each of the hosts and pick the longest one:
-    std::pair<string,int> bestHostInfo = this->hosts.getBestHost();
-    string bestHost = bestHostInfo.first;
-    this->targetBlockCount = bestHostInfo.second;
+    string bestHost = this->hosts.getBestHost();
+    this->targetBlockCount = getCurrentBlockCount(bestHost);
     int startCount = this->numBlocks;
 
     if (startCount >= this->targetBlockCount) {
@@ -313,16 +316,16 @@ ExecutionStatus BlockChain::startChainSync() {
                     if (addResult != SUCCESS) {
                         failure = true;
                         status = addResult;
-                        Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
+                        Logger::logError("Chain failed at blockID: ", std::to_string(b.getId()));
                     }
                 } 
             });
             if (failure) {
-                Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
+                Logger::logError("BlockChain::startChainSync: ", executionStatusAsString(status));
                 return status;
             }
         } catch (const std::exception &e) {
-            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
+            Logger::logError("BlockChain::startChainSync", "Failed to load block: " + string(e.what()));
             return UNKNOWN_ERROR;
         }
     }
