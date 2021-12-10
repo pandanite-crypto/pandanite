@@ -56,6 +56,18 @@ struct TransactionInfo {
 
 
 ### Getting Started
+### Install requirements
+```
+sudo apt-get update
+sudo apt-get -y install make  
+sudo apt-get -y install cmake  
+sudo apt-get -y install automake
+sudo apt-get -y install libtool
+sudo apt-get -y install python3-pip
+sudo apt-get -y install libleveldb-dev
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6
+sudo pip3 install conan
+```
 
 ### Building
 Requires:
