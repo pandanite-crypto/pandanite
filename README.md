@@ -56,7 +56,7 @@ struct TransactionInfo {
 
 
 ### Getting Started
-### Install requirements
+Linux install requirements
 ```
 sudo apt-get update
 sudo apt-get -y install make  
