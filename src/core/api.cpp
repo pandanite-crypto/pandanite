@@ -36,7 +36,7 @@ json getBlockData(string host_url, int idx) {
     return safeParseJson(responseStr);  
 }
 
-json addPeer(string host_url, string peer_url) {
+json addPeerNode(string host_url, string peer_url) {
     http::Request request{host_url + "/add_peer"};
     const auto response = request.send("POST",peer_url,{
         "Content-Type: text/plain"

@@ -7,6 +7,8 @@
 #include <iostream>
 #include <thread>
 #include <future>
+#include <algorithm>
+#include <random>
 #include <set>
 using namespace std;
 
@@ -22,7 +24,7 @@ HostManager::HostManager(json config, string myName) {
 
     if (this->hostSources.size() == 0) {
         for(auto h : config["hosts"]) {
-            this->hosts.push_back(h);
+            this->hosts.insert(string(h));
         }
     }     
     this->refreshHostList();
@@ -40,10 +42,20 @@ bool HostManager::isBanned(string host) {
     return this->bannedHosts.find(host) != this->bannedHosts.end();
 }
 
+void HostManager::addPeer(string host) {
+    if (this->peers.find(host) != this->peers.end()) return;
+    this->peers.insert(host);
+    // propagate the peer to N randomly chosen peers
+    vector<string> sampledHosts = this->sampleHosts(NUM_PEER_PROPAGATE_HOSTS);
+    for (auto neighbor : sampledHosts) {
+        addPeerNode(neighbor, host);
+    }
+}
+
 
 void HostManager::propagateBlock(Block& b) {
     // propagate the block to N randomly chosen peers
-    set<string> sampledHosts = this->sampleHosts(NUM_BLOCK_PROPAGATE_HOSTS);
+    vector<string> sampledHosts = this->sampleHosts(NUM_BLOCK_PROPAGATE_HOSTS);
     vector<future<void>> reqs;
     for(auto peer : sampledHosts) {
         reqs.push_back(std::async([&peer, &b]() {
@@ -56,18 +68,7 @@ void HostManager::propagateBlock(Block& b) {
     }
 }
 
-void HostManager::addPeer(string host) {
-    if (this->peers.find(host) != this->peers.end()) return;
-    this->peers.insert(host);
-    // propagate the peer to N randomly chosen peers
-    set<string> sampledHosts = this->sampleHosts(NUM_PEER_PROPAGATE_HOSTS);
-}
-
 void HostManager::refreshHostList() {
-    if (this->hostSources.size() == 0) {
-        this->initBestHost();
-        return;
-    }
     set<string> hostList;
     try {
         for (int i = 0; i < this->hostSources.size(); i++) {
@@ -77,31 +78,35 @@ void HostManager::refreshHostList() {
                 const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
                 auto peers = json::parse(std::string{response.body.begin(), response.body.end()});
                 for(auto h : peers) {
-                    hostList.insert(h);
+                    hostList.insert(string(h));
                 }
             } catch (...) {
                 continue;
             }
         }
-        if (hostList.size() == 0) throw std::runtime_error("Could not fetch host directory.");
+        for(auto h : this->hosts) {
+            hostList.insert(h);
+        }
         this->hosts.clear();
         vector<future<void>> reqs;
         for(auto host : hostList) {
             if (this->isBanned(host)) continue;
             try {
-                if (myName == "") {
-                    this->hosts.push_back(string(host));
+                if (this->myName == "") {
+                    this->hosts.insert(string(host));
                     Logger::logStatus("Adding host: " + string(host));
                 }else {
-                    // send name request to check responsiveness of each node:
                     HostManager& hm = *this;
-                    reqs.push_back(std::async([&host, &hm](){
+                    string myAddr = "http://" + exec("curl ifconfig.co") + ":3000";
+                    Logger::logStatus("My address is: " + myAddr);
+                    reqs.push_back(std::async([&host, &myAddr, &hm](){
+                        // send name request to check responsiveness of each node:
                         string hostName = getName(host);
                         if (hostName != hm.myName) {
-                            Logger::logStatus("Adding host: " + string(host));
+                            Logger::logStatus("Adding peer host: " + string(host));
                             hm.hosts.insert(string(host));
-                            string myAddr = "http://" + exec("curl ifconfig.co") + ":3000";
-                            addPeer(host, myAddr);
+                            // add ourself as a peer node of the host
+                            addPeerNode(host, myAddr);
                         }
                     }));
                 }
@@ -123,6 +128,7 @@ void HostManager::refreshHostList() {
 vector<string> HostManager::getHosts() {
     vector<string> allHosts;
     for(auto h : this->hosts) allHosts.push_back(h);
+    for(auto h : this->peers) allHosts.push_back(h);
     return allHosts;
 }
 
@@ -137,7 +143,7 @@ uint64_t HostManager::downloadAndVerifyChain(string host) {
     uint32_t numBlocks = 0;
     bool error = false;
     try {
-        readBlockHeaders(host, [&totalWork, &chain, &lastHash, &error](BlockHeader blockHeader) {
+        readBlockHeaders(host, [&totalWork, &numBlocks, &chain, &lastHash, &error](BlockHeader blockHeader) {
             vector<Transaction> empty;
             Block block(blockHeader, empty);
             if (!block.verifyNonce()) error = true;
@@ -149,6 +155,7 @@ uint64_t HostManager::downloadAndVerifyChain(string host) {
         if (error) return 0;
         
         this->bestChainLength = numBlocks;
+        this->bestChainWork = totalWork;
         return totalWork;
     } catch (...) {
         return 0;
@@ -159,34 +166,40 @@ uint32_t HostManager::getBestChainLength() {
     return this->bestChainLength;
 }
 
+uint64_t HostManager::getBestChainWork() {
+    return this->bestChainWork;
+}
+
 string HostManager::getBestHost() {
     return this->bestHost;
 }
 
 
-set<string> HostManager::sampleHosts(uint32_t numToPick) {
-    numToPick = min(numToPick, this->hosts.size());
-    while(sampledHosts.size() < numToPick) {
-        sampledHosts.insert(this->hosts[rand() % this->hosts.size()]);
-    }
-    return sampledHosts;
+vector<string> HostManager::sampleHosts(uint32_t numToPick) {
+    vector<string> sampledHosts;
+    numToPick = min(numToPick, (uint32_t) this->hosts.size());
+    std::sample(this->hosts.begin(), this->hosts.end(), std::back_inserter(sampledHosts),
+                numToPick, std::mt19937{std::random_device{}()});
+    return std::move(sampledHosts);
 }
 
 
 void HostManager::findBestHost() {
-    // TODO: make this asynchronous
     vector<future<void>> reqs;
     std::mutex lock;
     
     uint64_t mostWork = 0;
     string mostWorkHost = "";
-    
-    set<string> sampledHosts = this->sampleHosts(NUM_SEED_HOSTS);
 
+    // pick random hosts:
+    vector<string> sampledHosts = this->sampleHosts(NUM_SEED_HOSTS);
+
+    // download and verify chain from each host
     for (auto host : sampledHosts) {
         HostManager& hm = *this;
         reqs.push_back(std::async([&host, &hm, &lock, &mostWork, &mostWorkHost](){
             uint64_t totalWork = hm.downloadAndVerifyChain(host);
+            Logger::logStatus("Downloaded chain with totalWork=" + to_string(totalWork));
             lock.lock();
             if (totalWork > mostWork) {
                 mostWork = totalWork;

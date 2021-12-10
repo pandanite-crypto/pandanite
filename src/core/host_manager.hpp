@@ -11,6 +11,7 @@ class HostManager {
         HostManager(); // only used for  mocks
         string getBestHost();
         uint32_t getBestChainLength();
+        uint64_t getBestChainWork();
         size_t size();
         void refreshHostList();
         vector<string> getHosts();
@@ -19,15 +20,17 @@ class HostManager {
         void addPeer(string host);
         void propagateBlock(Block& b);
     protected:
-        set<string> sampleHosts(uint32_t num);
+        vector<string> sampleHosts(uint32_t num);
         std::mutex lock;
+        vector<string> hostSources;
         set<string> bannedHosts;
         set<string> hosts;
+        set<string> peers;
         void findBestHost();
-        uint64_t downloadAndVerifyChain(string host);
-        vector<string> hostSources;
+        uint64_t downloadAndVerifyChain(string host);        
         string bestHost;
         uint32_t bestChainLength;
+        uint64_t bestChainWork;
         string myName;
         
         

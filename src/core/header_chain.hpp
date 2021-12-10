@@ -18,5 +18,5 @@ class HeaderChain {
         vector<BlockHeader> chain;
         uint64_t totalWork;
         vector<std::thread> syncThread;
-        friend sync_blocks(HeaderChain & chain);
+        friend void sync_blocks(HeaderChain & chain);
 };

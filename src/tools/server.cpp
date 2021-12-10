@@ -17,13 +17,14 @@ using namespace std;
 
 int main(int argc, char **argv) {    
     json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
+    srand(time(NULL));
     string myName = randomString(25);
     int port = config["port"];
 
     if (argc > 1) {
-        string logfile = string(argv[1]);
-        Logger::file.open(logfile);
+        port = stoi(string(argv[1]));
     }
+    
     HostManager hosts(config, myName);
     RequestManager manager(hosts);
  
@@ -48,6 +49,7 @@ int main(int argc, char **argv) {
             if (last) {
                 try {
                     string url = string(buffer);
+                    Logger::logStatus("Adding peer : " + url);
                     return manager.addPeer(url);
                 }  catch(const std::exception &e) {
                     Logger::logError("/add_peer", e.what());
