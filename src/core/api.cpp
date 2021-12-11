@@ -98,21 +98,19 @@ json verifyTransaction(string host_url, Transaction& t) {
     return safeParseJson(responseStr);
 }
 
-void readBlockHeaders(string host_url,function<void(BlockHeader)> handler) {
+void readBlockHeaders(string host_url, function<bool(BlockHeader)> handler) {
     http::Request request(host_url + "/block_headers"); 
-    const auto response = request.send("GET", "", {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
-    std::vector<char> bytes(response.body.begin(), response.body.end());
-    int numHeaders = bytes.size() / sizeof(BlockHeader);
-    BlockHeader* curr = (BlockHeader*)bytes.data();
-    for(int i =0; i < numHeaders; i++){
-        BlockHeader t = curr[i];
-        handler(BlockHeader(t));
-    }
+    const auto response = request.send("GET", "", {}, std::chrono::milliseconds{120000});
+    if (response.status == 200) {
+        int numHeaders = response.body.size() / sizeof(BlockHeader);
+        BlockHeader* curr = (BlockHeader*)response.body.data();
+        for(int i =0; i < numHeaders; i++){
+            BlockHeader t = curr[i];
+            bool error = handler(t);
+            if (error) break;
+        }
+    } 
 }
-
-
 
 void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
     /*

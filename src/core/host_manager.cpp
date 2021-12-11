@@ -109,14 +109,15 @@ std::pair<uint32_t, uint64_t> HostManager::downloadAndVerifyChain(string host) {
     uint32_t chainLength = 0;
     bool error = false;
     try {
-        readBlockHeaders(host, [&totalWork, &chain, &lastHash, &error](BlockHeader blockHeader) {
+        readBlockHeaders(host, [&totalWork, &chain, &lastHash, &error, &chainLength](BlockHeader blockHeader) {
             vector<Transaction> empty;
             Block block(blockHeader, empty);
-            Logger::logStatus("verifying block header " + to_string(block.getId()));
             if (!block.verifyNonce()) error = true;
             if (block.getLastBlockHash() != lastHash) error = true;
             lastHash = block.getHash();
             totalWork+= block.getDifficulty();
+            chainLength++;
+            return error;
         });
         if (error) return std::pair<uint32_t, uint64_t>(0,0);
         return std::pair<uint32_t, uint64_t>(chainLength,totalWork);
@@ -156,7 +157,7 @@ void HostManager::initBestHost() {
             uint64_t totalWork= chainStats.second;
             lock.lock();
             if (totalWork > bestChainStats.second) {
-                mostWorkHost = host;
+                mostWorkHost = string(host);
                 bestChainStats = chainStats;
             }    
             lock.unlock();
