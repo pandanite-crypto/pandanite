@@ -137,6 +137,7 @@ uint64_t HostManager::getBestChainWork() {
     return this->bestChainStats.second;
 }
 
+#ifdef USE_HEADER_VERIFICATION
 void HostManager::initBestHost() {
     // TODO: make this asynchronous
     vector<future<void>> reqs;
@@ -171,3 +172,40 @@ void HostManager::initBestHost() {
     this->bestHost = mostWorkHost;
     this->bestChainStats = bestChainStats;
 }
+#else
+void HostManager::initBestHost() {
+    // TODO: make this asynchronous
+    uint64_t bestWork = 0;
+    vector<string> bestHosts;
+    vector<future<void>> reqs;
+    std::mutex lock;
+    for(auto host : this->hosts) {
+        reqs.push_back(std::async([host, &bestHosts, &bestWork, &lock]() {
+            try {
+                uint64_t curr = getCurrentBlockCount(host); //getTotalWork(host);
+                lock.lock();
+                if (curr > bestWork) {
+                    bestWork = curr;
+                    bestHosts.clear();
+                    bestHosts.push_back(host);
+                } else if (curr == bestWork) {
+                    bestHosts.push_back(host);
+                }
+                lock.unlock();
+            } catch (std::exception & e) {
+                lock.unlock();
+            }
+        }));
+    }    
+    // block until all requests finish
+    for(int i = 0; i < reqs.size(); i++) {
+        reqs[i].get();
+    }
+
+    if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
+    string bestHost = bestHosts[rand()%bestHosts.size()];
+    Logger::logStatus("initBestHost: " + bestHost);
+    this->bestHost = bestHost;
+    this->bestChainStats = std::pair<uint32_t,uint64_t>(bestWork, 0);
+}
+#endif

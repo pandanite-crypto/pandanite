@@ -17,6 +17,7 @@ using namespace std;
 
 int main(int argc, char **argv) {    
     json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
+    srand(time(0));
     string myName = randomString(25);
     int port = config["port"];
 
