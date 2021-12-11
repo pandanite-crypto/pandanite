@@ -65,17 +65,18 @@ void HostManager::refreshHostList() {
         this->hosts.clear();
         vector<future<void>> reqs;
         for(auto host : hostList) {
+            string host_url = string(host);
             try {
                 if (myName == "") {
-                    this->hosts.push_back(string(host));
-                    Logger::logStatus("Adding host: " + string(host));
+                    this->hosts.push_back(host_url);
+                    Logger::logStatus("Adding host: " + host_url);
                 }else {
                     HostManager& hm = *this;
-                    reqs.push_back(std::async([&host, &hm](){
-                        string hostName = getName(host);
-                        if (hostName != hm.myName && !hm.isBanned(host)) {
-                            Logger::logStatus("Adding host: " + string(host));
-                            hm.hosts.push_back(string(host));
+                    reqs.push_back(std::async([host_url, &hm](){
+                        string hostName = getName(host_url);
+                        if (hostName != hm.myName && !hm.isBanned(host_url)) {
+                            Logger::logStatus("Adding host: " + host_url);
+                            hm.hosts.push_back(host_url);
                         }
                     }));
                 }
