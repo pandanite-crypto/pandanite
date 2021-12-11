@@ -40,7 +40,7 @@ void chain_sync(BlockChain& blockchain) {
 
         if (failureCount > 3) {
             // ban current host
-            blockchain.hosts.banHost(blockchain.hosts.getBestHost());
+            // blockchain.hosts.banHost(blockchain.hosts.getBestHost());
             // fetch a new host:
             blockchain.hosts.refreshHostList();
             // pop off 20% of blocks
@@ -57,7 +57,7 @@ void chain_sync(BlockChain& blockchain) {
             
             failureCount = 0;
         }
-
+        if (rand()%600) blockchain.hosts.refreshHostList();
         blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
