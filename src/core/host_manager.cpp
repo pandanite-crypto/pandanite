@@ -176,6 +176,10 @@ void HostManager::initBestHost() {
 #else
 void HostManager::initBestHost() {
     // TODO: make this asynchronous
+    if (this->hosts.size() == 0) {
+        this->bestHost = "";
+        return;
+    }
     uint64_t bestWork = 0;
     vector<string> bestHosts;
     vector<future<void>> reqs;
