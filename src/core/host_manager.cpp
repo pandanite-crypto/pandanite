@@ -71,8 +71,12 @@ void HostManager::refreshHostList() {
                             Logger::logStatus("Adding host: " + hostUrl);
                             hm.hosts.push_back(hostUrl);
                             // add self as peer to host:
-                            string myAddress = computeAddress();
-                            addPeerNode(hostUrl, myAddress);
+                            try {
+                                string myAddress = computeAddress();
+                                addPeerNode(hostUrl, myAddress);
+                            } catch(...) {
+                                Logger::logStatus("Failed to register self as peer to " + hostUrl);
+                            }
                         }
                     }));
                 }
