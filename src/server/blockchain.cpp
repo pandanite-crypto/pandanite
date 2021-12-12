@@ -43,8 +43,7 @@ void chain_sync(BlockChain& blockchain) {
             // blockchain.hosts.banHost(blockchain.hosts.getBestHost());
             // fetch a new host:
             blockchain.hosts.refreshHostList();
-            // pop off 20% of blocks
-            int toPop = blockchain.getBlockCount() / 5;
+            int toPop = 15;
             if (blockchain.getBlockCount() - toPop <=10) {
                 Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                 blockchain.resetChain();

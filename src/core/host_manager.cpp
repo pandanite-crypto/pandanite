@@ -61,12 +61,12 @@ void HostManager::refreshHostList() {
         }
         if (!foundHost) throw std::runtime_error("Could not fetch host directory.");
 
-        // if our node is in the host list, remove ourselves:        
         this->hosts.clear();
         vector<future<void>> reqs;
         for(auto host : hostList) {
             string host_url = string(host);
             try {
+                // if our node is in the host list, remove ourselves: 
                 if (myName == "") {
                     this->hosts.push_back(host_url);
                     Logger::logStatus("Adding host: " + host_url);
@@ -74,7 +74,7 @@ void HostManager::refreshHostList() {
                     HostManager& hm = *this;
                     reqs.push_back(std::async([host_url, &hm](){
                         string hostName = getName(host_url);
-                        if (hostName != hm.myName && !hm.isBanned(host_url)) {
+                        if (hostName != hm.myName) {
                             Logger::logStatus("Adding host: " + host_url);
                             hm.hosts.push_back(host_url);
                         }
