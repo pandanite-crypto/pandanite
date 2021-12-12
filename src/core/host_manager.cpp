@@ -66,17 +66,21 @@ void HostManager::refreshHostList() {
                 }else {
                     HostManager& hm = *this;
                     reqs.push_back(std::async([&hostUrl, &hm](){
-                        string hostName = getName(hostUrl);
-                        if (hostName != hm.myName) {
-                            Logger::logStatus("Adding host: " + hostUrl);
-                            hm.hosts.push_back(hostUrl);
-                            // add self as peer to host:
-                            try {
-                                string myAddress = computeAddress();
-                                addPeerNode(hostUrl, myAddress);
-                            } catch(...) {
-                                Logger::logStatus("Failed to register self as peer to " + hostUrl);
+                        try {
+                            string hostName = getName(hostUrl);
+                            if (hostName != hm.myName) {
+                                Logger::logStatus("Adding host: " + hostUrl);
+                                hm.hosts.push_back(hostUrl);
+                                // add self as peer to host:
+                                try {
+                                    string myAddress = computeAddress();
+                                    addPeerNode(hostUrl, myAddress);
+                                } catch(...) {
+                                    Logger::logStatus("Failed to register self as peer to " + hostUrl);
+                                }
                             }
+                        } catch (...) {
+                            Logger::logStatus("Failed to load name");
                         }
                     }));
                 }
