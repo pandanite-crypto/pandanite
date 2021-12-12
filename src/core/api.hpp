@@ -15,6 +15,7 @@ json getBlockData(string host_url, int idx);
 json getMiningProblem(string host_url);
 json sendTransaction(string host_url, Transaction& t);
 json verifyTransaction(string host_url, Transaction& t);
+json addPeerNode(string host_url, string peer_url);
 json submitBlock(string host_url, Block& b);
 void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler);
 void readRawTransactions(string host_url, BloomFilter& bf, function<void(Transaction)> handler);

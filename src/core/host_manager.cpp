@@ -24,6 +24,17 @@ HostManager::HostManager(json config, string myName) {
 HostManager::HostManager() {
 }
 
+string computeAddress() {
+    string rawUrl = exec("curl ifconfig.co") ;
+    return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
+}
+
+void HostManager::addPeer(string addr) {
+    auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
+    if (existing != this->hosts.end()) return;
+    this->hosts.push_back(addr);
+}
+
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     json hostList;
@@ -42,27 +53,31 @@ void HostManager::refreshHostList() {
             }
         }
         if (!foundHost) throw std::runtime_error("Could not fetch host directory.");
-
-        // if our node is in the host list, remove ourselves:        
-        this->hosts.clear();
+        
         vector<future<void>> reqs;
-        for(auto host : hostList) {
+        for(auto hostJson : hostList) {
+            string hostUrl = string(hostJson);
+            auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
+            if (existing != this->hosts.end()) continue;
             try {
                 if (myName == "") {
-                    this->hosts.push_back(string(host));
-                    Logger::logStatus("Adding host: " + string(host));
+                    this->hosts.push_back(hostUrl);
+                    Logger::logStatus("Adding host: " + hostUrl);
                 }else {
                     HostManager& hm = *this;
-                    reqs.push_back(std::async([&host, &hm](){
-                        string hostName = getName(host);
+                    reqs.push_back(std::async([&hostUrl, &hm](){
+                        string hostName = getName(hostUrl);
                         if (hostName != hm.myName) {
-                            Logger::logStatus("Adding host: " + string(host));
-                            hm.hosts.push_back(string(host));
+                            Logger::logStatus("Adding host: " + hostUrl);
+                            hm.hosts.push_back(hostUrl);
+                            // add self as peer to host:
+                            string myAddress = computeAddress();
+                            addPeerNode(hostUrl, myAddress);
                         }
                     }));
                 }
             } catch (...) {
-                Logger::logStatus("Host did not respond: " + string(host));
+                Logger::logStatus("Host did not respond: " + hostUrl);
             }
         }
         // block until all requests finish or timeout

@@ -15,9 +15,11 @@
 #include "../server/request_manager.hpp"
 using namespace std;
 
+
 int main(int argc, char **argv) {    
     json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
-    string myName = ""; //randomString(25);
+    srand(time(0));
+    string myName = randomString(25);
     int port = config["port"];
 
     if (argc > 1) {
@@ -38,6 +40,9 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/total_work", "unknown");
         }
+    }).get("/peers", [&manager](auto *res, auto *req) {
+        json response = manager.getPeers();
+        res->end(response.dump());
     }).get("/block_count", [&manager](auto *res, auto *req) {
         try {
             std::string count = manager.getBlockCount();
@@ -83,6 +88,26 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/ledger", "unknown");
         }
+    }).post("/add_peer", [&manager](auto *res, auto *req) {
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+        std::string buffer;
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            if (last) {
+                try {
+                    string url = string(buffer);
+                    Logger::logStatus("Adding peer : " + url);
+                    json result = manager.addPeer(url);
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/add_peer", e.what());
+                } catch(...) {
+                    Logger::logError("/add_peer", "unknown");
+                }
+            }
+        });
     }).post("/submit", [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");

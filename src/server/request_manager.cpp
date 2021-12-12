@@ -105,6 +105,23 @@ std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(uint32_t 
 json RequestManager::getBlock(uint32_t index) {
     return this->blockchain->getBlock(index).toJson();
 }
+
+json RequestManager::getPeers() {
+    json peers = json::array();
+    for(auto h : this->hosts.getHosts()) {
+        peers.push_back(h);
+    }
+    return peers;
+}
+
+json RequestManager::addPeer(string host) {
+    this->hosts.addPeer(host);
+    json ret;
+    ret["status"] = executionStatusAsString(SUCCESS);
+    return ret;
+}
+
+
 json RequestManager::getLedger(PublicWalletAddress w) {
     json result;
     Ledger& ledger = this->blockchain->getLedger();
