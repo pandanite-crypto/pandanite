@@ -35,7 +35,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 std::pair<string, int> best = blockchain.hosts.getBestHost();
-                int toPop = blockchain.getBlockCount() / 2;
+                int toPop = 15;
                 if (blockchain.getBlockCount() - toPop <=10) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                     blockchain.resetChain();
@@ -170,8 +170,8 @@ int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t ex
             int lastK = 1;
             while(newDifficulty > 16) {
                 if(abs(elapsedTime/k - expectedTime) > abs(elapsedTime/lastK - expectedTime) ) {
-            break;
-            }
+                    break;
+                }
             newDifficulty--;
             lastK = k;
             k*=2;
@@ -192,9 +192,24 @@ int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t ex
     }
 }
 
+
+
+#define BLOCK_DIFFICULTY_GAP_START 37800
+#define BLOCK_DIFFICULTY_GAP_END   40000
+
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
-        if (block.getId() > NEW_DIFFICULTY_COMPUTATION_BLOCK) {
+        if (block.getId() >= BLOCK_DIFFICULTY_GAP_END) {
+            int firstID = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY); 
+            int lastID = this->numBlocks;  
+            Block first = this->getBlock(firstID);
+            Block last = this->getBlock(lastID);
+            int32_t elapsed = last.getTimestamp() - first.getTimestamp(); 
+            uint32_t numBlocksElapsed = lastID - firstID;
+            int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
+            int32_t difficulty = last.getDifficulty();
+            this->difficulty = computeDifficulty(difficulty, elapsed, target);
+        } else if (block.getId() > NEW_DIFFICULTY_COMPUTATION_BLOCK) {
             int firstID = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
             int lastID = this->numBlocks - 1;
             Block first = this->getBlock(firstID);
@@ -251,7 +266,7 @@ void BlockChain::popBlock() {
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty) {
+    if (block.getDifficulty() != this->difficulty && !(block.getId() >= BLOCK_DIFFICULTY_GAP_START && block.getId() < BLOCK_DIFFICULTY_GAP_END)) {
         Logger::logStatus("Added block difficulty: " + std::to_string(block.getDifficulty()) + " chain difficulty: " + to_string(this->difficulty));
         return INVALID_DIFFICULTY;
     }
@@ -274,6 +289,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         //revert ledger
         Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
+        Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
         this->numBlocks++;
         this->totalWork += block.getDifficulty();

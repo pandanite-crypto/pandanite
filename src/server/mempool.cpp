@@ -35,7 +35,7 @@ void mempool_sync(MemPool& mempool) {
                 });
             }
         } catch (const std::exception &e) {
-            Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
+            // Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
