@@ -65,11 +65,11 @@ void HostManager::refreshHostList() {
                     Logger::logStatus("Adding host: " + hostUrl);
                 }else {
                     HostManager& hm = *this;
-                    reqs.push_back(std::async([&hostUrl, &hm](){
+                    reqs.push_back(std::async([hostUrl, &hm](){
                         try {
+                            Logger::logStatus("Adding host: " + hostUrl);
                             string hostName = getName(hostUrl);
                             if (hostName != hm.myName) {
-                                Logger::logStatus("Adding host: " + hostUrl);
                                 hm.hosts.push_back(hostUrl);
                                 // add self as peer to host:
                                 try {
