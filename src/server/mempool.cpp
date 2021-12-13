@@ -64,13 +64,16 @@ void MemPool::sync() {
 }
 
 bool MemPool::hasTransaction(Transaction t) {
+    bool ret = false;
+    this->lock.lock();
     int currBlockId = t.getBlockId();
     if (this->transactionQueue.find(currBlockId) != this->transactionQueue.end()) {
         if(this->transactionQueue[currBlockId].find(t) != this->transactionQueue[currBlockId].end()) {
-            return true;
+            ret = true;
         }
     }
-    return false;
+    this->lock.unlock();
+    return ret;
 }
 
 ExecutionStatus MemPool::addTransaction(Transaction t) {
@@ -81,7 +84,7 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     if (this->hasTransaction(t)) {
         return SUCCESS;
     }
-    this->lock.unlock();
+    
 
     if (currBlockId <= this->blockchain.getBlockCount()) {
         return EXPIRED_TRANSACTION;
