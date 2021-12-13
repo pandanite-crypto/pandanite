@@ -4,6 +4,7 @@
 #include <map>
 #include <thread>
 #include <mutex>
+#include <list>
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "../core/bloomfilter.hpp"
@@ -23,7 +24,7 @@ class MemPool {
         std::pair<char*, size_t> getRaw(BloomFilter& seen);
         std::pair<char*, size_t> getRaw(int blockId);
     protected:
-        vector<Transaction> toSend;
+        list<Transaction> toSend;
         BloomFilter seenTransactions;
         BlockChain & blockchain;
         HostManager & hosts;

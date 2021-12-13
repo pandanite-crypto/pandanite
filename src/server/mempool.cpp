@@ -13,8 +13,11 @@ MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 }
 
 void mempool_sync(MemPool& mempool) {
-    vector<future<void>> reqs;
-    for(auto t : mempool.toSend) {
+    while(true) {
+        if (mempool.toSend.size() == 0) continue;
+        Transaction t = mempool.toSend.front();
+        mempool.toSend.pop_front();
+        vector<future<void>> reqs;
         set<string> neighbors = mempool.hosts.sampleHosts(TX_BRANCH_FACTOR);
         for(auto neighbor : neighbors) {
             Transaction newT = t;
@@ -27,11 +30,10 @@ void mempool_sync(MemPool& mempool) {
                 }
             }));
         }
+        for(int i =0 ; i < reqs.size(); i++) {
+            reqs[i].get();
+        }
     }
-    for(int i =0 ; i < reqs.size(); i++) {
-        reqs[i].get();
-    }
-    mempool.toSend.clear();
 }
 
 
