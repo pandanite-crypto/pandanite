@@ -32,7 +32,7 @@ string computeAddress() {
 }
 
 set<string> HostManager::sampleHosts(int count) {
-    int numToPick = min(count, this->hosts.size());
+    int numToPick = min(count, (int) this->hosts.size());
     set<string> sampledHosts;
     while(sampledHosts.size() < numToPick) {
         sampledHosts.insert(this->hosts[rand()%this->hosts.size()]);
@@ -59,7 +59,7 @@ void HostManager::addPeer(string addr) {
     for(auto neighbor : neighbors) {
         reqs.push_back(std::async([neighbor, addr](){
             try {
-                addPeer(neighbor, addr);
+                addPeerNode(neighbor, addr);
             } catch(...) {
                 Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
             }
