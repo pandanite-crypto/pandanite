@@ -44,12 +44,16 @@ set<string> HostManager::sampleHosts(int count) {
 
 void HostManager::addPeer(string addr) {
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
-    if (existing != this->hosts.end()) return;
+    if (existing != this->hosts.end()) {
+        Logger::logStatus("Host already in list");
+        return;
+    } 
 
     // check if host is reachable:
     try {   
         getName(addr);
     } catch (...) {
+        Logger::logStatus("Could not reach host, discarding");
         return;
     }
 

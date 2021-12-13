@@ -54,16 +54,15 @@ int main(int argc, char **argv) {
         }
     }).get("/logs", [&manager](auto *res, auto *req) {
         try {
-            res->writeHeader("Content-Type", "text/html; charset=utf-8");
             string s = "";
             for(auto str : Logger::buffer) {
                 s += str + "<br/>";
             }
-            res->end(s);
+            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(s);
         } catch(const std::exception &e) {
-            Logger::logError("/stats", e.what());
+            Logger::logError("/logs", e.what());
         } catch(...) {
-            Logger::logError("/stats", "unknown");
+            Logger::logError("/logs", "unknown");
         }
     }).get("/stats", [&manager](auto *res, auto *req) {
         try {
