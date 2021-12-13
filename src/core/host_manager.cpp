@@ -9,6 +9,8 @@
 #include <future>
 using namespace std;
 
+#define ADD_PEER_BRANCH_FACTOR 10
+
 HostManager::HostManager(json config, string myName) {
     this->myName = myName;
     for(auto h : config["hostSources"]) {
@@ -29,33 +31,68 @@ string computeAddress() {
     return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
 }
 
+set<string> HostManager::sampleHosts(int count) {
+    int numToPick = min(count, this->hosts.size());
+    set<string> sampledHosts;
+    while(sampledHosts.size() < numToPick) {
+        sampledHosts.insert(this->hosts[rand()%this->hosts.size()]);
+    }
+    return sampledHosts;
+}
+
 void HostManager::addPeer(string addr) {
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) return;
+
+    // check if host is reachable:
+    try {   
+        getName(addr);
+    } catch (...) {
+        return;
+    }
+
     this->hosts.push_back(addr);
+    
+    // pick random hosts and add send cascade:
+    set<string> neighbors = this->sampleHosts(ADD_PEER_BRANCH_FACTOR);
+    vector<future<void>> reqs;
+    for(auto neighbor : neighbors) {
+        reqs.push_back(std::async([neighbor, addr](){
+            try {
+                addPeer(neighbor, addr);
+            } catch(...) {
+                Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
+            }
+        }));
+    }
+
+    for(int i =0 ; i < reqs.size(); i++) {
+        reqs[i].get();
+    }
 }
 
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
-    json hostList;
+    
+    set<string> fullHostList;
     try {
-        bool foundHost = false;
         for (int i = 0; i < this->hostSources.size(); i++) {
             try {
                 string hostUrl = this->hostSources[i];
                 http::Request request{hostUrl};
                 const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-                hostList = json::parse(std::string{response.body.begin(), response.body.end()});
-                foundHost = true;
-                break;
+                json hostList = json::parse(std::string{response.body.begin(), response.body.end()});
+                for(auto host : hostList) {
+                    fullHostList.insert(string(host));
+                }
             } catch (...) {
                 continue;
             }
         }
-        if (!foundHost) throw std::runtime_error("Could not fetch host directory.");
+        if (fullHostList.size() == 0) throw std::runtime_error("Could not fetch host directory.");
         
         vector<future<void>> reqs;
-        for(auto hostJson : hostList) {
+        for(auto hostJson : fullHostList) {
             string hostUrl = string(hostJson);
             auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
             if (existing != this->hosts.end()) continue;
@@ -63,7 +100,7 @@ void HostManager::refreshHostList() {
                 if (myName == "") {
                     this->hosts.push_back(hostUrl);
                     Logger::logStatus("Adding host: " + hostUrl);
-                }else {
+                } else {
                     HostManager& hm = *this;
                     reqs.push_back(std::async([hostUrl, &hm](){
                         try {

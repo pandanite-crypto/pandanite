@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include <set>
 using namespace std;
 
 class HostManager {
@@ -10,6 +11,7 @@ class HostManager {
         size_t size();
         void refreshHostList();
         vector<string> getHosts();
+        set<string> sampleHosts(int count);
         void addPeer(string addr);
     protected:
         string myName;

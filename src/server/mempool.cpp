@@ -28,14 +28,19 @@ void mempool_sync(MemPool& mempool) {
             mempool.lock.unlock();
             // fetch mempool state from other hosts
             for (auto host : mempool.hosts.getHosts()) {
-                int count = 0;
-                readRawTransactions(host, mempool.seenTransactions, [&mempool, &count](Transaction t) {
-                    mempool.addTransaction(t);
-                    count++;
-                });
+                try {
+                    int count = 0;
+                    readRawTransactions(host, mempool.seenTransactions, [&mempool, &count](Transaction t) {
+                        mempool.addTransaction(t);
+                        Logger::logStatus("Received transaction : " + t.toJson().dump());
+                        count++;
+                    });
+                } catch (const std::exception &e) {
+                    Logger::logError("MemPool::sync", "Failed to load tx from "+ host +" "+ string(e.what()));
+                }
             }
         } catch (const std::exception &e) {
-            // Logger::logError("MemPool::sync", "Failed to load tx" + string(e.what()));
+            Logger::logError("MemPool::sync", "Unknown failure: "+ string(e.what()));
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
