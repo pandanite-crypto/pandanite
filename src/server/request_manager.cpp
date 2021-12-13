@@ -24,10 +24,13 @@ void RequestManager::deleteDB() {
 
 json RequestManager::addTransaction(Transaction& t) {
     json result;
+    Logger::logStatus("Received transaction: " + t.toJson().dump());
     if (this->mempool->hasTransaction(t)) {
         result["status"] = executionStatusAsString(SUCCESS);    
         return result;
     }
+
+    this->mempool->addTransaction(t);
     
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
     // send to N random peers
@@ -36,9 +39,10 @@ json RequestManager::addTransaction(Transaction& t) {
     for(auto neighbor : neighbors) {
         reqs.push_back(std::async([neighbor, &t](){
             try {
+                Logger::logStatus("Sending tx to " + neighbor);
                 sendTransaction(neighbor, t);
             } catch(...) {
-                Logger::logStatus("Could not send tx to " + neighbor);
+                Logger::logError("RequestManager::addTransaction", "Could not send tx to " + neighbor);
             }
         }));
     }

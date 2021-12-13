@@ -4,13 +4,25 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <list>
 #include <ctime>
 using namespace std;
 
 #define TIME_FORMAT "%m-%d-%Y %H:%M:%S"
+#define MAX_LINES 1000
 
 class Logger {
     public:
+        static list<string> buffer;
+        static ofstream file;
+        
+        static void logToBuffer(string message) {
+            if (Logger::buffer.size() > MAX_LINES) {
+                Logger::buffer.pop_front();
+            }
+            Logger::buffer.push_back(message);
+        }
+
         static void logError(string endpoint, string message) {
             auto t = std::time(0);
             auto tm = *std::localtime(&t);
@@ -22,7 +34,7 @@ class Logger {
                 file<<s.str();
                 file.flush();
             }
-            
+            Logger::logToBuffer(s.str());
         }
 
         static void logStatus(string message) {
@@ -35,8 +47,7 @@ class Logger {
             } else {
                 file<<s.str();
                 file.flush();
-            }
-            
+            }  
+            Logger::logToBuffer(s.str());
         }
-        static ofstream file;
 };

@@ -52,6 +52,19 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/block_count", "unknown");
         }
+    }).get("/logs", [&manager](auto *res, auto *req) {
+        try {
+            res->writeHeader("Content-Type", "text/html; charset=utf-8");
+            string s = "";
+            for(auto str : Logger::buffer) {
+                s += str + "<br/>";
+            }
+            res->end(s);
+        } catch(const std::exception &e) {
+            Logger::logError("/stats", e.what());
+        } catch(...) {
+            Logger::logError("/stats", "unknown");
+        }
     }).get("/stats", [&manager](auto *res, auto *req) {
         try {
             json stats = manager.getStats();
