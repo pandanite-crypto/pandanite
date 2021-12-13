@@ -27,7 +27,7 @@ HostManager::HostManager() {
 }
 
 string computeAddress() {
-    string rawUrl = exec("curl ifconfig.co") ;
+    string rawUrl = exec("curl -s ifconfig.co") ;
     return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
 }
 

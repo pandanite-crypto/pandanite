@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <future>
 #include "../core/logger.hpp"
 #include "../core/api.hpp"
 #include "mempool.hpp"
@@ -27,22 +28,31 @@ void mempool_sync(MemPool& mempool) {
             }
             mempool.lock.unlock();
             // fetch mempool state from other hosts
+            vector<future<void>> reqs;
             for (auto host : mempool.hosts.getHosts()) {
-                try {
-                    int count = 0;
-                    readRawTransactions(host, mempool.seenTransactions, [&mempool, &count](Transaction t) {
-                        mempool.addTransaction(t);
-                        Logger::logStatus("Received transaction : " + t.toJson().dump());
-                        count++;
-                    });
-                } catch (const std::exception &e) {
-                    Logger::logError("MemPool::sync", "Failed to load tx from "+ host +" "+ string(e.what()));
-                }
+                    reqs.push_back(
+                        std::async([&mempool, &host]() {
+                            try {
+                                readRawTransactions(host, mempool.seenTransactions, [&mempool](Transaction t) {
+                                    mempool.lock.lock();
+                                    mempool.addTransaction(t);
+                                    mempool.lock.unlock();
+                                    Logger::logStatus("Received transaction: " + t.toJson().dump());
+                                });
+                            } catch (const std::exception &e) {
+                                Logger::logError("MemPool::sync", "Failed to load tx from "+ host +" "+ string(e.what()));
+                            }
+                        })
+                    );
+            }
+
+            for(int i = 0; i < reqs.size(); i++) {
+                reqs[i].get();
             }
         } catch (const std::exception &e) {
             Logger::logError("MemPool::sync", "Unknown failure: "+ string(e.what()));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
