@@ -23,6 +23,7 @@ class MemPool {
         std::pair<char*, size_t> getRaw(BloomFilter& seen);
         std::pair<char*, size_t> getRaw(int blockId);
     protected:
+        vector<Transaction> toSend;
         BloomFilter seenTransactions;
         BlockChain & blockchain;
         HostManager & hosts;

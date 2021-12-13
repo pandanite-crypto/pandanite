@@ -7,60 +7,36 @@
 using namespace std;
 
 #define MAX_FUTURE_BLOCKS 5
+#define TX_BRANCH_FACTOR 10
 
 MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 }
 
 void mempool_sync(MemPool& mempool) {
-    while (true) {
-        try {
-            // get rid of any old un-needed blocks:
-            mempool.lock.lock();
-            int blockId = mempool.blockchain.getBlockCount();
-            vector<int> toDelete;
-            for (auto pair : mempool.transactionQueue) {
-                if (pair.first <= blockId) {
-                    toDelete.push_back(pair.first);
+    vector<future<void>> reqs;
+    for(auto t : mempool.toSend) {
+        set<string> neighbors = mempool.hosts.sampleHosts(TX_BRANCH_FACTOR);
+        for(auto neighbor : neighbors) {
+            Transaction newT = t;
+            reqs.push_back(std::async([neighbor, &newT](){
+                try {
+                    Logger::logStatus("Sending tx to " + neighbor);
+                    sendTransaction(neighbor, newT);
+                } catch(...) {
+                    Logger::logError("MemPool::sync", "Could not send tx to " + neighbor);
                 }
-            }
-            for (auto blockId : toDelete) {
-                mempool.transactionQueue.erase(blockId);
-            }
-            mempool.lock.unlock();
-            // fetch mempool state from other hosts
-            vector<future<void>> reqs;
-            for (auto host : mempool.hosts.getHosts(false)) {
-                // Logger::logStatus("Will fetch transactions from " + host);
-                    //reqs.push_back(
-                        //std::async([&mempool, host]() {
-                            try {
-                                // Logger::logStatus("Loading transactions from " + host);
-                                readRawTransactions(host, mempool.seenTransactions, [&mempool](Transaction t) {
-                                    // mempool.lock.lock();
-                                    mempool.addTransaction(t);
-                                    // mempool.lock.unlock();
-                                    Logger::logStatus("Received transaction: " + t.toJson().dump());
-                                });
-                            } catch (const std::exception &e) {
-                                Logger::logError("MemPool::sync", "Failed to load tx from "+ host +" "+ string(e.what()));
-                            }
-                        //})
-                    //);
-            }
-
-            for(int i = 0; i < reqs.size(); i++) {
-                reqs[i].get();
-            }
-        } catch (const std::exception &e) {
-            Logger::logError("MemPool::sync", "Unknown failure: "+ string(e.what()));
+            }));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    for(int i =0 ; i < reqs.size(); i++) {
+        reqs[i].get();
+    }
+    mempool.toSend.clear();
 }
 
 
 void MemPool::sync() {
-    //this->syncThread.push_back(std::thread(mempool_sync, ref(*this)));
+    this->syncThread.push_back(std::thread(mempool_sync, ref(*this)));
 }
 
 bool MemPool::hasTransaction(Transaction t) {
@@ -102,6 +78,7 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
                 status = QUEUE_FULL;
             }
             this->lock.unlock();
+            if (status==SUCCESS) this->toSend.push_back(t);
             return status;
         }
     } else if (currBlockId > this->blockchain.getBlockCount() + 1){ // case 2: add to a future blocks queue, no verify
@@ -117,6 +94,7 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
                 status = QUEUE_FULL;
             }
             this->lock.unlock();
+            if (status==SUCCESS) this->toSend.push_back(t);
             return status;
         } else {
             return BLOCK_ID_TOO_LARGE;

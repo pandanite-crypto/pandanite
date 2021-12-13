@@ -36,7 +36,4 @@ class RequestManager {
         HostManager& hosts;
         BlockChain* blockchain;
         MemPool* mempool;
-        std::mutex transactionsLock;
-        size_t getPendingTransactionSize(int block);
-        map<int,list<Transaction>> transactionQueue;
 };

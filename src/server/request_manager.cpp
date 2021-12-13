@@ -7,7 +7,6 @@
 #include "request_manager.hpp"
 using namespace std;
 
-#define TX_BRANCH_FACTOR 10
 
 RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts);
@@ -29,27 +28,8 @@ json RequestManager::addTransaction(Transaction& t) {
         result["status"] = executionStatusAsString(SUCCESS);    
         return result;
     }
-
-    this->mempool->addTransaction(t);
     
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
-    // send to N random peers
-    set<string> neighbors = this->hosts.sampleHosts(TX_BRANCH_FACTOR);
-    vector<future<void>> reqs;
-    for(auto neighbor : neighbors) {
-        reqs.push_back(std::async([neighbor, &t](){
-            try {
-                Logger::logStatus("Sending tx to " + neighbor);
-                sendTransaction(neighbor, t);
-            } catch(...) {
-                Logger::logError("RequestManager::addTransaction", "Could not send tx to " + neighbor);
-            }
-        }));
-    }
-
-    for(int i =0 ; i < reqs.size(); i++) {
-        reqs[i].get();
-    }
     return result;
 }
 
