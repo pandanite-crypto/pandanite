@@ -49,14 +49,6 @@ void HostManager::addPeer(string addr) {
         return;
     } 
 
-    // check if host is reachable:
-    try {   
-        getName(addr);
-    } catch (...) {
-        Logger::logStatus("Could not reach host, discarding");
-        return;
-    }
-
     this->hosts.push_back(addr);
     
     // pick random hosts and add send cascade:
