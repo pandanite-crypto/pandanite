@@ -29,21 +29,23 @@ void mempool_sync(MemPool& mempool) {
             mempool.lock.unlock();
             // fetch mempool state from other hosts
             vector<future<void>> reqs;
-            for (auto host : mempool.hosts.getHosts()) {
-                    reqs.push_back(
-                        std::async([&mempool, host]() {
+            for (auto host : mempool.hosts.getHosts(false)) {
+                // Logger::logStatus("Will fetch transactions from " + host);
+                    //reqs.push_back(
+                        //std::async([&mempool, host]() {
                             try {
+                                // Logger::logStatus("Loading transactions from " + host);
                                 readRawTransactions(host, mempool.seenTransactions, [&mempool](Transaction t) {
-                                    mempool.lock.lock();
+                                    // mempool.lock.lock();
                                     mempool.addTransaction(t);
-                                    mempool.lock.unlock();
+                                    // mempool.lock.unlock();
                                     Logger::logStatus("Received transaction: " + t.toJson().dump());
                                 });
                             } catch (const std::exception &e) {
                                 Logger::logError("MemPool::sync", "Failed to load tx from "+ host +" "+ string(e.what()));
                             }
-                        })
-                    );
+                        //})
+                    //);
             }
 
             for(int i = 0; i < reqs.size(); i++) {

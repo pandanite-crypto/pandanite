@@ -138,9 +138,9 @@ void HostManager::refreshHostList() {
     }
 }
 
-vector<string> HostManager::getHosts() {
+vector<string> HostManager::getHosts(bool includeSelf) {
     vector<string> ret = this->hosts;
-    ret.push_back(this->myAddress);
+    if (includeSelf) ret.push_back(this->myAddress);
     return ret;
 }
 

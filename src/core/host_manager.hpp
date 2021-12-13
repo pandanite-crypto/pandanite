@@ -10,7 +10,7 @@ class HostManager {
         std::pair<string,uint64_t> getBestHost();
         size_t size();
         void refreshHostList();
-        vector<string> getHosts();
+        vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
         void addPeer(string addr);
     protected:
