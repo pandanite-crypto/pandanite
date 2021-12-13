@@ -31,7 +31,7 @@ void mempool_sync(MemPool& mempool) {
             vector<future<void>> reqs;
             for (auto host : mempool.hosts.getHosts()) {
                     reqs.push_back(
-                        std::async([&mempool, &host]() {
+                        std::async([&mempool, host]() {
                             try {
                                 readRawTransactions(host, mempool.seenTransactions, [&mempool](Transaction t) {
                                     mempool.lock.lock();
