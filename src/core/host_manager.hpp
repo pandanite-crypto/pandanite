@@ -14,6 +14,7 @@ class HostManager {
         set<string> sampleHosts(int count);
         void addPeer(string addr);
     protected:
+        string myAddress;
         string myName;
         vector<string> hostSources;
         vector<string> hosts;

@@ -11,8 +11,15 @@ using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
 
+
+string computeAddress() {
+    string rawUrl = exec("curl -s ifconfig.co") ;
+    return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
+}
+
 HostManager::HostManager(json config, string myName) {
     this->myName = myName;
+    this->myAddress = computeAddress();
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -24,11 +31,6 @@ HostManager::HostManager(json config, string myName) {
 }
 
 HostManager::HostManager() {
-}
-
-string computeAddress() {
-    string rawUrl = exec("curl -s ifconfig.co") ;
-    return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
 }
 
 set<string> HostManager::sampleHosts(int count) {
@@ -137,7 +139,9 @@ void HostManager::refreshHostList() {
 }
 
 vector<string> HostManager::getHosts() {
-    return this->hosts;
+    vector<string> ret = this->hosts;
+    ret.push_back(this->myAddress);
+    return ret;
 }
 
 size_t HostManager::size() {
