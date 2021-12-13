@@ -17,6 +17,7 @@ class MemPool {
         void sync();
         ExecutionStatus addTransaction(Transaction t);
         void finishBlock(int blockId);
+        bool hasTransaction(Transaction t);
         set<Transaction>& getTransactions(int blockId);
         std::pair<char*, size_t> getRaw();
         std::pair<char*, size_t> getRaw(BloomFilter& seen);

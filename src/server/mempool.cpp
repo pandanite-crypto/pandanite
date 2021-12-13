@@ -60,7 +60,17 @@ void mempool_sync(MemPool& mempool) {
 
 
 void MemPool::sync() {
-    this->syncThread.push_back(std::thread(mempool_sync, ref(*this)));
+    //this->syncThread.push_back(std::thread(mempool_sync, ref(*this)));
+}
+
+bool MemPool::hasTransaction(Transaction t) {
+    int currBlockId = t.getBlockId();
+    if (this->transactionQueue.find(currBlockId) != this->transactionQueue.end()) {
+        if(this->transactionQueue[currBlockId].find(t) != this->transactionQueue[currBlockId].end()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 ExecutionStatus MemPool::addTransaction(Transaction t) {
@@ -68,11 +78,8 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     int currBlockId = t.getBlockId();
     // If the transaction is already in our queue return immediately
     this->lock.lock();
-    if (this->transactionQueue.find(currBlockId) != this->transactionQueue.end()) {
-        if(this->transactionQueue[currBlockId].find(t) != this->transactionQueue[currBlockId].end()) {
-            this->lock.unlock();
-            return SUCCESS;
-        }
+    if (this->hasTransaction(t)) {
+        return SUCCESS;
     }
     this->lock.unlock();
 

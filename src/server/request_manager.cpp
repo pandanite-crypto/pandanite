@@ -1,11 +1,13 @@
 #include <map>
 #include <iostream>
+#include <future>
 #include "../core/helpers.hpp"
 #include "../core/logger.hpp"
 #include "../core/merkle_tree.hpp"
 #include "request_manager.hpp"
 using namespace std;
 
+#define TX_BRANCH_FACTOR 10
 
 RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts);
@@ -22,7 +24,28 @@ void RequestManager::deleteDB() {
 
 json RequestManager::addTransaction(Transaction& t) {
     json result;
+    if (this->mempool->hasTransaction(t)) {
+        result["status"] = executionStatusAsString(SUCCESS);    
+        return result;
+    }
+    
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
+    // send to N random peers
+    set<string> neighbors = this->hosts.sampleHosts(TX_BRANCH_FACTOR);
+    vector<future<void>> reqs;
+    for(auto neighbor : neighbors) {
+        reqs.push_back(std::async([neighbor, &t](){
+            try {
+                sendTransaction(neighbor, t);
+            } catch(...) {
+                Logger::logStatus("Could not send tx to " + neighbor);
+            }
+        }));
+    }
+
+    for(int i =0 ; i < reqs.size(); i++) {
+        reqs[i].get();
+    }
     return result;
 }
 
