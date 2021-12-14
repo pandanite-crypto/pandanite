@@ -129,7 +129,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             Block newBlock;
 
             
-            try {
+            try { // TODO: remove try catch when all servers are patched with timestamp 
                 uint64_t lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
 
                 // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
