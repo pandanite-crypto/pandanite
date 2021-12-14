@@ -11,10 +11,8 @@ using namespace std;
 RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts);
     this->mempool = new MemPool(hosts, *this->blockchain);
-    if (hosts.size()>0) {
-        this->blockchain->sync();
-        this->mempool->sync();
-    }
+    this->blockchain->sync();
+    this->mempool->sync();
 }
 
 void RequestManager::deleteDB() {

@@ -34,8 +34,7 @@ void chain_sync(BlockChain& blockchain) {
                 failureCount++;
             }
             if (failureCount > 3) {
-                std::pair<string, int> best = blockchain.hosts.getBestHost();
-                int toPop = 15;
+                int toPop = 50;
                 if (blockchain.getBlockCount() - toPop <=10) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                     blockchain.resetChain();
