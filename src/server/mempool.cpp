@@ -58,7 +58,6 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     ExecutionStatus status;
     int currBlockId = t.getBlockId();
     // If the transaction is already in our queue return immediately
-    this->lock.lock();
     if (this->hasTransaction(t)) {
         return SUCCESS;
     }
