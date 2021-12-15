@@ -12,6 +12,12 @@
 #include <string>
 #include <array>
 
+// windows port for popen/pclose 
+#ifdef WIN32
+#define popen _popen
+#define pclose _pclose
+#endif
+
 using namespace std;
 
 TransactionAmount BMB(double amount) {
