@@ -14,7 +14,22 @@ PandaCoin is written from the ground up in C++. We want the PandaCoin source cod
 * 10000 transactions per block, 30 second block time
 
 ### Getting Started
-Linux install requirements
+*Windows*: Only binaries are available for windows they can be downloaded here:
+
+https://github.com/mr-pandabear/panda-coin/files/7709628/win32_release_binaries.zip
+
+- Run keygen.exe, this generates a keys.json file in the same folder as miner.exe, copy this file and keep it safe.
+- Run miner.exe, the miner will start running and should indicate that it is loading blocks to solve.
+
+*Mac OSX* build pre-requirements
+```
+brew install leveldb
+brew install cmake
+pip3 install conan
+```
+
+
+*Linux* install pre-requirements
 ```
 sudo apt-get update
 sudo apt-get -y install make  
@@ -28,10 +43,6 @@ sudo pip3 install conan
 ```
 
 ### Building
-Requires:
-* CMake
-* Conan package manager (http://www.conan.io)
-* LevelDB
 ```
 git clone https://github.com/mr-pandabear/panda-coin.git
 cd panda-coin
