@@ -18,7 +18,7 @@ include_directories(/usr/local/include/)
 
 file(GLOB CORE_SOURCES "src/core/*.cpp")
 file(GLOB SERVER_SOURCES "src/server/*.cpp")
-file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/murmurhash3/*.cpp")
+file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/murmurhash3/*.cpp", "src/external/sha256/*.cpp")
 
 if (UNIX)
     add_executable(tests ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tests/tests.cpp)

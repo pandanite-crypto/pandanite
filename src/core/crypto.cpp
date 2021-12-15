@@ -2,6 +2,7 @@
 #include "crypto.hpp"
 #include <iostream>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
+#include "../external/sha256/sha2.hpp" 
 using namespace std;
 
 SHA256Hash SHA256(const char* buffer, size_t len) {
@@ -12,6 +13,18 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
     SHA256_Final(ret.data(), &sha256);
     return ret;
 }
+
+
+std::array<uint8_t, 32> SHA256Fast(const unsigned char* buffer, size_t len) {
+    std::array<uint8_t, 32> ret;
+    sha256_ctx sha256;
+    sha256_init(&sha256);
+    sha256_update(&sha256, buffer, len);
+    sha256_final(&sha256, ret.data());
+    return ret;
+}
+
+
 
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
     RIPEMD160Hash ret;
@@ -224,7 +237,7 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, function<boo
     for(size_t i=32; i<64;++i) concat[i]=rand()%256;
     while (true) {
         *reinterpret_cast<uint64_t*>(concat.data()+32)+=1;
-        SHA256Hash fullHash  = SHA256((const char*)concat.data(), concat.size());
+        SHA256Hash fullHash  = SHA256Fast((const unsigned char*)concat.data(), concat.size());
         bool found= checkLeadingZeroBits(fullHash, challengeSize);
         if (found) {
             SHA256Hash solution;

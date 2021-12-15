@@ -41,7 +41,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
             string host = bestHost.first;
             int nextBlock = bestCount + 1;
             json problem = getMiningProblem(host); 
-            Logger::logStatus("Got problem. Difficulty=" + to_string(problem["challengeSize"]));
+            Logger::logStatus("Got problem for block " + to_string(nextBlock) + ". Difficulty=" + to_string(problem["challengeSize"]));
 
             // download transactions
             int count = 0;
