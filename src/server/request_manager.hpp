@@ -27,8 +27,6 @@ class RequestManager {
         std::pair<uint8_t*, size_t> getBlockHeaders(uint32_t start, uint32_t end);
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t index);
         std::pair<char*, size_t> getRawTransactionData();
-        std::pair<char*, size_t> getRawTransactionData(BloomFilter& seen);
-        std::pair<char*, size_t> getRawTransactionDataForBlock(uint32_t blockId);
         string getBlockCount();
         string getTotalWork();
         void deleteDB();

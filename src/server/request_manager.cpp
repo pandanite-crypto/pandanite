@@ -39,7 +39,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);
     if (status == SUCCESS) {
-        this->mempool->finishBlock(newBlock.getId());
+        this->mempool->finishBlock(newBlock);
     }
     this->blockchain->release();
     return result;
@@ -99,14 +99,6 @@ std::pair<char*, size_t> RequestManager::getRawTransactionData() {
     return this->mempool->getRaw();
 }
 
-std::pair<char*, size_t> RequestManager::getRawTransactionData(BloomFilter & seen) {
-    return this->mempool->getRaw(seen);
-}
-
-std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(uint32_t blockId) {
-    return this->mempool->getRaw(blockId);
-}
-
 json RequestManager::getBlock(uint32_t index) {
     return this->blockchain->getBlock(index).toJson();
 }
@@ -158,7 +150,7 @@ json RequestManager::getStats() {
     info["num_coins"] = coins;
     info["num_wallets"] = wallets;
     int blockId = this->blockchain->getBlockCount();
-    info["pending_transactions"]= this->mempool->getTransactions(blockId + 1).size();
+    info["pending_transactions"]= this->mempool->size();
     
     int idx = this->blockchain->getBlockCount();
     Block a = this->blockchain->getBlock(idx);
