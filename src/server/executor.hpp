@@ -3,6 +3,7 @@
 #include "../core/constants.hpp"
 #include "../core/common.hpp"
 #include "ledger.hpp"
+#include "tx_store.hpp"
 using namespace std;
 
 enum ExecutionStatus {
@@ -32,7 +33,7 @@ string executionStatusAsString(ExecutionStatus s);
 class Executor {
     public:
         static void Rollback(Ledger& ledger, LedgerState& deltas);
-        static void RollbackBlock(Block& curr, Ledger& ledger);
-        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, LedgerState& deltas);
+        static void RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb);
+        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas);
         static ExecutionStatus ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas);
 };

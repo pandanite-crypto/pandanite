@@ -11,7 +11,7 @@ using namespace std;
 RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts);
     this->mempool = new MemPool(hosts, *this->blockchain);
-    this->blockchain->sync();
+    if (!hosts.isDisabled()) this->blockchain->sync();
     this->mempool->sync();
 }
 

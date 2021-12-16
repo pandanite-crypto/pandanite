@@ -11,4 +11,5 @@ class TransactionStore : public DataStore {
         TransactionStore();
         bool hasTransaction(Transaction &t);
         void insertTransaction(Transaction& t);
+        void removeTransaction(Transaction & t);
 };

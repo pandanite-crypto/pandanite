@@ -3,6 +3,7 @@
 #include "../core/helpers.hpp"
 #include "test_block.hpp"
 #include "test_user.hpp"
+#include "test_transaction_store.hpp"
 #include "test_executor.hpp"
 #include "test_crypto.hpp"
 #include "test_transaction.hpp"

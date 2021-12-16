@@ -20,6 +20,7 @@ string computeAddress() {
 HostManager::HostManager(json config, string myName) {
     this->myName = myName;
     this->myAddress = computeAddress();
+    this->disabled = false;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -31,6 +32,11 @@ HostManager::HostManager(json config, string myName) {
 }
 
 HostManager::HostManager() {
+    this->disabled = true;
+}
+
+bool HostManager::isDisabled() {
+    return this->disabled;
 }
 
 set<string> HostManager::sampleHosts(int count) {

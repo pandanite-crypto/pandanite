@@ -10,8 +10,9 @@
 using namespace std;
 using namespace std::chrono_literals;
 
-string ledger = "/tmp/ledger";
-string blocks = "/tmp/blocks";
+string ledger = "./test-data/ledger";
+string blocks = "./test-data/blocks";
+string txdb = "./test-data/txdb";
 
 void addMerkleHashToBlock(Block& block) {
     // compute merkle tree and verify root matches;
@@ -23,7 +24,7 @@ void addMerkleHashToBlock(Block& block) {
 
 TEST(check_adding_new_node_with_hash) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
     User miner;
     User other;
     // have miner mine the next block
@@ -45,7 +46,7 @@ TEST(check_adding_new_node_with_hash) {
 
 TEST(check_popping_block) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
     User miner;
     User other;
     // have miner mine the next block
@@ -70,7 +71,7 @@ TEST(check_popping_block) {
 
 TEST(check_adding_wrong_lastblock_hash_fails) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
     User miner;
     User other;
     // have miner mine the next block
@@ -92,7 +93,7 @@ TEST(check_adding_wrong_lastblock_hash_fails) {
 
 TEST(check_adding_two_nodes_updates_ledger) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
     User miner;
 
     // have miner mine the next block
@@ -118,7 +119,7 @@ TEST(check_adding_two_nodes_updates_ledger) {
 
 TEST(check_sending_transaction_updates_ledger) {
     HostManager h;
-    BlockChain* blockchain = new BlockChain(h, ledger, blocks);
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
     User miner;
     User other;
 
@@ -147,6 +148,40 @@ TEST(check_sending_transaction_updates_ledger) {
     ASSERT_EQUAL(totalWork, 3*16);
     ASSERT_EQUAL(minerTotal, BMB(80.0));
     ASSERT_EQUAL(otherTotal, BMB(20.0));
+    blockchain->deleteDB();
+    delete blockchain;
+}
+
+
+TEST(check_duplicate_tx_fails) {
+    HostManager h;
+    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
+    User miner;
+    User other;
+
+    Transaction t = miner.send(other, BMB(20.0),2);
+    // have miner mine the next block
+    for (int i =2; i <=4; i++) {
+        Transaction fee = miner.mine(i);
+        Block newBlock;
+        newBlock.setId(i);
+        newBlock.addTransaction(fee);
+        
+        if (i==3 || i==4) {
+            newBlock.addTransaction(t);
+        }
+        addMerkleHashToBlock(newBlock);
+        newBlock.setLastBlockHash(blockchain->getLastHash());
+        SHA256Hash hash = newBlock.getHash();
+        SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+        newBlock.setNonce(solution);
+        ExecutionStatus status = blockchain->addBlock(newBlock);
+        if (i==4) { 
+            ASSERT_EQUAL(status, EXPIRED_TRANSACTION);
+        }else {
+            ASSERT_EQUAL(status, SUCCESS);
+        }
+    }
     blockchain->deleteDB();
     delete blockchain;
 }

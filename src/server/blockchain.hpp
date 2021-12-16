@@ -13,12 +13,13 @@
 #include "executor.hpp"
 #include "block_store.hpp"
 #include "ledger.hpp"
+#include "tx_store.hpp"
 
 using namespace std;
 
 class BlockChain {
     public:
-        BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="");
+        BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
         void sync();
         void acquire();
         void release();
@@ -43,6 +44,7 @@ class BlockChain {
         uint64_t totalWork;
         BlockStore blockStore;
         Ledger ledger;
+        TransactionStore txdb;
         SHA256Hash lastHash;
         int difficulty;
         void updateDifficulty(Block& b);

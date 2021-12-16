@@ -14,7 +14,7 @@ void Ledger::deleteDB() {
     leveldb::Options options;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
     experimental::filesystem::remove_all(this->path); 
-    if(!status.ok()) throw std::runtime_error("Could not close BlockStore db : " + status.ToString());
+    if(!status.ok()) throw std::runtime_error("Could not close ledger db : " + status.ToString());
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
 

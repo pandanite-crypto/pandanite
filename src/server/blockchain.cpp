@@ -60,11 +60,13 @@ void chain_sync(BlockChain& blockchain) {
     }
 }
 
-BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath) : hosts(hosts) {
+BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
     if (ledgerPath == "") ledgerPath = LEDGER_FILE_PATH;
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
+    if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
     ledger.init(ledgerPath);
     blockStore.init(blockPath);
+    txdb.init(txdbPath);
     this->initChain();
 }
 
@@ -100,12 +102,14 @@ void BlockChain::resetChain() {
 }
 
 void BlockChain::closeDB() {
+    txdb.closeDB();
     ledger.closeDB();
     blockStore.closeDB();
 }
 
 void BlockChain::deleteDB() {
     this->closeDB();
+    txdb.deleteDB();
     ledger.deleteDB();
     blockStore.deleteDB();
 }
@@ -247,7 +251,7 @@ uint8_t BlockChain::getDifficulty() {
 
 void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
-    Executor::RollbackBlock(last, this->ledger);
+    Executor::RollbackBlock(last, this->ledger, this->txdb);
     this->numBlocks--;
     this->totalWork -= last.getDifficulty();
     this->blockStore.setTotalWork(this->totalWork);
@@ -283,10 +287,11 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
     LedgerState deltasFromBlock;
-    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, deltasFromBlock);
+    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock);
     if (status != SUCCESS) {
         //revert ledger
-        Executor::Rollback(this->ledger, deltasFromBlock);
+        cout<<"STATUS: " << executionStatusAsString(status)<<endl;
+        Executor::RollbackBlock(block, this->ledger, this->txdb);
     } else {
         Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
