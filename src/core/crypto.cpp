@@ -231,6 +231,22 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSi
 //     return NULL_SHA256_HASH;
 // }
 
+
+SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, function<bool()> problemValid) {
+    SHA256Hash solution;
+    std::atomic<bool> aFound(false);
+    miner_status status;
+    status.hash_count = 0;
+
+    mineHash(target, challengeSize, solution, aFound, status, problemValid);
+
+    if (aFound.load()) {
+        return solution;
+    }
+
+    return NULL_SHA256_HASH;
+}
+
 void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& solution, std::atomic<bool>& aFound, miner_status& status, function<bool()> problemValid) {
     // By @Shifu!
     vector<uint8_t> concat;
