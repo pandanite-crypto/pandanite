@@ -78,7 +78,7 @@ SHA256Hash start_mining_threads(SHA256Hash target, unsigned char challengeSize, 
     vector<thread> threads;
 
     for (int i = 0; i < thread_count; i++) {
-        threads.push_back(std::thread(mineHash, target, challengeSize, ref(solution), ref(aFound), ref(status), problemValid));
+        threads.push_back(std::thread(static_cast<void(*)(SHA256Hash, unsigned char, SHA256Hash&, std::atomic<bool>&, miner_status&, function<bool()>)>(&mineHash), target, challengeSize, ref(solution), ref(aFound), ref(status), problemValid));
     }
 
     for (int i = 0; i < thread_count; i++) {
