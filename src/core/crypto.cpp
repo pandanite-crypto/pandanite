@@ -234,14 +234,14 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSi
 void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& solution, std::atomic<bool>& aFound, miner_status& status, function<bool()> problemValid) {
     // By @Shifu!
     vector<uint8_t> concat;
-    uint64_t i = 0;
+    uint64_t hash_count = 0;
 
     concat.resize(2 * 32);
     for (size_t i = 0; i < 32; i++) concat[i] = target[i];
     // fill with random data for privacy (one cannot guess number of tries later)
     for (size_t i = 32; i < 64; ++i) concat[i] = rand() % 256;
     do {
-        i++;
+        hash_count++;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
         SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
         bool found = checkLeadingZeroBits(fullHash, challengeSize);
@@ -254,6 +254,6 @@ void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& soluti
     } while (problemValid() && !aFound.load());
 
     status._lock.lock();
-    status.hash_count += i;
+    status.hash_count += hash_count;
     status._lock.unlock();
 }
