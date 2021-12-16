@@ -175,7 +175,6 @@ int main(int argc, char **argv) {
             // NOTE: We no longer group tx's by blockID so we just return
             // all transaction data in the mempool
             std::pair<char*, size_t> buffer = manager.getRawTransactionData();
-            Logger::logStatus("Sending transactions byte count=" + std::to_string(buffer.second));
             std::string_view str(buffer.first, buffer.second);
             res->write(str);
             delete buffer.first;
