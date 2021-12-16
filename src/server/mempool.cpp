@@ -22,7 +22,7 @@ void mempool_sync(MemPool& mempool) {
             t = mempool.toSend.front();
             mempool.toSend.pop_front();
         }
-        mepool.lock.unlock();
+        mempool.lock.unlock();
         vector<future<void>> reqs;
         set<string> neighbors = mempool.hosts.sampleHosts(TX_BRANCH_FACTOR);
         for(auto neighbor : neighbors) {
