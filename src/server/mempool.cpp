@@ -89,8 +89,9 @@ void MemPool::finishBlock(Block& block) {
     this->lock.lock();
     // erase all of this blocks included transactions from the mempool
     for(auto tx : block.getTransactions()) {
-        if (this->hasTransaction(tx)) {
-            this->transactionQueue.erase(this->transactionQueue.find(tx));
+        auto it = this->transactionQueue.find(tx);
+        if (it != this->transactionQueue.end()) {
+            this->transactionQueue.erase(it);
         }
     }
     this->lock.unlock();
