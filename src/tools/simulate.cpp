@@ -11,22 +11,15 @@ using namespace std;
 
 int TOTAL;
 void simulate_transactions(HostManager& hosts) {
-    string filepath = "./keys/miner.json";
+    string filepath = "./keys/miner2.json";
     User miner(readJsonFromFile(filepath));
-    
-    vector<User> randomUsers;
-    for(int i = 0; i < 40; i++) {
-        User u;
-        randomUsers.push_back(u);
-    }
     std::pair<string,int> best = hosts.getBestHost();
     while(true) {
         try {
             // if (rand()%1000==0) best = hosts.getBestHost();
             string host = best.first;
             int blockId = getCurrentBlockCount(host) + 3;
-            User r = randomUsers[rand()%randomUsers.size()];
-            Transaction t = miner.send(r, 1 + rand()%5, blockId);
+            Transaction t = miner.send(miner, 1 + rand()%5, blockId);
             json result = sendTransaction(host, t);
             cout<<"sent: "<< TOTAL<<endl;
             cout<<result.dump()<<endl;
@@ -39,18 +32,14 @@ void simulate_transactions(HostManager& hosts) {
 
 
 int main(int argc, char **argv) {
-    string configFile = DEFAULT_CONFIG_FILE_PATH;
-    if (argc > 1 ) {
-        configFile = string(argv[1]);
-    }
-    json config = readJsonFromFile(configFile);
+    json config;
+    config["hostSources"] = json::array();
+    config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
     HostManager hosts(config);
     vector<std::thread> requests;
     std::thread sim_thread(simulate_transactions, ref(hosts));
-        std::thread sim_thread1(simulate_transactions, ref(hosts));
-        std::thread sim_thread2(simulate_transactions, ref(hosts));
-        std::thread sim_thread3(simulate_transactions, ref(hosts));
-        std::thread sim_thread4(simulate_transactions, ref(hosts));
-        std::thread sim_thread5(simulate_transactions, ref(hosts));
+    std::thread sim_thread2(simulate_transactions, ref(hosts));
+    std::thread sim_thread3(simulate_transactions, ref(hosts));
+    std::thread sim_thread4(simulate_transactions, ref(hosts));
     sim_thread.join();
 }
