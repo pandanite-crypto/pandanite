@@ -88,11 +88,10 @@ std::pair<char*, size_t> MemPool::getRaw() {
 void MemPool::finishBlock(Block& block) {
     this->lock.lock();
     // erase all of this blocks included transactions from the mempool
-
-
-    // reset the bloomfilter with some probability
-    if (rand()%20 == 0) {
-        seenTransactions.clear();
+    for(auto tx : block.getTransactions()) {
+        if (this->hasTransaction(tx)) {
+            this->transactionQueue.erase(this->transactionQueue.find(tx));
+        }
     }
     this->lock.unlock();
 }
