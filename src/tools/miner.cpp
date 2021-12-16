@@ -63,16 +63,14 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
             Block newBlock;
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
-            set<string> nonces;
+
             TransactionAmount total = MINING_FEE;
             if (newBlock.getId() >= MINING_PAYMENTS_UNTIL) {
                 total = 0;
             }
             for(auto t : transactions) {
-                if (nonces.find(t.getNonce()) != nonces.end()) continue;
                 newBlock.addTransaction(t);
                 total += t.getTransactionFee();
-                nonces.insert(t.getNonce());
             }
             
             MerkleTree m;
@@ -97,7 +95,8 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
                 continue;
             }
             newBlock.setNonce(solution);
-            auto result = submitBlock(host, newBlock);
+            json result;
+            result = submitBlock(host, newBlock);
             Logger::logStatus(result.dump(4));
             if (string(result["status"]) == "SUCCESS") {
                 allEarnings += total;
@@ -105,7 +104,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
                 Logger::logStatus("Earned:" + std::to_string(total/DECIMAL_SCALE_FACTOR));
                 Logger::logStatus("Total:" + std::to_string(allEarnings/DECIMAL_SCALE_FACTOR));
             }
-            // std::this_thread::sleep_for(std::chrono::milliseconds(15000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -115,9 +114,7 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
 
 
 int main(int argc, char **argv) {
-    json config;
-    config["hostSources"] = json::array();
-    config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
+    json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
     HostManager hosts(config);
     json keys;
     try {

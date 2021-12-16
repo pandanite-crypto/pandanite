@@ -14,22 +14,21 @@ MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 void mempool_sync(MemPool& mempool) {
     while(true) {
         Transaction t;
-        mempool.lock.lock();
+        mempool.sendLock.lock();
         if (mempool.toSend.size() == 0) {
-            mempool.lock.unlock();
+            mempool.sendLock.unlock();
             continue;
         } else {
             t = mempool.toSend.front();
             mempool.toSend.pop_front();
         }
-        mempool.lock.unlock();
+        mempool.sendLock.unlock();
         vector<future<void>> reqs;
         set<string> neighbors = mempool.hosts.sampleHosts(TX_BRANCH_FACTOR);
         for(auto neighbor : neighbors) {
             Transaction newT = t;
             reqs.push_back(std::async([neighbor, &newT](){
                 try {
-                    Logger::logStatus("Sending tx to " + neighbor);
                     sendTransaction(neighbor, newT);
                 } catch(...) {
                     Logger::logError("MemPool::sync", "Could not send tx to " + neighbor);
@@ -56,22 +55,30 @@ bool MemPool::hasTransaction(Transaction t) {
 
 ExecutionStatus MemPool::addTransaction(Transaction t) {
     ExecutionStatus status;
-    if (this->hasTransaction(t)) {
-        return SUCCESS;
+    this->lock.lock();
+    if (this->transactionQueue.find(t) != this->transactionQueue.end()) {
+        status = SUCCESS;
+        this->lock.unlock();
+        return status;
     }
+    
     status = this->blockchain.verifyTransaction(t);
     if (status != SUCCESS) {
+        this->lock.unlock();
         return status;
     } else {
-        this->lock.lock();
+        
         if (this->transactionQueue.size() < MAX_TRANSACTIONS_PER_BLOCK) {
             this->transactionQueue.insert(t);
-            this->seenTransactions.insert(t.getNonce());
             status = SUCCESS;
         } else {
             status = QUEUE_FULL;
         }
-        if (status==SUCCESS) this->toSend.push_back(t);
+        if (status==SUCCESS) {
+            this->sendLock.lock();
+            this->toSend.push_back(t);
+            this->sendLock.unlock();
+        }
         this->lock.unlock();
         return status;
     }
@@ -83,12 +90,14 @@ size_t MemPool::size() {
 
 std::pair<char*, size_t> MemPool::getRaw() {
     int count = 0;
+    this->lock.lock();
     size_t len = this->transactionQueue.size() *sizeof(TransactionInfo);
     TransactionInfo* buf = (TransactionInfo*)malloc(len);
     for (auto tx : this->transactionQueue) {
         buf[count] = tx.serialize();
         count++;
     }
+    this->lock.unlock();
     return std::pair<char*, size_t>((char*)buf, len);
 }
 

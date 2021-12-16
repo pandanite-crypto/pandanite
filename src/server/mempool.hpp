@@ -23,11 +23,11 @@ class MemPool {
         std::pair<char*, size_t> getRaw();
     protected:
         list<Transaction> toSend;
-        BloomFilter seenTransactions;
         BlockChain & blockchain;
         HostManager & hosts;
         set<Transaction> transactionQueue;
         vector<std::thread> syncThread;
         std::mutex lock;
+        std::mutex sendLock;
         friend void mempool_sync(MemPool& mempool);
 };
