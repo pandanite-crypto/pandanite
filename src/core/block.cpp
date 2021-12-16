@@ -121,7 +121,6 @@ void Block::setId(uint32_t id) {
 
 
 void Block::addTransaction(Transaction t) {
-    if (t.getBlockId() != this->id) throw std::runtime_error("transactionID does not match blockID");
     this->transactions.push_back(t);
 }
 

@@ -8,7 +8,7 @@ TEST(test_ledger_stores_wallets) {
     PublicWalletAddress wallet = walletAddressFromPublicKey(pair.first);
 
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
     ledger.createWallet(wallet);
     ledger.deposit(wallet, BMB(50.0));
     ASSERT_EQUAL(ledger.getWalletValue(wallet), BMB(50.0));
