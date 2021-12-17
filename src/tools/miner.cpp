@@ -126,16 +126,14 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             Block newBlock;
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
-            set<string> nonces;
+
             TransactionAmount total = MINING_FEE;
             if (newBlock.getId() >= MINING_PAYMENTS_UNTIL) {
                 total = 0;
             }
             for(auto t : transactions) {
-                if (nonces.find(t.getNonce()) != nonces.end()) continue;
                 newBlock.addTransaction(t);
                 total += t.getTransactionFee();
-                nonces.insert(t.getNonce());
             }
             
             MerkleTree m;
@@ -163,8 +161,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
 
             if (solution == NULL_SHA256_HASH) {
                 continue;
-            }
-            else {
+            } else {
                 newBlock.setNonce(solution);
                 auto transmit_start = std::chrono::steady_clock::now();
                 result = submitBlock(host, newBlock);
@@ -193,7 +190,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             }
             status._lock.unlock();
 
-            // std::this_thread::sleep_for(std::chrono::milliseconds(15000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -223,12 +220,11 @@ int main(int argc, char **argv) {
     config["hostSources"] = json::array();
 
     if (testnet) {
-        config["hostSources"].push_back("http://35.83.163.26:3000/peers");
+        config["hostSources"].push_back("http://54.185.169.234:3000/peers");
     }
     else {
         config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
     }
-
     HostManager hosts(config);
     json keys;
     try {

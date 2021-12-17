@@ -226,7 +226,7 @@ void Transaction::sign(PublicKey pubKey, PrivateKey signingKey) {
 }
 
 bool operator<(const Transaction& a, const Transaction& b) {
-    return a.nonce < b.nonce;
+    return a.signature < b.signature;
 }
 
 bool operator==(const Transaction& a, const Transaction& b) {

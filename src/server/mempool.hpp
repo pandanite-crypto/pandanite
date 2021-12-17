@@ -17,19 +17,17 @@ class MemPool {
         MemPool(HostManager& h, BlockChain &b);
         void sync();
         ExecutionStatus addTransaction(Transaction t);
-        void finishBlock(int blockId);
+        void finishBlock(Block& block);
         bool hasTransaction(Transaction t);
-        set<Transaction>& getTransactions(int blockId);
+        size_t size();
         std::pair<char*, size_t> getRaw();
-        std::pair<char*, size_t> getRaw(BloomFilter& seen);
-        std::pair<char*, size_t> getRaw(int blockId);
     protected:
         list<Transaction> toSend;
-        BloomFilter seenTransactions;
         BlockChain & blockchain;
         HostManager & hosts;
-        map<int, set<Transaction>> transactionQueue;
+        set<Transaction> transactionQueue;
         vector<std::thread> syncThread;
         std::mutex lock;
+        std::mutex sendLock;
         friend void mempool_sync(MemPool& mempool);
 };

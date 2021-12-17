@@ -17,19 +17,25 @@ TEST(checks_invalid_mining_fee) {
     t.setAmount(100.0);
     b.addTransaction(t);
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();
+    txdb.closeDB();
+    txdb.deleteDB();
     ASSERT_EQUAL(status, INCORRECT_MINING_FEE);     
 }
 
 TEST(checks_duplicate_mining_fee) {
     Block b;
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
     User miner;
@@ -39,49 +45,37 @@ TEST(checks_duplicate_mining_fee) {
     b.addTransaction(t1);
     b.addTransaction(t2);
 
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();
+    txdb.closeDB();
+    txdb.deleteDB();
     ASSERT_EQUAL(status, EXTRA_MINING_FEE);     
 }
 
 TEST(checks_missing_mining_fee) {
     Block b;
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();   
+    txdb.closeDB();
+    txdb.deleteDB();
     ASSERT_EQUAL(status, NO_MINING_FEE);  
-}
-
-TEST(checks_duplicate_nonce) {
-    Block b;
-    Ledger ledger;
-    ledger.init("./data/tmpdb");
-    LedgerState deltas;
-    ExecutionStatus status;
-    User miner;
-    User receiver;
-    Transaction t1 = miner.mine(1);
-    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
-    t2.setNonce(t1.getNonce());
-    b.addTransaction(t1);
-    b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, deltas);
-    ledger.closeDB();
-    ledger.deleteDB();  
-    ASSERT_EQUAL(status, INVALID_TRANSACTION_NONCE);   
 }
 
 TEST(check_valid_send) {
     Block b;
 
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
 
@@ -93,7 +87,7 @@ TEST(check_valid_send) {
     Transaction t2 = miner.send(receiver, BMB(30), 2);
     b.addTransaction(t2);
 
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
     ASSERT_EQUAL(status, SUCCESS);
 
     PublicWalletAddress aKey = miner.getAddress(); 
@@ -102,13 +96,17 @@ TEST(check_valid_send) {
     ASSERT_EQUAL(ledger.getWalletValue(bKey), BMB(30.0))
     ledger.closeDB();
     ledger.deleteDB();
+    txdb.closeDB();
+    txdb.deleteDB();
 }
 
 TEST(check_low_balance) {
     Block b;
 
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
     
@@ -121,9 +119,11 @@ TEST(check_low_balance) {
     Transaction t2 = miner.send(receiver, BMB(100.0), 2);
     b.addTransaction(t2);
 
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();  
+    txdb.closeDB();
+    txdb.deleteDB();
     ASSERT_EQUAL(status, BALANCE_TOO_LOW);   
 }
 
@@ -132,7 +132,9 @@ TEST(check_miner_fee) {
     Block b;
 
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
     b.setId(2);
@@ -146,7 +148,7 @@ TEST(check_miner_fee) {
     miner.signTransaction(t2);
     b.addTransaction(t);
     b.addTransaction(t2);
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
     ASSERT_EQUAL(status, SUCCESS);
     
     Block b2;
@@ -157,13 +159,15 @@ TEST(check_miner_fee) {
     receiver.signTransaction(t4);
     b2.addTransaction(t3);
     b2.addTransaction(t4);
-    status = Executor::ExecuteBlock(b2, ledger, deltas);
+    status = Executor::ExecuteBlock(b2, ledger, txdb, deltas);
     ASSERT_EQUAL(status, SUCCESS);
     ASSERT_EQUAL(ledger.getWalletValue(other.getAddress()), BMB(1)); 
     ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(9)); 
     ASSERT_EQUAL(ledger.getWalletValue(miner.getAddress()), BMB(90)); 
     ledger.closeDB();
     ledger.deleteDB();
+    txdb.closeDB();
+    txdb.deleteDB();
 }
 
 
@@ -171,7 +175,9 @@ TEST(check_miner_fee) {
 TEST(check_bad_signature) {
     Block b;
     Ledger ledger;
-    ledger.init("./data/tmpdb");
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
     
@@ -187,9 +193,11 @@ TEST(check_bad_signature) {
     t2.sign(foo.getPublicKey(), foo.getPrivateKey());
     b.addTransaction(t2);
 
-    status = Executor::ExecuteBlock(b, ledger, deltas);
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas);
 
     ledger.closeDB();
     ledger.deleteDB();
+    txdb.closeDB();
+    txdb.deleteDB();
     ASSERT_EQUAL(status, INVALID_SIGNATURE);
 }

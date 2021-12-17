@@ -13,6 +13,7 @@
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
 #define DEFAULT_CONFIG_FILE_PATH "./config.json"
 #define LEDGER_FILE_PATH "./data/ledger"
+#define TXDB_FILE_PATH "./data/txdb"
 #define BLOCK_STORE_FILE_PATH "./data/blocks"
 
 // Blocks

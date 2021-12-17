@@ -16,7 +16,7 @@ void simulate_transactions(HostManager& hosts) {
     std::pair<string,int> best = hosts.getBestHost();
     while(true) {
         try {
-            // if (rand()%1000==0) best = hosts.getBestHost();
+            if (rand()%1000==0) best = hosts.getBestHost();
             string host = best.first;
             int blockId = getCurrentBlockCount(host) + 3;
             Transaction t = miner.send(miner, 1 + rand()%5, blockId);

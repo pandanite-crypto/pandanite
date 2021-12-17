@@ -13,7 +13,9 @@ class HostManager {
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
         void addPeer(string addr);
+        bool isDisabled();
     protected:
+        bool disabled;
         string myAddress;
         string myName;
         vector<string> hostSources;
