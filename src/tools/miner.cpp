@@ -62,7 +62,7 @@ void get_status(miner_status& status) {
         Logger::writeConsole("Earned \t\t\t" + std::to_string(earned) + " bamboos");
         Logger::writeConsole("Miner hash rate \t" + std::to_string(hash_count / (double)duration / 1000000) + " Mh/sec"); // todo: HARDCODED
         if (block_time > 0) {
-            Logger::writeConsole("Net hash rate (est) \t" + std::to_string(pow(2, (difficulty / (double)block_time))) + " Gh/sec"); // todo: HARDCODED
+            Logger::writeConsole("Net hash rate (est) \t" + std::to_string(pow(2, difficulty) / (double)block_time / 1000000000) + " Gh/sec"); // todo: HARDCODED
         }
         else {
             Logger::writeConsole("Net hash rate (est) \tN/A");
