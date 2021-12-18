@@ -14,8 +14,9 @@
 #include "block_store.hpp"
 #include "ledger.hpp"
 #include "tx_store.hpp"
-
 using namespace std;
+
+class MemPool;
 
 class BlockChain {
     public:
@@ -33,6 +34,7 @@ class BlockChain {
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         std::pair<uint8_t*, size_t>  getBlockHeaders(uint32_t start, uint32_t end);
+        void setMemPool(MemPool * memPool);
         void initChain();
         void resetChain();
         void popBlock();
@@ -40,6 +42,7 @@ class BlockChain {
         void closeDB();
     protected:
         HostManager& hosts;
+        MemPool * memPool;
         int numBlocks;
         uint64_t totalWork;
         BlockStore blockStore;

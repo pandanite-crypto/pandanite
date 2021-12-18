@@ -17,6 +17,7 @@
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "blockchain.hpp"
+#include "mempool.hpp"
 
 
 using namespace std;
@@ -64,9 +65,10 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     if (ledgerPath == "") ledgerPath = LEDGER_FILE_PATH;
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
     if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
-    ledger.init(ledgerPath);
-    blockStore.init(blockPath);
-    txdb.init(txdbPath);
+    this->memPool = nullptr;
+    this->ledger.init(ledgerPath);
+    this->blockStore.init(blockPath);
+    this->txdb.init(txdbPath);
     this->initChain();
 }
 
@@ -245,6 +247,10 @@ void BlockChain::updateDifficulty(Block& block) {
     }
 }
 
+void BlockChain::setMemPool(MemPool * memPool) {
+    this->memPool = memPool;
+}
+
 uint8_t BlockChain::getDifficulty() {
     return this->difficulty;
 }
@@ -290,9 +296,11 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock);
     if (status != SUCCESS) {
         //revert ledger
-        cout<<"STATUS: " << executionStatusAsString(status)<<endl;
         Executor::RollbackBlock(block, this->ledger, this->txdb);
     } else {
+        if (this->memPool != nullptr) {
+            this->memPool->finishBlock(block);
+        }
         Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
         this->numBlocks++;

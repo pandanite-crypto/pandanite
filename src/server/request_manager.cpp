@@ -13,6 +13,7 @@ RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
     this->mempool = new MemPool(hosts, *this->blockchain);
     if (!hosts.isDisabled()) this->blockchain->sync();
     this->mempool->sync();
+    this->blockchain->setMemPool(this->mempool);
 }
 
 void RequestManager::deleteDB() {

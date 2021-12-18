@@ -8,9 +8,10 @@
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "../core/bloomfilter.hpp"
-#include "blockchain.hpp"
 #include "executor.hpp"
 using namespace std;
+
+class BlockChain;
 
 class MemPool {
     public:

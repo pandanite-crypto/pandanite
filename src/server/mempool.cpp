@@ -4,6 +4,7 @@
 #include "../core/logger.hpp"
 #include "../core/api.hpp"
 #include "mempool.hpp"
+#include "blockchain.hpp"
 using namespace std;
 
 #define TX_BRANCH_FACTOR 10
