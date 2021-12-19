@@ -10,23 +10,89 @@
 #include <mutex>
 #include <set>
 #include <thread>
+#include <atomic>
+#include <chrono>
 using namespace std;
 
-void get_status( HostManager& hosts, std::mutex& statusLock, uint64_t& latestBlockId) {
-    while(true) {
+void get_host(HostManager& hosts, std::atomic<uint64_t>& latestBlockId) {
+    while (true) {
         try {
-            std::pair<string,uint64_t> bestHost = hosts.getBestHost();
-            statusLock.lock();
-            latestBlockId = bestHost.second;
-            statusLock.unlock();
+            std::pair<string, uint64_t> bestHost = hosts.getBestHost();
+            latestBlockId.store(bestHost.second);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        } catch(...) {
+        }
+        catch (...) {
         }
     }
 }
 
+void get_status(miner_status& status) {
+    time_t start = std::time(0);
 
-void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& statusLock, uint64_t& latestBlockId) {
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::minutes(1));
+
+        status._lock.lock();
+        auto hash_count = status.hash_count;
+        auto accepted = status.accepted_blocks;
+        auto rejected = status.rejected_blocks;
+        auto earned = status.earned / DECIMAL_SCALE_FACTOR;
+        auto difficulty = status.last_difficulty;
+        auto block_time = status.last_blocktime;
+        status._lock.unlock();
+
+        if (hash_count == 0) {
+            continue;
+        }
+
+        auto end = std::time(0);
+        auto duration = end - start;
+        auto total_blocks = accepted + rejected;
+
+        Logger::beginWriteConsole();
+        Logger::writeConsole("Periodic Report");
+        if (total_blocks > 0) {
+            Logger::writeConsole("Accepted \t\t" + std::to_string(accepted) + " (" + std::to_string(accepted / (double)total_blocks * 100) + "%)");
+            Logger::writeConsole("Rejected \t\t" + std::to_string(rejected) + " (" + std::to_string(rejected / (double)total_blocks * 100) + "%)");
+        }
+        else {
+            Logger::writeConsole("Accepted \t\t0 (0%)");
+            Logger::writeConsole("Rejected \t\t0 (0%)");
+        }
+        Logger::writeConsole("Earned \t\t\t" + std::to_string(earned) + " bamboos");
+        Logger::writeConsole("Miner hash rate \t" + std::to_string(hash_count / (double)duration / 1000000) + " Mh/sec"); // todo: HARDCODED
+        if (block_time > 0) {
+            Logger::writeConsole("Net hash rate (est) \t" + std::to_string(pow(2, difficulty) / (double)block_time / 1000000000) + " Gh/sec"); // todo: HARDCODED
+        }
+        else {
+            Logger::writeConsole("Net hash rate (est) \tN/A");
+        }
+        Logger::endWriteConsole();
+    }
+}
+
+SHA256Hash start_mining_threads(SHA256Hash target, unsigned char challengeSize, int thread_count, miner_status& status, function<bool()> problemValid) {
+    SHA256Hash solution;
+    std::atomic<bool> aFound(false);
+
+    vector<thread> threads;
+
+    for (int i = 0; i < thread_count; i++) {
+        threads.push_back(std::thread(static_cast<void(*)(SHA256Hash, unsigned char, SHA256Hash&, std::atomic<bool>&, miner_status&, function<bool()>)>(&mineHash), target, challengeSize, ref(solution), ref(aFound), ref(status), problemValid));
+    }
+
+    for (int i = 0; i < thread_count; i++) {
+        threads[i].join();
+    }
+
+    if (aFound.load()) {
+        return solution;
+    }
+
+    return NULL_SHA256_HASH;
+}
+
+void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts, std::atomic<uint64_t>& latestBlockId, miner_status& status) {
     TransactionAmount allEarnings = 0;
     BloomFilter bf;
     while(true) {
@@ -34,14 +100,12 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
             std::pair<string,int> bestHost = hosts.getBestHost();
             if (bestHost.first == "") {
                 Logger::logStatus("no host found");
-            } else {
-                Logger::logStatus("fetching problem from " + bestHost.first);
             }
+
             int bestCount = bestHost.second;
             string host = bestHost.first;
             int nextBlock = bestCount + 1;
-            json problem = getMiningProblem(host); 
-            Logger::logStatus("Got problem for block " + to_string(nextBlock) + ". Difficulty=" + to_string(problem["challengeSize"]));
+            json problem = getMiningProblem(host);
 
             // download transactions
             int count = 0;
@@ -50,9 +114,8 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
                 transactions.push_back(t);
                 count++;
             });
-            stringstream s;
-            s<<"Read "<<count<<" transactions from "<<host;
-            Logger::logStatus(s.str());
+
+            Logger::logStatus("[ NEW ] block = " + std::to_string(nextBlock) + ", difficulty = " + to_string(problem["challengeSize"]) + ", transactions = " + to_string(transactions.size()) + " - " + host);
 
             string lastHashStr = problem["lastHash"];
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
@@ -79,31 +142,54 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
             newBlock.setDifficulty(challengeSize);
             newBlock.setLastBlockHash(lastHash);
             SHA256Hash hash = newBlock.getHash();
-            bool doSubmit = true;
-            SHA256Hash solution = mineHash(hash, challengeSize, [&statusLock, &nextBlock, &latestBlockId, &doSubmit]() {
-                statusLock.lock();
-                if (nextBlock != (latestBlockId + 1)) {
-                    doSubmit = false;
-                }
-                bool ret = nextBlock == (latestBlockId + 1);
-                statusLock.unlock();
-                return ret;
+
+            time_t block_start = std::time(0);
+
+            SHA256Hash solution = start_mining_threads(hash, challengeSize, thread_count, status, [&nextBlock, &latestBlockId]() {
+                return nextBlock == (latestBlockId.load() + 1);
             });
-            if (!doSubmit) {
-                Logger::logStatus("==============BLOCK ALREADY SOLVED==============");
-                Logger::logStatus("Stopping mining and fetching new block.");   
+
+            time_t block_end = std::time(0);
+            bool accepted;
+            uint32_t elapsed;
+            nlohmann::json result;
+
+            status._lock.lock();
+            status.last_difficulty = problem["challengeSize"].get<uint32_t>();
+            status.last_blocktime = block_end - block_start;
+            status._lock.unlock();
+
+            if (solution == NULL_SHA256_HASH) {
                 continue;
+            } else {
+                newBlock.setNonce(solution);
+                auto transmit_start = std::chrono::steady_clock::now();
+                result = submitBlock(host, newBlock);
+                elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - transmit_start).count();
+
+                if (string(result["status"]) == "SUCCESS") {
+                    accepted = true;
+                }
+                else {
+                    accepted = false;
+                }
             }
-            newBlock.setNonce(solution);
-            json result;
-            result = submitBlock(host, newBlock);
-            Logger::logStatus(result.dump(4));
-            if (string(result["status"]) == "SUCCESS") {
-                allEarnings += total;
-                Logger::logStatus("================BLOCK ACCEPTED=================");
-                Logger::logStatus("Earned:" + std::to_string(total/DECIMAL_SCALE_FACTOR));
-                Logger::logStatus("Total:" + std::to_string(allEarnings/DECIMAL_SCALE_FACTOR));
+
+            status._lock.lock();
+            if (accepted) {
+                status.earned += total;
+                status.accepted_blocks++;
+                auto total_blocks = status.accepted_blocks + status.rejected_blocks;
+                Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET + to_string(status.accepted_blocks) + " / " + to_string(status.rejected_blocks) + " (" + to_string(status.accepted_blocks / (double)total_blocks * 100) + ") "+ to_string(elapsed) + "ms");
             }
+            else {
+                status.rejected_blocks++;
+                auto total_blocks = status.accepted_blocks + status.rejected_blocks;
+                Logger::logStatus(RED + "[ REJECTED ] " + RESET + to_string(status.accepted_blocks) + " / " + to_string(status.rejected_blocks) + " (" + to_string(status.rejected_blocks / (double)total_blocks * 100) + ") " + to_string(elapsed) + "ms");
+                Logger::logStatus(result.dump(4));
+            }
+            status._lock.unlock();
+
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
@@ -112,9 +198,33 @@ void run_mining(PublicWalletAddress wallet, HostManager& hosts, std::mutex& stat
     }
 }
 
-
 int main(int argc, char **argv) {
-    json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
+    std::vector<std::string> args(argv, argv + argc);
+    int threads = 1; // TODO: detect core count automatically and allow -t to override
+    bool testnet = false;
+
+    // should read from config when available
+    std::vector<string>::iterator it;
+    
+    it = std::find(args.begin(), args.end(), "-t");
+    if (it++ != args.end()) {
+        threads = std::stoi(*it);
+    }
+
+    it = std::find(args.begin(), args.end(), "--testnet");
+    if (it != args.end()) {
+        testnet = true;
+    }
+
+    json config;
+    config["hostSources"] = json::array();
+
+    if (testnet) {
+        config["hostSources"].push_back("http://54.185.169.234:3000/peers");
+    }
+    else {
+        config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
+    }
     HostManager hosts(config);
     json keys;
     try {
@@ -123,12 +233,23 @@ int main(int argc, char **argv) {
         Logger::logStatus("Could not read ./keys.json");
         return 0;
     }
+        
+    Logger::logStatus("Starting miner with " + to_string(threads) + " thread. Use -t X to change (for example: miner -t 6)");
     
     PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
     Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
-    std::mutex statusLock;
-    uint64_t latestBlockId;
-    std::thread status_thread(get_status, ref(hosts), ref(statusLock), ref(latestBlockId));
-    std::thread mining_thread(run_mining, wallet, ref(hosts), ref(statusLock), ref(latestBlockId));
+    std::atomic<uint64_t> latestBlockId;
+    
+    miner_status status;
+    status.accepted_blocks = 0;
+    status.rejected_blocks = 0;
+    status.earned = 0;
+    status.hash_count = 0;
+    status.last_blocktime = 0;
+    status.last_difficulty = 0;
+
+    std::thread host_thread(get_host, ref(hosts), ref(latestBlockId));
+    std::thread status_thread(get_status, ref(status));
+    std::thread mining_thread(run_mining, wallet, threads, ref(hosts), ref(latestBlockId), ref(status));
     mining_thread.join();
 }
