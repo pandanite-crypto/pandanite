@@ -18,11 +18,11 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
 }
 
 
-std::array<uint8_t, 32> SHA256Fast(const unsigned char* buffer, size_t len) {
+std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
     std::array<uint8_t, 32> ret;
     sha256_ctx sha256;
     sha256_init(&sha256);
-    sha256_update(&sha256, buffer, len);
+    sha256_update(&sha256, (const unsigned char*) buffer, len);
     sha256_final(&sha256, ret.data());
     return ret;
 }
@@ -259,7 +259,7 @@ void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& soluti
     do {
         hash_count++;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
-        SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
+        SHA256Hash fullHash = SHA256Fast((const char*)concat.data(), concat.size());
         bool found = checkLeadingZeroBits(fullHash, challengeSize);
         if (found && !aFound.load()) {
             aFound.store(true);

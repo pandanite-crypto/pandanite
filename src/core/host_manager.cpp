@@ -122,7 +122,7 @@ void HostManager::refreshHostList() {
                                 }
                             }
                         } catch (...) {
-                            Logger::logStatus("Failed to load name");
+                            Logger::logStatus("Host did not respond: " + hostUrl);
                         }
                     }));
                 }

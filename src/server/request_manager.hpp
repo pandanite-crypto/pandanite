@@ -14,7 +14,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(HostManager& hosts);
+        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
         json addTransaction(Transaction& t);
         json getProofOfWork();
         json submitProofOfWork(Block & block);

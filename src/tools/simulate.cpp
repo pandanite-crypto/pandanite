@@ -38,8 +38,5 @@ int main(int argc, char **argv) {
     HostManager hosts(config);
     vector<std::thread> requests;
     std::thread sim_thread(simulate_transactions, ref(hosts));
-    std::thread sim_thread2(simulate_transactions, ref(hosts));
-    std::thread sim_thread3(simulate_transactions, ref(hosts));
-    std::thread sim_thread4(simulate_transactions, ref(hosts));
     sim_thread.join();
 }

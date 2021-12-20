@@ -9,7 +9,7 @@ using namespace std;
 
 TEST(test_accepts_proof_of_work) {
     HostManager hosts;
-    RequestManager r(hosts);
+    RequestManager r(hosts, "./test-data/tmpdb1", "./test-data/tmpdb2", "./test-data/tmpdb3");
 
     json pow = r.getProofOfWork();
     string lastHashStr = pow["lastHash"];

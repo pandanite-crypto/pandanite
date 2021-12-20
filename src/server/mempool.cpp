@@ -92,7 +92,7 @@ size_t MemPool::size() {
 std::pair<char*, size_t> MemPool::getRaw() {
     int count = 0;
     this->lock.lock();
-    size_t len = this->transactionQueue.size() *sizeof(TransactionInfo);
+    size_t len = this->transactionQueue.size() * sizeof(TransactionInfo);
     TransactionInfo* buf = (TransactionInfo*)malloc(len);
     for (auto tx : this->transactionQueue) {
         buf[count] = tx.serialize();
