@@ -3,6 +3,7 @@
 #include <iostream>
 #include <atomic>
 #include <thread>
+#include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
 #include "../external/sha256/sha2.hpp" 
 #include "../core/logger.hpp"
@@ -251,11 +252,13 @@ void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& soluti
     // By @Shifu!
     vector<uint8_t> concat;
     uint64_t hash_count = 0;
+    std::random_device t_rand;
 
     concat.resize(2 * 32);
     for (size_t i = 0; i < 32; i++) concat[i] = target[i];
     // fill with random data for privacy (one cannot guess number of tries later)
-    for (size_t i = 32; i < 64; ++i) concat[i] = rand() % 256;
+    for (size_t i = 32; i < 64; ++i) concat[i] = t_rand() % 256;
+
     do {
         hash_count++;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
