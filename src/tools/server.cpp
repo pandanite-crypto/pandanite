@@ -8,6 +8,7 @@
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
+#include "../core/header_chain.hpp"
 #include "../core/helpers.hpp"
 #include "../core/bloomfilter.hpp"
 #include "../core/api.hpp"
@@ -23,7 +24,9 @@ int main(int argc, char **argv) {
 
     srand(time(0));
     string myName = randomString(25);
+
     int port = 3000;
+
     HostManager hosts(config, myName);
     RequestManager manager(hosts);
  
@@ -165,6 +168,10 @@ int main(int argc, char **argv) {
                     Logger::logError("/submit", "unknown");
                 }
                 
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e10563b... basic chain working
             }
         });
     }).get("/gettx/:blockId", [&manager](auto *res, auto *req) {
@@ -310,6 +317,151 @@ int main(int argc, char **argv) {
     }).listen(port, [port](auto *token) {
         Logger::logStatus("Started server");
     }).run();
+<<<<<<< HEAD
+=======
+    //         }
+    //     });
+    // }).get("/gettx/:blockId", [&manager](auto *res, auto *req) {
+    //     try {
+    //         res->writeHeader("Content-Type", "application/octet-stream");
+    //         // NOTE: We no longer group tx's by blockID so we just return
+    //         // all transaction data in the mempool
+    //         std::pair<char*, size_t> buffer = manager.getRawTransactionData();
+    //         std::string_view str(buffer.first, buffer.second);
+    //         res->write(str);
+    //         delete buffer.first;
+    //         res->end("");
+    //     } catch(const std::exception &e) {
+    //         Logger::logError("/sync", e.what());
+    //     } catch(...) {
+    //         Logger::logError("/sync", "unknown");
+    //     }
+    //     res->onAborted([res]() {
+    //         res->end("ABORTED");
+    //     });
+    // }).get("/mine", [&manager](auto *res, auto *req) {
+    //     try {
+    //         json response = manager.getProofOfWork();
+    //         res->end(response.dump());
+    //     } catch(const std::exception &e) {
+    //         Logger::logError("/mine", e.what());
+    //     } catch(...) {
+    //         Logger::logError("/mine", "unknown");
+    //     }
+    // }).get("/sync/:start/:end", [&manager](auto *res, auto *req) {
+    //     try {
+    //         int start = std::stoi(string(req->getParameter(0)));
+    //         int end = std::stoi(string(req->getParameter(1)));
+    //         if ((end-start) > BLOCKS_PER_FETCH) {
+    //             Logger::logError("/sync", "invalid range requested");
+    //             res->end("");
+    //         }
+    //         res->writeHeader("Content-Type", "application/octet-stream");
+    //         for (int i = start; i <=end; i++) {
+    //             std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i);
+    //             std::string_view str((char*)buffer.first, buffer.second);
+    //             res->write(str);
+    //             delete buffer.first;
+    //         }
+    //         res->end("");
+    //     } catch(const std::exception &e) {
+    //         Logger::logError("/sync", e.what());
+    //     } catch(...) {
+    //         Logger::logError("/sync", "unknown");
+    //     }
+    //     res->onAborted([res]() {
+    //         res->end("ABORTED");
+    //     });
+    // }).get("/block_headers/:start/:end", [&manager](auto *res, auto *req) {
+    //     try {
+    //         uint32_t start = std::stoi(string(req->getParameter(0)));
+    //         uint32_t end = std::stoi(string(req->getParameter(1)));
+    //         res->writeHeader("Content-Type", "application/octet-stream");
+    //         std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
+    //         std::string_view str((char*)buffer.first, buffer.second);
+    //         res->write(str);
+    //         delete buffer.first;
+    //         res->end("");
+    //     } catch(const std::exception &e) {
+    //         Logger::logError("/block_headers", e.what());
+    //     } catch(...) {
+    //         Logger::logError("/block_headers", "unknown");
+    //     }
+    //     res->onAborted([res]() {
+    //         res->end("ABORTED");
+    //     });
+    // }).get("/synctx", [&manager](auto *res, auto *req) {
+    //     try {
+    //         res->writeHeader("Content-Type", "application/octet-stream");
+    //         std::pair<char*, size_t> buffer = manager.getRawTransactionData();
+    //         std::string_view str(buffer.first, buffer.second);
+    //         res->write(str);
+    //         delete buffer.first;
+    //         res->end("");
+    //     } catch(const std::exception &e) {
+    //         Logger::logError("/sync", e.what());
+    //     } catch(...) {
+    //         Logger::logError("/sync", "unknown");
+    //     }
+    //     res->onAborted([res]() {
+    //         res->end("ABORTED");
+    //     });
+    // }).post("/add_transaction", [&manager](auto *res, auto *req) {
+    //     res->onAborted([res]() {
+    //         res->end("ABORTED");
+    //     });
+    //     std::string buffer;
+    //     res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+    //         buffer.append(data.data(), data.length());
+    //         if (last) {
+    //             try {
+    //                 if (buffer.length() < sizeof(TransactionInfo)) {
+    //                     json response;
+    //                     response["error"] = "Malformed transaction";
+    //                     Logger::logError("/add_transaction","Malformed transaction");
+    //                     res->end(response.dump());
+    //                 } else {
+    //                     TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+    //                     Transaction tx(t);
+    //                     json response = manager.addTransaction(tx);
+    //                     res->end(response.dump());
+    //                 }
+    //             }  catch(const std::exception &e) {
+    //                 Logger::logError("/add_transaction", e.what());
+    //             } catch(...) {
+    //                 Logger::logError("/add_transaction", "unknown");
+    //             }
+    //         }
+    //     });
+    // }).post("/verify_transaction", [&manager](auto *res, auto *req) {
+    //     /* Allocate automatic, stack, variable as usual */
+    //     std::string buffer;
+    //     /* Move it to storage of lambda */
+    //     res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+    //         buffer.append(data.data(), data.length());
+    //         if (last) {
+    //             if (buffer.length() < sizeof(TransactionInfo)) {
+    //                 json response;
+    //                 response["error"] = "Malformed transaction";
+    //                 res->end(response.dump());
+    //                 Logger::logError("/verify_transaction","Malformed transaction");
+    //                 return;
+    //             }
+    //             TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+    //             Transaction tx(t);
+    //             json response = manager.verifyTransaction(tx);
+    //             res->end(response.dump());
+    //         }
+    //     });
+    //     res->onAborted([res]() {
+    //         res->end("ABORTED");
+    //     });
+    // }).listen(port, [port](auto *token) {
+    //     Logger::logStatus("Started server");
+    // }).run();
+>>>>>>> d0ccd18... checkpoint
+=======
+>>>>>>> e10563b... basic chain working
 
 }
 

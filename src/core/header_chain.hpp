@@ -10,8 +10,8 @@ class HeaderChain {
     public:
         HeaderChain(string host);
         uint64_t getTotalWork();
-        uint32_t getChainLength();
-        void setStartBlock(BlockHeader& b, uint64_t totalWork);
+        uint64_t getChainLength();
+        string getHostAddress();
     protected:
         void resetChain();
         void discardBlock();
@@ -22,5 +22,5 @@ class HeaderChain {
         string host;
         vector<std::thread> syncThread;
         list<BlockHeader> headers;
-        friend sync_headers(HeaderChain& chain);
+        friend void sync_headers(HeaderChain& chain);
 };

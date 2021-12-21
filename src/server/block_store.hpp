@@ -10,6 +10,10 @@ class BlockStore {
         bool hasBlock(uint32_t blockId);
         Block getBlock(uint32_t blockId);
         std::pair<uint8_t*, size_t> getRawData(uint32_t blockId);
+<<<<<<< HEAD
+=======
+        std::pair<uint8_t*, size_t> getBlockHeaders(uint32_t start, uint32_t end);
+>>>>>>> e10563b... basic chain working
         BlockHeader getBlockHeader(uint32_t blockId);
         void setBlock(Block& b);
         void setBlockCount(size_t count);

@@ -1,0 +1,10 @@
+{
+    "port": 3000,
+    "hostSources2": [],
+    "hostSources": ["http://54.185.169.234:3000/peers"],
+    "hostSources2":[
+        "http://ec2-35-84-249-159.us-west-2.compute.amazonaws.com:3000/peers", 
+        "http://ec2-44-227-179-62.us-west-2.compute.amazonaws.com:3000/peers", 
+        "http://ec2-54-189-82-240.us-west-2.compute.amazonaws.com:3000/peers"
+    ]
+}

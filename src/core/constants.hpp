@@ -3,13 +3,18 @@
 // System
 #define DECIMAL_SCALE_FACTOR 10000
 #define TIMEOUT_MS 5000
+#define TIMEOUT_BLOCKHEADERS_MS 30000
 #define TIMEOUT_SUBMIT_MS 45000
 #define BLOCKS_PER_FETCH 200
+<<<<<<< HEAD
 <<<<<<< HEAD
 #define BLOCK_HEADERS_PER_FETCH 2000
 =======
 #define BLOCKS_PER_HEADER_FETCH 10000
 >>>>>>> bab1e42... basic header chain impl
+=======
+#define BLOCKS_PER_HEADER_FETCH 1000
+>>>>>>> c72bb94... checkpoint
 #define DEFAULT_BLOOMFILTER_BITS 8000
 #define DEFAULT_BLOOMFILTER_HASHES 5
 

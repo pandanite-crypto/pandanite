@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include "header_chain.hpp"
 #include <set>
 using namespace std;
 
@@ -9,7 +10,7 @@ class HostManager {
         HostManager(); // only used for  mocks
         std::pair<string,uint64_t> getBestHost();
         size_t size();
-        void refreshHostList();
+        void refreshHostList(bool resampleHeadChains=false);
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
         void addPeer(string addr);
@@ -20,5 +21,6 @@ class HostManager {
         string myName;
         vector<string> hostSources;
         vector<string> hosts;
+        vector<HeaderChain*> currentHosts;
 };
 

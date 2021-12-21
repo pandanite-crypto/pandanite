@@ -316,7 +316,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // iterate through each of the hosts and pick the longest one:
-    std::pair<string,int> bestHostInfo = this->hosts.getBestHost();
+    std::pair<string,uint64_t> bestHostInfo = this->hosts.getBestHost();
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = bestHostInfo.second;
     int startCount = this->numBlocks;

@@ -10,7 +10,7 @@
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
-
+#define NUM_RANDOM_HOSTS 1
 
 string computeAddress() {
     string rawUrl = exec("curl -s ifconfig.co") ;
@@ -27,7 +27,7 @@ HostManager::HostManager(json config, string myName) {
     if (this->hostSources.size() == 0) {
         this->hosts.push_back("http://localhost:3000");
     } else {
-        this->refreshHostList();
+        this->refreshHostList(true);
     }
 }
 
@@ -75,7 +75,7 @@ void HostManager::addPeer(string addr) {
     }
 }
 
-void HostManager::refreshHostList() {
+void HostManager::refreshHostList(bool resampleHeadChains) {
     if (this->hostSources.size() == 0) return;
     
     set<string> fullHostList;
@@ -134,6 +134,14 @@ void HostManager::refreshHostList() {
         for(int i = 0; i < reqs.size(); i++) {
             reqs[i].get();
         }
+        
+        if (resampleHeadChains) {
+            set<string> headChains = this->sampleHosts(NUM_RANDOM_HOSTS);
+            this->currentHosts.clear(); // TODO: HUGE MEMORY LEAK!
+            for(auto h : headChains) {
+                this->currentHosts.push_back(new HeaderChain(h));
+            }
+        }
 
     } catch (std::exception &e) {
         Logger::logError("HostManager::refreshHostList", string(e.what()));
@@ -153,33 +161,23 @@ size_t HostManager::size() {
 std::pair<string, uint64_t> HostManager::getBestHost() {
     // TODO: make this asynchronous
     uint64_t bestWork = 0;
-    vector<string> bestHosts;
-    vector<future<void>> reqs;
+    uint64_t bestChainLength = 0;
+    vector<string> bestHostAddresses;
     std::mutex lock;
-    for(auto host : this->hosts) {
-        reqs.push_back(std::async([host, &bestHosts, &bestWork, &lock]() {
-            try {
-                uint64_t curr = getCurrentBlockCount(host); //getTotalWork(host);
-                lock.lock();
-                if (curr > bestWork) {
-                    bestWork = curr;
-                    bestHosts.clear();
-                    bestHosts.push_back(host);
-                } else if (curr == bestWork) {
-                    bestHosts.push_back(host);
-                }
-                lock.unlock();
-            } catch (std::exception & e) {
-                lock.unlock();
-            }
-        }));
+    for(int i = 0; i < this->currentHosts.size(); i++) {
+        HeaderChain* host = this->currentHosts[i];
+        uint64_t curr = host->getTotalWork();
+        if (curr > bestWork) {
+            bestHostAddresses.clear();
+            bestWork = curr;
+            bestChainLength = host->getChainLength();
+            bestHostAddresses.push_back(host->getHostAddress());
+        } else if (curr == bestWork) {
+            bestHostAddresses.push_back(host->getHostAddress());
+        }
     }    
-    // block until all requests finish
-    for(int i = 0; i < reqs.size(); i++) {
-        reqs[i].get();
-    }
-
-    if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
-    string bestHost = bestHosts[rand()%bestHosts.size()];
-    return std::pair<string, uint64_t>(bestHost, bestWork);
+    if (bestChainLength == 0) throw std::runtime_error("Could not get chain length from any host");
+    
+    string bestHost = bestHostAddresses[rand()%bestHostAddresses.size()];
+    return std::pair<string, uint64_t>(bestHost, bestChainLength);
 }
