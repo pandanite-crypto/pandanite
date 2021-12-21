@@ -24,15 +24,7 @@ class RequestManager {
         json verifyTransaction(Transaction& t);
         json getPeers();
         json addPeer(string host);
-<<<<<<< HEAD
-<<<<<<< HEAD
         BlockHeader getBlockHeader(uint32_t blockId);
-=======
-        std::pair<uint8_t*, size_t> getBlockHeader(uint32_t blockId);
->>>>>>> 795d9df... checkpoint
-=======
-        BlockHeader getBlockHeader(uint32_t blockId);
->>>>>>> e10563b... basic chain working
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t blockId);
         std::pair<char*, size_t> getRawTransactionData();
         string getBlockCount();

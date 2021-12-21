@@ -125,7 +125,7 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
     http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
+    },std::chrono::milliseconds{TIMEOUT_BLOCK_MS});
     std::vector<char> bytes(response.body.begin(), response.body.end());
     char* buffer = (char*)bytes.data();
     char* currPtr = buffer;

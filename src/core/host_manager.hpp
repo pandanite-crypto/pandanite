@@ -1,8 +1,9 @@
 #pragma once
 #include "common.hpp"
-#include "header_chain.hpp"
 #include <set>
 using namespace std;
+
+class HeaderChain;
 
 class HostManager {
     public:
@@ -13,8 +14,10 @@ class HostManager {
         void refreshHostList(bool resampleHeadChains=false);
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
+        string getUnusedHost();
         void addPeer(string addr);
         bool isDisabled();
+        bool isReady();
     protected:
         bool disabled;
         string myAddress;

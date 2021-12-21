@@ -3,14 +3,16 @@
 #include "api.hpp"
 #include "constants.hpp"
 #include "logger.hpp"
+#include "header_chain.hpp"
 #include "../external/http.hpp"
 #include <iostream>
+#include <algorithm>
 #include <thread>
 #include <future>
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
-#define NUM_RANDOM_HOSTS 1
+#define NUM_RANDOM_HOSTS 3
 
 string computeAddress() {
     string rawUrl = exec("curl -s ifconfig.co") ;
@@ -46,6 +48,22 @@ set<string> HostManager::sampleHosts(int count) {
         sampledHosts.insert(this->hosts[rand()%this->hosts.size()]);
     }
     return sampledHosts;
+}
+
+string HostManager::getUnusedHost() {
+    // create a set of all hosts
+    set<string> all;
+    for(auto h : this->hosts) all.insert(h);
+    set<string> curr;
+    for(auto h : this->currentHosts) curr.insert(h->getHostAddress());
+
+    std::set<string> result;
+    std::set_difference(all.begin(), all.end(), curr.begin(), curr.end(), std::inserter(result, result.end()));
+
+    if (result.size() == 0) return "";
+    
+    auto it = result.begin();
+    return *it;
 }
 
 void HostManager::addPeer(string addr) {
@@ -137,9 +155,8 @@ void HostManager::refreshHostList(bool resampleHeadChains) {
         
         if (resampleHeadChains) {
             set<string> headChains = this->sampleHosts(NUM_RANDOM_HOSTS);
-            this->currentHosts.clear(); // TODO: HUGE MEMORY LEAK!
             for(auto h : headChains) {
-                this->currentHosts.push_back(new HeaderChain(h));
+                this->currentHosts.push_back(new HeaderChain(h, this));
             }
         }
 
@@ -156,6 +173,13 @@ vector<string> HostManager::getHosts(bool includeSelf) {
 
 size_t HostManager::size() {
     return this->hosts.size();
+}
+
+bool HostManager::isReady() {
+    for (auto host : this->currentHosts) {
+        if (host->isReady()) return true;
+    }
+    return false;
 }
 
 std::pair<string, uint64_t> HostManager::getBestHost() {
