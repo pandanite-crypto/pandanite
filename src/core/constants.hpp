@@ -8,6 +8,7 @@
 #define BLOCKS_PER_FETCH 200
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define BLOCK_HEADERS_PER_FETCH 2000
 =======
 #define BLOCKS_PER_HEADER_FETCH 10000
@@ -15,6 +16,9 @@
 =======
 #define BLOCKS_PER_HEADER_FETCH 1000
 >>>>>>> c72bb94... checkpoint
+=======
+#define BLOCKS_PER_HEADER_FETCH 10000
+>>>>>>> 15eb1bb... basic header chain impl
 #define DEFAULT_BLOOMFILTER_BITS 8000
 #define DEFAULT_BLOOMFILTER_HASHES 5
 
