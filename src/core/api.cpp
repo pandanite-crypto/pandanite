@@ -104,7 +104,21 @@ json verifyTransaction(string host_url, Transaction& t) {
     return json::parse(responseStr);
 }
 
-
+void readRawHeaders(string host_url, int startId, int endId, function<bool(BlockHeader&)> handler) {
+    http::Request request(host_url + "/block_headers/" + std::to_string(startId) + "/" +  std::to_string(endId) );
+    const auto response = request.send("GET", "", {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_MS});
+    
+    std::vector<char> bytes(response.body.begin(), response.body.end());
+    BlockHeader* curr = (BlockHeader*)bytes.data();
+    int numBlocks = bytes.size() / sizeof(BlockHeader);
+    for(int i =0; i < numBlocks; i++){
+        BlockHeader t = curr[i];
+        bool finished = handler(BlockHeader(t));
+        if (!finished) break;
+    }
+}
 
 
 void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
