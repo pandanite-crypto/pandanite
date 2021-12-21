@@ -13,19 +13,17 @@
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 #include "../server/request_manager.hpp"
+#include "../core/config.hpp"
 using namespace std;
 
 
-int main(int argc, char **argv) {    
-    json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
+int main(int argc, char **argv) {  
+
+    json config = getConfig(argc, argv);
+
     srand(time(0));
     string myName = randomString(25);
-    int port = config["port"];
-
-    if (argc > 1) {
-        string logfile = string(argv[1]);
-        Logger::file.open(logfile);
-    }
+    int port = 3000;
     HostManager hosts(config, myName);
     RequestManager manager(hosts);
  
