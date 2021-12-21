@@ -121,8 +121,9 @@ std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
     return this->blockStore.getRawData(blockId);
 }
 
-std::pair<uint8_t*, size_t> BlockChain::getBlockHeaders(uint32_t start, uint32_t end) {
-    return this->blockStore.getBlockHeaders(start, end);
+BlockHeader BlockChain::getBlockHeader(uint32_t blockId) {
+    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    return this->blockStore.getBlockHeader(blockId);
 }
 
 void BlockChain::sync() {

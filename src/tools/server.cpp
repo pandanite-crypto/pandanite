@@ -220,13 +220,18 @@ int main(int argc, char **argv) {
         });
     }).get("/block_headers/:start/:end", [&manager](auto *res, auto *req) {
         try {
-            uint32_t start = std::stoi(string(req->getParameter(0)));
-            uint32_t end = std::stoi(string(req->getParameter(1)));
+            int start = std::stoi(string(req->getParameter(0)));
+            int end = std::stoi(string(req->getParameter(1)));
+            if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
+                Logger::logError("/block_headers", "invalid range requested");
+                res->end("");
+            }
             res->writeHeader("Content-Type", "application/octet-stream");
-            std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
-            std::string_view str((char*)buffer.first, buffer.second);
-            res->write(str);
-            delete buffer.first;
+            for (int i = start; i <=end; i++) {
+                BlockHeader b = manager.getBlockHeader(i);
+                std::string_view str((char*)&b, sizeof(BlockHeader));
+                res->write(str);
+            }
             res->end("");
         } catch(const std::exception &e) {
             Logger::logError("/block_headers", e.what());

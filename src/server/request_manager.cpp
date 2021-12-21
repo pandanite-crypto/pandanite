@@ -87,14 +87,12 @@ json RequestManager::getProofOfWork() {
 
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t index) {
-    return this->blockchain->getRaw(index);
+std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
+    return this->blockchain->getRaw(blockId);
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getBlockHeaders(uint32_t start, uint32_t end) {
-    if (start < 1) start = 1;
-    if (end > this->blockchain->getBlockCount()) end = this->blockchain->getBlockCount();
-    return this->blockchain->getBlockHeaders(start, end);
+BlockHeader RequestManager::getBlockHeader(uint32_t blockId) {
+    return this->blockchain->getBlockHeader(blockId);
 }
 
 
@@ -102,8 +100,8 @@ std::pair<char*, size_t> RequestManager::getRawTransactionData() {
     return this->mempool->getRaw();
 }
 
-json RequestManager::getBlock(uint32_t index) {
-    return this->blockchain->getBlock(index).toJson();
+json RequestManager::getBlock(uint32_t blockId) {
+    return this->blockchain->getBlock(blockId).toJson();
 }
 
 json RequestManager::getPeers() {

@@ -10,7 +10,7 @@ class BlockStore {
         bool hasBlock(uint32_t blockId);
         Block getBlock(uint32_t blockId);
         std::pair<uint8_t*, size_t> getRawData(uint32_t blockId);
-        std::pair<uint8_t*, size_t> getBlockHeaders(uint32_t start, uint32_t end);
+        BlockHeader getBlockHeader(uint32_t blockId);
         void setBlock(Block& b);
         void setBlockCount(size_t count);
         size_t getBlockCount();
@@ -20,7 +20,6 @@ class BlockStore {
         void deleteDB();
         void closeDB();
     protected:
-        BlockHeader getBlockHeader(uint32_t blockId);
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block);
         leveldb::DB *db;
         size_t numBlocks;
