@@ -6,19 +6,15 @@
 #include "../core/helpers.hpp"
 #include "../core/common.hpp"
 #include "../core/host_manager.hpp"
+#include "../core/config.hpp"
 using namespace std;
 
 
 
 
 int main(int argc, char** argv) {
-    map<string,User*> users;
-    string configFile = DEFAULT_CONFIG_FILE_PATH;
-    if (argc > 1 ) {
-        configFile = string(argv[1]);
-    }
-    json config = readJsonFromFile(configFile);
-    int port = config["port"];
+    
+    json config = getConfig(argc, argv);
     HostManager hosts(config);
 
     json keys;
@@ -39,7 +35,7 @@ int main(int argc, char** argv) {
     PublicWalletAddress fromWallet = walletAddressFromPublicKey(publicKey);
 
     cout<<"Enter the amount:"<<endl;
-    TransactionAmount amount = 10000;
+    TransactionAmount amount;
     cin>>amount;
 
     cout<<"Enter the mining fee (or 0):"<<endl;

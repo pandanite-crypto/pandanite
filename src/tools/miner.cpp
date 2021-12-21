@@ -6,6 +6,7 @@
 #include "../core/host_manager.hpp"
 #include "../core/logger.hpp"
 #include "../core/user.hpp"
+#include "../core/config.hpp"
 #include <iostream>
 #include <mutex>
 #include <set>
@@ -199,32 +200,9 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
 }
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args(argv, argv + argc);
-    int threads = 1; // TODO: detect core count automatically and allow -t to override
-    bool testnet = false;
+    json config = getConfig(argc, argv);
+    int threads = config["threads"];
 
-    // should read from config when available
-    std::vector<string>::iterator it;
-    
-    it = std::find(args.begin(), args.end(), "-t");
-    if (it++ != args.end()) {
-        threads = std::stoi(*it);
-    }
-
-    it = std::find(args.begin(), args.end(), "--testnet");
-    if (it != args.end()) {
-        testnet = true;
-    }
-
-    json config;
-    config["hostSources"] = json::array();
-
-    if (testnet) {
-        config["hostSources"].push_back("http://54.185.169.234:3000/peers");
-    }
-    else {
-        config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
-    }
     HostManager hosts(config);
     json keys;
     try {
