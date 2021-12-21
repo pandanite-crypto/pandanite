@@ -33,7 +33,7 @@ class BlockChain {
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
-        std::pair<uint8_t*, size_t>  getBlockHeaders(uint32_t start, uint32_t end);
+        BlockHeader getBlockHeader(uint32_t blockId);
         void setMemPool(MemPool * memPool);
         void initChain();
         void resetChain();
