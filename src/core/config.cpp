@@ -31,7 +31,7 @@ json getConfig(int argc, char**argv) {
     config["hostSources"] = json::array();
 
     if (local) {
-        config["hostSources"].push_back("http://localhost:3000/peers");
+        // do nothing
     } else if (testnet) {
         config["hostSources"].push_back("http://54.185.169.234:3000/peers");
     } else {
