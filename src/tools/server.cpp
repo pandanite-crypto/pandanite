@@ -225,12 +225,10 @@ int main(int argc, char **argv) {
             uint32_t start = std::stoi(string(req->getParameter(0)));
             uint32_t end = std::stoi(string(req->getParameter(1)));
             res->writeHeader("Content-Type", "application/octet-stream");
-            for (int i = start; i <=end; i++) {
-                std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
-                std::string_view str((char*)buffer.first, buffer.second);
-                res->write(str);
-                delete buffer.first;
-            }
+            std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
+            std::string_view str((char*)buffer.first, buffer.second);
+            res->write(str);
+            delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
             Logger::logError("/block_headers", e.what());
