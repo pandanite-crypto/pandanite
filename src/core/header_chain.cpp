@@ -10,7 +10,7 @@ void sync_headers(HeaderChain& chain) {
     uint64_t statusFailureCount = 0;
     uint64_t downloadFailureCount = 0;
     while(true) {
-        uint32_t targetBlockCount;
+        uint32_t targetBlockCount = 0;
         try {
             targetBlockCount = getCurrentBlockCount(chain.getHostAddress());
             statusFailureCount = 0;
@@ -23,7 +23,7 @@ void sync_headers(HeaderChain& chain) {
             string newPeer = chain.hostManager->getUnusedHost();
             if (newPeer == "") {
                 // give up
-                Logger::logStatus("No alternate peer hosts. Giving up.");
+                Logger::logStatus("No alternate peer hosts for host="+chain.getHostAddress());
                 return;
             } else {
                 Logger::logStatus("Swapped non-responsive chain to new host=" + newPeer);
@@ -31,8 +31,9 @@ void sync_headers(HeaderChain& chain) {
                 downloadFailureCount = 0;
                 statusFailureCount = 0;
             }
-            continue;
         }
+
+        if (targetBlockCount == 0) continue;
             
         uint32_t startCount = chain.numBlocks;
 
