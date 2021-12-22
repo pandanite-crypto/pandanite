@@ -15,18 +15,6 @@
 #include <chrono>
 using namespace std;
 
-void get_host(HostManager& hosts, std::atomic<uint64_t>& latestBlockId) {
-    while (true) {
-        try {
-            std::pair<string, uint64_t> bestHost = hosts.getBestHost();
-            latestBlockId.store(bestHost.second);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        catch (...) {
-        }
-    }
-}
-
 void get_status(miner_status& status) {
     time_t start = std::time(0);
 
@@ -93,7 +81,7 @@ SHA256Hash start_mining_threads(SHA256Hash target, unsigned char challengeSize, 
     return NULL_SHA256_HASH;
 }
 
-void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts, std::atomic<uint64_t>& latestBlockId, miner_status& status) {
+void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts, miner_status& status) {
     TransactionAmount allEarnings = 0;
     BloomFilter bf;
     while(true) {
@@ -146,8 +134,9 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
 
             time_t block_start = std::time(0);
 
-            SHA256Hash solution = start_mining_threads(hash, challengeSize, thread_count, status, [&nextBlock, &latestBlockId]() {
-                return nextBlock == (latestBlockId.load() + 1);
+            SHA256Hash solution = start_mining_threads(hash, challengeSize, thread_count, status, [&nextBlock, &hosts]() {
+                uint64_t latestBlockId = hosts.getBestHost().second;
+                return nextBlock == latestBlockId + 1;
             });
 
             time_t block_end = std::time(0);
@@ -203,7 +192,7 @@ int main(int argc, char **argv) {
     json config = getConfig(argc, argv);
     int threads = config["threads"];
 
-    HostManager hosts(config);
+
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");
@@ -212,6 +201,16 @@ int main(int argc, char **argv) {
         return 0;
     }
         
+
+    HostManager hosts(config);
+
+    // wait to have one chain synchronized
+    Logger::logStatus("=== SYNCHRONIZING CHAIN ===");
+    while(true) {
+        if(hosts.isReady()) break;
+    }
+    Logger::logStatus("====== READY TO MINE ======");
+
     Logger::logStatus("Starting miner with " + to_string(threads) + " thread. Use -t X to change (for example: miner -t 6)");
     
     PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
@@ -226,8 +225,7 @@ int main(int argc, char **argv) {
     status.last_blocktime = 0;
     status.last_difficulty = 0;
 
-    std::thread host_thread(get_host, ref(hosts), ref(latestBlockId));
     std::thread status_thread(get_status, ref(status));
-    std::thread mining_thread(run_mining, wallet, threads, ref(hosts), ref(latestBlockId), ref(status));
+    std::thread mining_thread(run_mining, wallet, threads, ref(hosts), ref(status));
     mining_thread.join();
 }

@@ -8,6 +8,7 @@
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
+#include "../core/header_chain.hpp"
 #include "../core/helpers.hpp"
 #include "../core/bloomfilter.hpp"
 #include "../core/api.hpp"
@@ -23,8 +24,18 @@ int main(int argc, char **argv) {
 
     srand(time(0));
     string myName = randomString(25);
+
     int port = 3000;
+
     HostManager hosts(config, myName);
+
+    // wait to have one chain synchronized
+    Logger::logStatus("=== SYNCHRONIZING CHAIN ===");
+    while(true) {
+        if(hosts.isReady()) break;
+    }
+    Logger::logStatus("======= SERVER READY =====");
+
     RequestManager manager(hosts);
  
     uWS::App().get("/name", [&myName](auto *res, auto *req) {
@@ -164,7 +175,6 @@ int main(int argc, char **argv) {
                     res->end(response.dump());
                     Logger::logError("/submit", "unknown");
                 }
-                
             }
         });
     }).get("/gettx/:blockId", [&manager](auto *res, auto *req) {
@@ -310,6 +320,5 @@ int main(int argc, char **argv) {
     }).listen(port, [port](auto *token) {
         Logger::logStatus("Started server");
     }).run();
-
 }
 
