@@ -276,13 +276,7 @@ void BlockChain::popBlock() {
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if ( abs(block.getDifficulty() - this->difficulty) > 1 && !(block.getId() >= BLOCK_DIFFICULTY_GAP_START && block.getId() < BLOCK_DIFFICULTY_GAP_END)) {
-        // NOTE: the difficulties are seriously F*CKED, not sure how to adequately keep 
-        // the difficulty computation consistent across nodes -- keep getting off by ones. 
-        // I introduce a fudge factor of 1 ... this means someone could fake out the chain
-        // with 50% of the total POW of the chain. Miners can probably adapt to submit lower POW blocks
-        // than the current difficulty (by 1) which would effectively increase the difficulty to cancel this effect.
-        // Critical to figure out how to do this properly at some point.
+    if (block.getDifficulty() != this->difficulty && !(block.getId() >= BLOCK_DIFFICULTY_GAP_START && block.getId() < BLOCK_DIFFICULTY_GAP_END)) {
         Logger::logStatus("Added block difficulty: " + std::to_string(block.getDifficulty()) + " chain difficulty: " + to_string(this->difficulty));
         return INVALID_DIFFICULTY;
     }
@@ -322,7 +316,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // iterate through each of the hosts and pick the longest one:
-    std::pair<string,uint64_t> bestHostInfo = this->hosts.getBestHost();
+    std::pair<string,int> bestHostInfo = this->hosts.getBestHost();
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = bestHostInfo.second;
     int startCount = this->numBlocks;
@@ -357,7 +351,7 @@ ExecutionStatus BlockChain::startChainSync() {
                 return status;
             }
         } catch (const std::exception &e) {
-            Logger::logError("BlockChain::startChainSync", "Failed to load block " + string(e.what()));
+            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
             return UNKNOWN_ERROR;
         }
     }
