@@ -68,9 +68,15 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
         this->lock.unlock();
         return status;
     } else {
-        
-        if (this->transactionQueue.size() < MAX_TRANSACTIONS_PER_BLOCK) {
+        // check how much of the from wallets balance is outstanding in mempool
+        TransactionAmount outgoing = 0;
+        if (!t.isFee()) outgoing = this->mempoolOutgoing[t.fromWallet()];
+
+        if (!t.isFee() && outgoing + t.getAmount() > this->blockchain.getWalletValue(t.fromWallet())) {
+            status = BALANCE_TOO_LOW;
+        } else  if (this->transactionQueue.size() < MAX_TRANSACTIONS_PER_BLOCK) {
             this->transactionQueue.insert(t);
+            this->mempoolOutgoing[t.fromWallet()] += t.getAmount();
             status = SUCCESS;
         } else {
             status = QUEUE_FULL;
@@ -109,6 +115,14 @@ void MemPool::finishBlock(Block& block) {
         auto it = this->transactionQueue.find(tx);
         if (it != this->transactionQueue.end()) {
             this->transactionQueue.erase(it);
+            if (!tx.isFee()) {
+                this->mempoolOutgoing[tx.fromWallet()] -= tx.getAmount();
+                if (this->mempoolOutgoing[tx.fromWallet()] == 0) {
+                    // remove the key if there is no longer an outgoing amount
+                    auto it = this->mempoolOutgoing.find(tx.fromWallet());
+                    this->mempoolOutgoing.erase(it);
+                }
+            }
         }
     }
     this->lock.unlock();

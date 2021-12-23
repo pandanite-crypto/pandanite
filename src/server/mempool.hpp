@@ -5,6 +5,7 @@
 #include <thread>
 #include <mutex>
 #include <list>
+#include <map>
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "../core/bloomfilter.hpp"
@@ -23,6 +24,7 @@ class MemPool {
         size_t size();
         std::pair<char*, size_t> getRaw();
     protected:
+        map<PublicWalletAddress,TransactionAmount> mempoolOutgoing;
         list<Transaction> toSend;
         BlockChain & blockchain;
         HostManager & hosts;
