@@ -169,6 +169,10 @@ SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
 }
 
+TransactionAmount BlockChain::getWalletValue(PublicWalletAddress addr) {
+    return this->getLedger().getWalletValue(addr);
+}
+
 int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
     uint32_t newDifficulty = currentDifficulty;
     if (elapsedTime > expectedTime) {
