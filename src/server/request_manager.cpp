@@ -11,9 +11,19 @@ using namespace std;
 RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
     this->mempool = new MemPool(hosts, *this->blockchain);
-    if (!hosts.isDisabled()) this->blockchain->sync();
+    if (!hosts.isDisabled()) {
+        this->blockchain->sync();
+     
+        // initialize the mempool with a random peers transactions:
+        string host = *hosts.sampleHosts(1).begin();
+        readRawTransactionsForBlock(host, 0, [&](Transaction t) {
+            mempool->addTransaction(t);
+        });
+    }
     this->mempool->sync();
     this->blockchain->setMemPool(this->mempool);
+
+
 }
 
 void RequestManager::deleteDB() {
