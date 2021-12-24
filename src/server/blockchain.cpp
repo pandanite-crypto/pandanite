@@ -158,10 +158,12 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     if (!t.signatureValid()) return INVALID_SIGNATURE;
     LedgerState deltas;
     // verify the transaction is consistent with ledger
+    this->lock.lock();
     ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
 
     //roll back the ledger to it's original state:
     Executor::Rollback(this->getLedger(), deltas);
+    this->lock.unlock();
     return status;
 }
 
