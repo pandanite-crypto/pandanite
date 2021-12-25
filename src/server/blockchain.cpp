@@ -19,7 +19,6 @@
 #include "blockchain.hpp"
 #include "mempool.hpp"
 
-
 using namespace std;
 
 void chain_sync(BlockChain& blockchain) {

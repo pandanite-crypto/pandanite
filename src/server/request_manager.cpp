@@ -15,10 +15,10 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
         this->blockchain->sync();
      
         // initialize the mempool with a random peers transactions:
-        string host = *hosts.sampleHosts(1).begin();
-        readRawTransactionsForBlock(host, 0, [&](Transaction t) {
-            mempool->addTransaction(t);
-        });
+        // string host = *hosts.sampleHosts(1).begin();
+        // readRawTransactionsForBlock(host, 0, [&](Transaction t) {
+        //     mempool->addTransaction(t);
+        // });
     }
     this->mempool->sync();
     this->blockchain->setMemPool(this->mempool);
