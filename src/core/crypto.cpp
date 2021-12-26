@@ -113,13 +113,6 @@ string walletAddressToString(PublicWalletAddress p) {
     return hexEncode((const char*)p.data(), p.size());
 }
 
-bool isFounderWalletPossible(PublicWalletAddress w) {
-    SHA256Hash hash = SHA256((const char*)w.data(), w.size());
-    int difficulty = FOUNDER_WALLET_BITS;
-    bool found = checkLeadingZeroBits(hash, difficulty);
-    return found;
-}
-
 PublicWalletAddress stringToWalletAddress(string s) {
     vector<uint8_t> bytes = hexDecode(s);
     PublicWalletAddress ret;
