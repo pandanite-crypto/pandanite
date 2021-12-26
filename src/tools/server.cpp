@@ -199,9 +199,9 @@ int main(int argc, char **argv) {
             delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
+            Logger::logError("/gettx", e.what());
         } catch(...) {
-            Logger::logError("/sync", "unknown");
+            Logger::logError("/gettx", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");

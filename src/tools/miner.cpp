@@ -111,7 +111,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             // download transactions
             int count = 0;
             vector<Transaction> transactions;
-            readRawTransactionsForBlock(host, nextBlock, [&nextBlock, &count, &transactions](Transaction t) {
+            readRawTransactions(host, [&nextBlock, &count, &transactions](Transaction t) {
                 transactions.push_back(t);
                 count++;
             });

@@ -104,9 +104,6 @@ json verifyTransaction(string host_url, Transaction& t) {
     return json::parse(responseStr);
 }
 
-
-
-
 void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
     http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
@@ -138,31 +135,8 @@ void readRaw(string host_url, int startId, int endId, function<void(Block&)> han
     }
 }
 
-
-void readRawTransactions(string host_url, BloomFilter& bf, function<void(Transaction)> handler) {
-    http::Request request(host_url + "/synctx");
-    std::pair<char*, size_t> bfs = bf.serialize();
-    vector<uint8_t> bytes;
-    for(int i = 0; i < bfs.second; i++) {
-        bytes.push_back(bfs.first[i]);
-    }
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
-    
-    std::vector<char> responseBytes(response.body.begin(), response.body.end());
-    TransactionInfo* curr = (TransactionInfo*)responseBytes.data();
-    int numTx = responseBytes.size() / sizeof(TransactionInfo);
-    for(int i =0; i < numTx; i++){
-        TransactionInfo t = curr[i];
-        handler(Transaction(t));
-    }
-    delete bfs.first;
-}
-
-
-void readRawTransactionsForBlock(string host_url, int blockId, function<void(Transaction)> handler) {
-    http::Request request(host_url + "/gettx/" + std::to_string(blockId));
+void readRawTransactions(string host_url, function<void(Transaction)> handler) {
+    http::Request request(host_url + "/gettx");
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});
