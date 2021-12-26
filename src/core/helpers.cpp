@@ -21,7 +21,7 @@
 using namespace std;
 
 TransactionAmount BMB(double amount) {
-    return amount * DECIMAL_SCALE_FACTOR;
+    return (TransactionAmount)(amount * DECIMAL_SCALE_FACTOR);
 }
 
 string randomString(int len) {

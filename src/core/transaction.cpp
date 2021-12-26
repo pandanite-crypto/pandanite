@@ -27,13 +27,8 @@ Transaction::Transaction() {
 Transaction::Transaction(const TransactionInfo& t) {
     this->to = t.to;
     if (!t.isTransactionFee) this->from = t.from;
-#ifdef SECP256K1
-    memcpy((void*)this->signature.data, (void*)t.signature, 64);
-    memcpy((void*)this->signingKey.data, (void*)t.signingKey, 64);
-#else
     memcpy((void*)this->signature.data(), (void*)t.signature, 64);
     memcpy((void*)this->signingKey.data(), (void*)t.signingKey, 32);
-#endif
     this->nonce = string((char*)t.nonce, TRANSACTION_NONCE_SIZE);
     this->amount = t.amount;
     this->isTransactionFee = t.isTransactionFee;
@@ -44,13 +39,8 @@ Transaction::Transaction(const TransactionInfo& t) {
 TransactionInfo Transaction::serialize() {
     TransactionInfo t;
     t.blockId = this->blockId;
-#ifdef SECP256K1
-    memcpy((void*)t.signature, (void*)this->signature.data, 64);
-    memcpy((void*)t.signingKey, (void*)this->signingKey.data, 64);
-#else
     memcpy((void*)t.signature, (void*)this->signature.data(), 64);
     memcpy((void*)t.signingKey, (void*)this->signingKey.data(), 32);
-#endif
     memcpy((char*)t.nonce, (char*)this->nonce.c_str(), TRANSACTION_NONCE_SIZE);
     t.timestamp = this->timestamp;
     t.to = this->to;
@@ -75,9 +65,9 @@ Transaction::Transaction(const Transaction & t) {
     this->signingKey = t.signingKey;
 }
 
-Transaction::Transaction(PublicWalletAddress to, int blockId) {
+Transaction::Transaction(PublicWalletAddress to, int blockId, TransactionAmount fee) {
     this->to = to;
-    this->amount = MINING_FEE; // TODO make this a function
+    this->amount = fee;
     this->isTransactionFee = true;
     this->blockId = blockId;
     this->nonce = randomString(TRANSACTION_NONCE_SIZE);

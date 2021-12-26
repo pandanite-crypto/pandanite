@@ -36,7 +36,7 @@ PrivateKey User::getPrivateKey() {
 }
 
 Transaction User::mine(int blockId) {
-    return Transaction(this->getAddress(), blockId);
+    return Transaction(this->getAddress(), blockId, BMB(50));
 }
 
 Transaction User::send(User& to, TransactionAmount amount, int blockId) {

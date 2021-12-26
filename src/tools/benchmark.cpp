@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         Ledger ledger;
         ledger.init("./test-data/tmpdb");
         start = std::time(0);
-        ExecutionStatus status = Executor::ExecuteBlock(b, ledger, deltas);
+        ExecutionStatus status = Executor::ExecuteBlock(b, ledger, deltas, BMB(50));
         cout<<"Status: " << executionStatusAsString(status) <<endl;
         end = std::time(0);
         averageValidationTime += (end-start);

@@ -123,15 +123,12 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             int challengeSize = problem["challengeSize"];
 
             // create fee to our wallet:
-            Transaction fee(wallet, nextBlock);
+            Transaction fee(wallet, nextBlock, problem["miningFee"]);
             Block newBlock;
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
 
-            TransactionAmount total = MINING_FEE;
-            if (newBlock.getId() >= MINING_PAYMENTS_UNTIL) {
-                total = 0;
-            }
+            TransactionAmount total = problem["miningFee"];
             for(auto t : transactions) {
                 newBlock.addTransaction(t);
                 total += t.getTransactionFee();

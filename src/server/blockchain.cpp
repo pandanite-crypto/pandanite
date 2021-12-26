@@ -144,6 +144,18 @@ uint32_t BlockChain::getBlockCount() {
     return this->numBlocks;
 }
 
+uint32_t BlockChain::getCurrentMiningFee() {
+    if (this->numBlocks < 1000000) {
+        return BMB(50.0);
+    } else if (this->numBlocks < 2000000) {
+        return BMB(25.0);
+    }  else if (this->numBlocks < 4000000) {
+        return BMB(12.5);
+    } else {
+        return BMB(0.0);
+    }
+}
+
 uint64_t BlockChain::getTotalWork() {
     return this->totalWork;
 }
@@ -299,7 +311,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
     LedgerState deltasFromBlock;
-    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock);
+    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee());
     if (status != SUCCESS) {
         //revert ledger
         Executor::RollbackBlock(block, this->ledger, this->txdb);

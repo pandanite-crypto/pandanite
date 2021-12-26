@@ -34,6 +34,6 @@ class Executor {
     public:
         static void Rollback(Ledger& ledger, LedgerState& deltas);
         static void RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb);
-        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas);
+        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount miningFee);
         static ExecutionStatus ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas);
 };

@@ -98,6 +98,7 @@ json RequestManager::getProofOfWork() {
     vector<Transaction> transactions;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
+    result["miningFee"] = this->blockchain->getCurrentMiningFee();
     return result;
 
 }

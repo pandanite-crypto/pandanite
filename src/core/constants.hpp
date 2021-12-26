@@ -11,8 +11,6 @@
 
 // Files
 #define GENESIS_FILE_PATH "./genesis.json"
-#define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
-#define DEFAULT_CONFIG_FILE_PATH "./config.json"
 #define LEDGER_FILE_PATH "./data/ledger"
 #define TXDB_FILE_PATH "./data/txdb"
 #define BLOCK_STORE_FILE_PATH "./data/blocks"
@@ -24,13 +22,8 @@
 #define TIMESTAMP_VERIFICATION_START 20700
 #define NEW_DIFFICULTY_COMPUTATION_BLOCK 28000
 
-// Payments`
-#define MINING_FEE (50 * DECIMAL_SCALE_FACTOR)
-#define MINING_PAYMENTS_UNTIL 2000000
-
 // Difficulty
 #define DESIRED_BLOCK_TIME_SEC 30
 #define MIN_DIFFICULTY 16
 #define MAX_DIFFICULTY 256
-#define FOUNDER_WALLET_BITS 20
 

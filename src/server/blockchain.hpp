@@ -28,6 +28,7 @@ class BlockChain {
         uint64_t getTotalWork();
         uint8_t getDifficulty();
         uint32_t getBlockCount();
+        uint32_t getCurrentMiningFee();
         SHA256Hash getLastHash();
         Ledger& getLedger();
         ExecutionStatus addBlock(Block& block);
