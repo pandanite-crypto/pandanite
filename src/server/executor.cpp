@@ -221,9 +221,6 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas);
         if (updateStatus != SUCCESS) {
             return updateStatus;
-        } else {
-            // add to txdb:
-            txdb.insertTransaction(t);
         }
     }
     return SUCCESS;

@@ -298,14 +298,17 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     m.setItems(block.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
-    LedgerState deltasFromBlock;
-    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock);
+    LedgerState deltasExecuted;
+    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasExecuted);
     if (status != SUCCESS) {
-        //revert ledger
-        Executor::RollbackBlock(block, this->ledger, this->txdb);
+        Executor::Rollback(this->ledger, deltasExecuted);
     } else {
         if (this->memPool != nullptr) {
             this->memPool->finishBlock(block);
+        }
+        // add all transactions to txdb:
+        for(auto t : block.getTransactions()) {
+            if (!t.isFee()) this->txdb.insertTransaction(t);
         }
         Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
