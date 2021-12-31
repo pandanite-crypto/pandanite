@@ -134,7 +134,7 @@ void BlockChain::deleteDB() {
 }
 
 std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
-    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore.getRawData(blockId);
 }
 
@@ -221,7 +221,7 @@ uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32
     } else {
         int k = 2;
         int lastK = 1;
-        while(newDifficulty < 255) {
+        while(newDifficulty < 254) {
             if(abs(elapsedTime*k - expectedTime) > abs(elapsedTime*lastK - expectedTime) ) {
                 break;
             }
@@ -233,10 +233,18 @@ uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32
     }
 }
 
-void BlockChain::updateDifficulty(Block& block) {
-    if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
-        
-    }
+void BlockChain::updateDifficulty() {
+    if (this->numBlocks <= DIFFICULTY_LOOKBACK) return;
+    if (this->numBlocks % DIFFICULTY_LOOKBACK != 0) return;
+    int firstID = this->numBlocks - DIFFICULTY_LOOKBACK;
+    int lastID = this->numBlocks;  
+    Block first = this->getBlock(firstID);
+    Block last = this->getBlock(lastID);
+    int32_t elapsed = last.getTimestamp() - first.getTimestamp(); 
+    uint32_t numBlocksElapsed = lastID - firstID;
+    int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
+    int32_t difficulty = last.getDifficulty();
+    this->difficulty = computeDifficulty(difficulty, elapsed, target);
 }
 
 uint32_t BlockChain::findBlockForTransaction(Transaction &t) {
@@ -261,7 +269,7 @@ void BlockChain::popBlock() {
     this->blockStore.setBlockCount(this->numBlocks);
     if (this->getBlockCount() > 1) {
         Block newLast = this->getBlock(this->getBlockCount());
-        this->updateDifficulty(newLast);
+        this->updateDifficulty();
         this->lastHash = newLast.getHash();
     } else {
         this->resetChain();
@@ -300,7 +308,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->blockStore.setTotalWork(this->totalWork);
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
-        this->updateDifficulty(block);
+        this->updateDifficulty();
     }
     return status;
 }

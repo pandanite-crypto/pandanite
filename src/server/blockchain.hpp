@@ -53,7 +53,7 @@ class BlockChain {
         TransactionStore txdb;
         SHA256Hash lastHash;
         int difficulty;
-        void updateDifficulty(Block& b);
+        void updateDifficulty();
         ExecutionStatus startChainSync();
         int targetBlockCount;
         std::mutex lock;

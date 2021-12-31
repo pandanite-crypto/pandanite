@@ -24,8 +24,14 @@ int main(int argc, char **argv) {
     srand(time(0));
     string myName = randomString(25);
     int port = 3000;
+    
+
+    Logger::logStatus("Starting server...");
+    
     HostManager hosts(config, myName);
     RequestManager manager(hosts);
+
+    Logger::logStatus("Ready.");
     
     auto logsHandler = [&manager](auto *res, auto *req) {
         try {
