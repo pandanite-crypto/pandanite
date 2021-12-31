@@ -85,11 +85,11 @@ int main(int argc, char **argv) {
         long numHashes = 0;
         struct timeval time_now{};
         gettimeofday(&time_now, nullptr);
-        time_t start = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
+        uint64_t start = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
         benchmark::mineHashShifu(NULL_SHA256_HASH, 16, numHashes);
         gettimeofday(&time_now, nullptr);
-        time_t end = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
-        // time_t end = std::time(0);
+        uint64_t end = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
+        // uint64_t end = std::time(0);
         cout<<"Mined in : " <<(end-start)<<" ms"<<endl;
         cout<<"Hash Rate : " <<numHashes*1000/(end-start)<<endl;
         averageMiningTime += (end-start);

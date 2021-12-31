@@ -8,7 +8,6 @@
 #include <map>
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
-#include "../core/bloomfilter.hpp"
 #include "executor.hpp"
 using namespace std;
 

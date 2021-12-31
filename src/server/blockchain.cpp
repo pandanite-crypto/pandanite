@@ -16,6 +16,7 @@
 #include "../core/logger.hpp"
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
+#include "../core/user.hpp"
 #include "blockchain.hpp"
 #include "mempool.hpp"
 
@@ -88,14 +89,31 @@ void BlockChain::initChain() {
 
 void BlockChain::resetChain() {
     Logger::logStatus("BlockStore does not exist");
-    for(size_t i = 0; i <this->lastHash.size(); i++) this->lastHash[i] = 0;
-    json data = readJsonFromFile(GENESIS_FILE_PATH);
-    Block genesis(data);
-    this->difficulty = genesis.getDifficulty();
+    this->difficulty = MIN_DIFFICULTY;
     this->targetBlockCount = 1;
     this->numBlocks = 0;
     this->totalWork = 0;
     this->lastHash = NULL_SHA256_HASH;
+
+    /** TODO: add totals for existing miners **/
+    User miner;
+    Transaction fee = miner.mine();
+    vector<Transaction> transactions;
+    Block genesis;
+    genesis.setId(1);
+    genesis.addTransaction(fee);
+    genesis.setLastBlockHash(NULL_SHA256_HASH);
+    SHA256Hash hash = genesis.getHash();
+    
+    // compute merkle tree
+    MerkleTree m;
+    m.setItems(genesis.getTransactions());
+    SHA256Hash computedRoot = m.getRootHash();
+    genesis.setMerkleRoot(m.getRootHash());
+
+    SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
+    genesis.setNonce(solution);
+
     ExecutionStatus status = this->addBlock(genesis);
     if (status != SUCCESS) {
         throw std::runtime_error("Could not load genesis block: " + executionStatusAsString(status));
@@ -121,7 +139,7 @@ std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
 }
 
 BlockHeader BlockChain::getBlockHeader(uint32_t blockId) {
-    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore.getBlockHeader(blockId);
 }
 
@@ -186,12 +204,12 @@ TransactionAmount BlockChain::getWalletValue(PublicWalletAddress addr) {
     return this->getLedger().getWalletValue(addr);
 }
 
-int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
+uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
     uint32_t newDifficulty = currentDifficulty;
     if (elapsedTime > expectedTime) {
-            int k = 2;
-            int lastK = 1;
-            while(newDifficulty > 16) {
+        int k = 2;
+        int lastK = 1;
+        while(newDifficulty > 16) {
                 if(abs(elapsedTime/k - expectedTime) > abs(elapsedTime/lastK - expectedTime) ) {
                     break;
                 }
@@ -215,54 +233,15 @@ int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t ex
     }
 }
 
-
-
-#define BLOCK_DIFFICULTY_GAP_START 37800
-#define BLOCK_DIFFICULTY_GAP_END   40000
-
 void BlockChain::updateDifficulty(Block& block) {
     if(block.getId() % DIFFICULTY_RESET_FREQUENCY == 0) {
-        if (block.getId() >= BLOCK_DIFFICULTY_GAP_END) {
-            int firstID = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY); 
-            int lastID = this->numBlocks;  
-            Block first = this->getBlock(firstID);
-            Block last = this->getBlock(lastID);
-            int32_t elapsed = last.getTimestamp() - first.getTimestamp(); 
-            uint32_t numBlocksElapsed = lastID - firstID;
-            int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
-            int32_t difficulty = last.getDifficulty();
-            this->difficulty = computeDifficulty(difficulty, elapsed, target);
-        } else if (block.getId() > NEW_DIFFICULTY_COMPUTATION_BLOCK) {
-            int firstID = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
-            int lastID = this->numBlocks - 1;
-            Block first = this->getBlock(firstID);
-            Block last = this->getBlock(lastID);
-            int32_t elapsed = last.getTimestamp() - first.getTimestamp();
-            int32_t target = DIFFICULTY_RESET_FREQUENCY * DESIRED_BLOCK_TIME_SEC;
-            int32_t difficulty = last.getDifficulty();
-            this->difficulty = computeDifficulty(difficulty, elapsed, target);
-        } else {
-            // compute the new difficulty score based on average block time
-            double average = 0;
-            int total = 0;
-            // ignore genesis block time
-            int first = max(3, this->numBlocks - DIFFICULTY_RESET_FREQUENCY);
-            int last = this->numBlocks - 1;
-            for(int i = last; i >= first; i--) {
-                Block b1 = this->blockStore.getBlock(i-1);
-                Block b2 = this->blockStore.getBlock(i-2);
-                int currTs = (int)b1.getTimestamp();
-                int lastTs = (int)b2.getTimestamp();
-                average += (double)(currTs - lastTs);
-                total++;
-            }
-            average /= total;
-            double ratio = average/DESIRED_BLOCK_TIME_SEC;
-            int delta = -round(log2(ratio));
-            this->difficulty += delta;
-            this->difficulty = min(max(this->difficulty, MIN_DIFFICULTY), MAX_DIFFICULTY);
-        }
+        
     }
+}
+
+uint32_t BlockChain::findBlockForTransaction(Transaction &t) {
+    uint32_t blockId = this->txdb.blockForTransaction(t);
+    return blockId;
 }
 
 void BlockChain::setMemPool(MemPool * memPool) {
@@ -293,18 +272,13 @@ void BlockChain::popBlock() {
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty && !(block.getId() >= BLOCK_DIFFICULTY_GAP_START && block.getId() < BLOCK_DIFFICULTY_GAP_END)) {
-        Logger::logStatus("Added block difficulty: " + std::to_string(block.getDifficulty()) + " chain difficulty: " + to_string(this->difficulty));
-        return INVALID_DIFFICULTY;
-    }
+    if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
-    // if we are greater than block 20700 check timestamps
-    if (block.getId() > TIMESTAMP_VERIFICATION_START) {
+    if (block.getId() != 1) {
         Block lastBlock = blockStore.getBlock(this->getBlockCount());
         if (block.getTimestamp() < lastBlock.getTimestamp()) return BLOCK_TIMESTAMP_TOO_OLD;
     }
-
     // compute merkle tree and verify root matches;
     MerkleTree m;
     m.setItems(block.getTransactions());
@@ -345,7 +319,7 @@ ExecutionStatus BlockChain::startChainSync() {
     int needed = this->targetBlockCount - startCount;
 
     // download any remaining blocks in batches
-    time_t start = std::time(0);
+    uint64_t start = std::time(0);
     for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
         try {
             int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
@@ -372,8 +346,8 @@ ExecutionStatus BlockChain::startChainSync() {
             return UNKNOWN_ERROR;
         }
     }
-    time_t final = std::time(0);
-    time_t d = final - start;
+    uint64_t final = std::time(0);
+    uint64_t d = final - start;
     stringstream s;
     s<<"Downloaded " << needed <<" blocks in " << d << " seconds";
     if (needed > 1) Logger::logStatus(s.str());

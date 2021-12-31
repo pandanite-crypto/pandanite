@@ -11,11 +11,11 @@ TEST(check_block_json_serialization) {
     Block a;
     User miner;
     User receiver;
-    Transaction t = miner.mine(a.getId());
+    Transaction t = miner.mine();
     a.addTransaction(t);
     // send tiny shares to receiver:
     for(int i = 0; i < 5; i++) {
-        a.addTransaction(miner.send(receiver, 1, a.getId()));
+        a.addTransaction(miner.send(receiver, 1));
     }
     string s = a.toJson().dump();
     json x = json::parse(s);
@@ -28,11 +28,11 @@ TEST(check_block_struct_serialization) {
     Block a;
     User miner;
     User receiver;
-    Transaction t = miner.mine(a.getId());
+    Transaction t = miner.mine();
     a.addTransaction(t);
     // send tiny shares to receiver:
     for(int i = 0; i < 5; i++) {
-        a.addTransaction(miner.send(receiver, 1, a.getId()));
+        a.addTransaction(miner.send(receiver, 1));
     }
     BlockHeader d = a.serialize();
     Block b(d, a.getTransactions());

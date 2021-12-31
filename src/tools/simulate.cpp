@@ -18,8 +18,7 @@ void simulate_transactions(HostManager& hosts) {
         try {
             if (rand()%1000==0) best = hosts.getBestHost();
             string host = best.first;
-            int blockId = getCurrentBlockCount(host) + 3;
-            Transaction t = miner.send(miner, 1 + rand()%5, blockId);
+            Transaction t = miner.send(miner, 1 + rand()%5);
             json result = sendTransaction(host, t);
             cout<<"sent: "<< TOTAL<<endl;
             cout<<result.dump()<<endl;

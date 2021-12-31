@@ -103,11 +103,11 @@ json Block::toJson() {
 }
 
 
-void Block::setTimestamp(time_t t) {
+void Block::setTimestamp(uint64_t t) {
     this->timestamp = t;
 }
 
-time_t Block::getTimestamp() {
+uint64_t Block::getTimestamp() {
     return this->timestamp;
 }
 
@@ -173,7 +173,7 @@ SHA256Hash Block::getHash() {
     SHA256_Update(&sha256, (unsigned char*)this->merkleRoot.data(), this->merkleRoot.size());
     SHA256_Update(&sha256, (unsigned char*)this->lastBlockHash.data(), this->lastBlockHash.size());
     SHA256_Update(&sha256, (unsigned char*)&this->difficulty, sizeof(int));
-    SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(time_t));
+    SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(uint64_t));
     SHA256_Final(ret.data(), &sha256);
     return ret;
 }

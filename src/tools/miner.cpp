@@ -28,7 +28,7 @@ void get_host(HostManager& hosts, std::atomic<uint64_t>& latestBlockId) {
 }
 
 void get_status(miner_status& status) {
-    time_t start = std::time(0);
+    uint64_t start = std::time(0);
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::minutes(1));
@@ -95,7 +95,6 @@ SHA256Hash start_mining_threads(SHA256Hash target, unsigned char challengeSize, 
 
 void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts, std::atomic<uint64_t>& latestBlockId, miner_status& status) {
     TransactionAmount allEarnings = 0;
-    BloomFilter bf;
     while(true) {
         try {
             std::pair<string,int> bestHost = hosts.getBestHost();
@@ -141,13 +140,13 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             newBlock.setLastBlockHash(lastHash);
             SHA256Hash hash = newBlock.getHash();
 
-            time_t block_start = std::time(0);
+            uint64_t block_start = std::time(0);
 
             SHA256Hash solution = start_mining_threads(hash, challengeSize, thread_count, status, [&nextBlock, &latestBlockId]() {
                 return nextBlock == (latestBlockId.load() + 1);
             });
 
-            time_t block_end = std::time(0);
+            uint64_t block_end = std::time(0);
             bool accepted;
             uint32_t elapsed;
             nlohmann::json result;

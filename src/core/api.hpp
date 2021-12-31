@@ -2,7 +2,6 @@
 #include <functional>
 #include "transaction.hpp"
 #include "block.hpp"
-#include "bloomfilter.hpp"
 #include "common.hpp"
 using namespace std;
 

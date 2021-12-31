@@ -99,7 +99,7 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     }
 }
 
-ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee) {
+ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
@@ -114,7 +114,7 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
         }
     }
 
-    if (t.getBlockId() == 1) { // special case genesis block
+    if (blockId == 1) { // special case genesis block
         deposit(to, amt, ledger, deltas);
     } else {
         // from account must exist
@@ -182,7 +182,7 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
         return INVALID_SIGNATURE;
     }
     PublicWalletAddress miner = NULL_ADDRESS;
-    return updateLedger(t, miner, ledger, deltas, BMB(0)); // ExecuteTransaction is only used on non-fee transactions
+    return updateLedger(t, miner, ledger, deltas, BMB(0), 0); // ExecuteTransaction is only used on non-fee transactions
 }
 
 ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee) {
@@ -209,15 +209,15 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         return INCORRECT_MINING_FEE;
     }
     for(auto t : curr.getTransactions()) {
-        if (!t.isFee() && !t.signatureValid() && t.getBlockId() != 1) {
+        if (!t.isFee() && !t.signatureValid() && curr.getId() != 1) {
             return INVALID_SIGNATURE;
         }
-        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas, blockMiningFee);
+        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas, blockMiningFee, curr.getId());
         if (updateStatus != SUCCESS) {
             return updateStatus;
         } else {
             // add to txdb:
-            txdb.insertTransaction(t);
+            txdb.insertTransaction(t, curr.getId());
         }
     }
     return SUCCESS;

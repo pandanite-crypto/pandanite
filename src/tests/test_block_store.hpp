@@ -10,11 +10,11 @@ TEST(test_blockstore_stores_block) {
     a.setId(2);
     User miner;
     User receiver;
-    Transaction t = miner.mine(a.getId());
+    Transaction t = miner.mine();
     a.addTransaction(t);
     // send tiny shares to receiver:
     for(int i = 0; i < 5; i++) {
-        a.addTransaction(miner.send(receiver, 1, a.getId()));
+        a.addTransaction(miner.send(receiver, 1));
     }
     ASSERT_EQUAL(blocks.hasBlock(2), false);
     blocks.setBlock(a);
@@ -35,11 +35,11 @@ TEST(test_blockstore_stores_multiple) {
     for (int i = 0; i < 30; i++) {
         Block a;
         a.setId(i+1);
-        Transaction t = miner.mine(a.getId());
+        Transaction t = miner.mine();
         a.addTransaction(t);
         // send tiny shares to receiver:
         for(int i = 0; i < 5; i++) {
-            a.addTransaction(miner.send(receiver, 1, a.getId()));
+            a.addTransaction(miner.send(receiver, 1));
         }
         ASSERT_EQUAL(blocks.hasBlock(i+1), false);
         blocks.setBlock(a);
@@ -63,11 +63,11 @@ TEST(test_blockstore_returns_valid_raw_data) {
     User receiver;
     Block a;
     a.setId(1);
-    Transaction t = miner.mine(a.getId());
+    Transaction t = miner.mine();
     a.addTransaction(t);
     // send tiny shares to receiver:
     for(int i = 0; i < 5; i++) {
-        Transaction t = miner.send(receiver, 1, a.getId());
+        Transaction t = miner.send(receiver, 1);
         a.addTransaction(t);
     }
     blocks.setBlock(a);

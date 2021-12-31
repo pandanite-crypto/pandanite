@@ -31,6 +31,7 @@ class BlockChain {
         uint32_t getCurrentMiningFee();
         SHA256Hash getLastHash();
         Ledger& getLedger();
+        uint32_t findBlockForTransaction(Transaction &t);
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);

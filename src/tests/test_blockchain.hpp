@@ -27,8 +27,7 @@ TEST(check_adding_new_node_with_hash) {
     BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
     User miner;
     User other;
-    // have miner mine the next block
-    Transaction fee = miner.mine(2);
+    Transaction fee = miner.mine();
     vector<Transaction> transactions;
     Block newBlock;
     newBlock.setId(2);
@@ -50,7 +49,7 @@ TEST(check_popping_block) {
     User miner;
     User other;
     // have miner mine the next block
-    Transaction fee = miner.mine(2);
+    Transaction fee = miner.mine();
     vector<Transaction> transactions;
     Block newBlock;
     newBlock.setId(2);
@@ -75,7 +74,7 @@ TEST(check_adding_wrong_lastblock_hash_fails) {
     User miner;
     User other;
     // have miner mine the next block
-    Transaction fee = miner.mine(2);
+    Transaction fee = miner.mine();
     vector<Transaction> transactions;
     Block newBlock;
     newBlock.setId(2);
@@ -98,7 +97,7 @@ TEST(check_adding_two_nodes_updates_ledger) {
 
     // have miner mine the next block
     for (int i =2; i <4; i++) {
-        Transaction fee = miner.mine(i);
+        Transaction fee = miner.mine();
         Block newBlock;
         newBlock.setId(i);
         newBlock.addTransaction(fee);
@@ -125,12 +124,12 @@ TEST(check_sending_transaction_updates_ledger) {
 
     // have miner mine the next block
     for (int i =2; i <4; i++) {
-        Transaction fee = miner.mine(i);
+        Transaction fee = miner.mine();
         Block newBlock;
         newBlock.setId(i);
         newBlock.addTransaction(fee);
         if (i==3) {
-            Transaction t = miner.send(other, BMB(20.0),i);
+            Transaction t = miner.send(other, BMB(20.0));
             newBlock.addTransaction(t);
         }
         addMerkleHashToBlock(newBlock);
@@ -159,10 +158,10 @@ TEST(check_duplicate_tx_fails) {
     User miner;
     User other;
 
-    Transaction t = miner.send(other, BMB(20.0),2);
+    Transaction t = miner.send(other, BMB(20.0));
     // have miner mine the next block
     for (int i =2; i <=4; i++) {
-        Transaction fee = miner.mine(i);
+        Transaction fee = miner.mine();
         Block newBlock;
         newBlock.setId(i);
         newBlock.addTransaction(fee);
