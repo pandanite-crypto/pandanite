@@ -107,8 +107,6 @@ std::pair<PublicKey,PrivateKey> generateKeyPair() {
     return std::pair<PublicKey, PrivateKey>(pubKey, privKey);
 }
 
-
-
 string walletAddressToString(PublicWalletAddress p) {
     return hexEncode((const char*)p.data(), p.size());
 }
@@ -188,45 +186,26 @@ SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b) {
     return fullHash;
 }
 
-bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize) {
-    int bytes = challengeSize / 8;
+bool checkLeadingZeroBits(SHA256Hash& hash, uint8_t challengeSize) {
+    // NOTE: challengeSize >= 16
+    int bytes = challengeSize / 8; 
     const uint8_t * a = hash.data();
-    if (bytes == 0) {
-        return a[0]>>(8-challengeSize) == 0;
-    } else {
-        for (int i = 0; i < bytes; i++) {
-            if (a[i] != 0) return false;
-        }
-        int remainingBits = challengeSize - 8*bytes;
-        if (remainingBits > 0) return a[bytes + 1]>>(8-remainingBits) == 0;
-        else return true;
+    for (int i = 0; i < bytes; i++) {
+        if (a[i] != 0) return false;
     }
-    return false;
+    int remainingBits = challengeSize - 8*bytes;
+    if (remainingBits > 0) return a[bytes]>>(8-remainingBits) == 0;
+    else return true;
 }
 
 
-bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize) {
+bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize) {
     SHA256Hash fullHash  = concatHashes(target, nonce);
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
-// SHA256Hash mineHash(SHA256Hash targetHash, unsigned char challengeSize, function<bool()> problemValid) {
-//     while(true) {
-//         SHA256Hash solution;
-//         for(size_t i = 0; i < solution.size(); i++) {
-//             solution[i] = rand()%256;
-//         }
-//         bool found = verifyHash(targetHash, solution, challengeSize);
-//         if (found) {
-//             return solution;
-//         }
-//         if (!problemValid()) break;
-//     }
-//     return NULL_SHA256_HASH;
-// }
 
-
-SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, function<bool()> problemValid) {
+SHA256Hash mineHash(SHA256Hash target, uint8_t challengeSize, function<bool()> problemValid) {
     SHA256Hash solution;
     std::atomic<bool> aFound(false);
     miner_status status;
@@ -241,7 +220,7 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, function<boo
     return NULL_SHA256_HASH;
 }
 
-void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& solution, std::atomic<bool>& aFound, miner_status& status, function<bool()> problemValid) {
+void mineHash(SHA256Hash target, uint8_t challengeSize, SHA256Hash& solution, std::atomic<bool>& aFound, miner_status& status, function<bool()> problemValid) {
     // By @Shifu!
     vector<uint8_t> concat;
     uint64_t hash_count = 0;
