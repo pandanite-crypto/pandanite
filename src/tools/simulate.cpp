@@ -13,10 +13,10 @@ int TOTAL;
 void simulate_transactions(HostManager& hosts) {
     string filepath = "./keys/miner2.json";
     User miner(readJsonFromFile(filepath));
-    std::pair<string,int> best = hosts.getBestHost();
+    std::pair<string,int> best = hosts.getRandomHost();
     while(true) {
         try {
-            if (rand()%1000==0) best = hosts.getBestHost();
+            if (rand()%1000==0) best = hosts.getRandomHost();
             string host = best.first;
             Transaction t = miner.send(miner, 1 + rand()%5);
             json result = sendTransaction(host, t);

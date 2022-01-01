@@ -5,8 +5,6 @@
 #include "common.hpp"
 using namespace std;
 
-
-
 uint64_t getTotalWork(string host_url);
 uint32_t getCurrentBlockCount(string host_url);
 string getName(string host_url);
@@ -16,5 +14,6 @@ json sendTransaction(string host_url, Transaction& t);
 json verifyTransaction(string host_url, Transaction& t);
 json addPeerNode(string host_url, string peer_url);
 json submitBlock(string host_url, Block& b);
-void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler);
+void readRawBlocks(string host_url, int startId, int endId, function<void(Block&)> handler);
 void readRawTransactions(string host_url, function<void(Transaction)> handler);
+void readRawHeaders(string host_url, int startId, int endId, function<bool(BlockHeader&)> handler);

@@ -76,6 +76,7 @@ void HostManager::addPeer(string addr) {
     }
 }
 
+
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     
@@ -158,36 +159,10 @@ size_t HostManager::size() {
     return this->hosts.size();
 }
 
-std::pair<string, uint64_t> HostManager::getBestHost() {
-    // TODO: make this asynchronous
-    uint64_t bestWork = 0;
-    vector<string> bestHosts;
-    vector<future<void>> reqs;
-    std::mutex lock;
-    for(auto host : this->hosts) {
-        reqs.push_back(std::async([host, &bestHosts, &bestWork, &lock]() {
-            try {
-                uint64_t curr = getCurrentBlockCount(host); //getTotalWork(host);
-                lock.lock();
-                if (curr > bestWork) {
-                    bestWork = curr;
-                    bestHosts.clear();
-                    bestHosts.push_back(host);
-                } else if (curr == bestWork) {
-                    bestHosts.push_back(host);
-                }
-                lock.unlock();
-            } catch (std::exception & e) {
-                lock.unlock();
-            }
-        }));
-    }    
-    // block until all requests finish
-    for(int i = 0; i < reqs.size(); i++) {
-        reqs[i].get();
-    }
+std::pair<string, uint64_t> HostManager::getRandomHost() {
+    // return a random host along with it's chain length
+    string host = *this->sampleHosts(1).begin();
+    uint64_t len = getCurrentBlockCount(host);
+    return std::pair<string, uint64_t> (host, len);
 
-    if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
-    string bestHost = bestHosts[rand()%bestHosts.size()];
-    return std::pair<string, uint64_t>(bestHost, bestWork);
 }

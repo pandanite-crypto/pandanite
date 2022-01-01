@@ -314,10 +314,15 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-    // iterate through each of the hosts and pick the longest one:
-    std::pair<string,int> bestHostInfo = this->hosts.getBestHost();
+
+    std::pair<string,int> bestHostInfo = this->hosts.getRandomHost();
     string bestHost = bestHostInfo.first;
-    this->targetBlockCount = bestHostInfo.second;
+
+    std::pair<string,int> validatorHostInfo = this->hosts.getRandomHost();
+    string validationHost = validatorHostInfo.first;
+
+
+    this->targetBlockCount = min(validationHostInfo.second, bestHostInfo.second);
     int startCount = this->numBlocks;
 
     if (startCount >= this->targetBlockCount) {
@@ -325,6 +330,7 @@ ExecutionStatus BlockChain::startChainSync() {
     }
 
     int needed = this->targetBlockCount - startCount;
+
 
     // download any remaining blocks in batches
     uint64_t start = std::time(0);
@@ -335,9 +341,37 @@ ExecutionStatus BlockChain::startChainSync() {
             ExecutionStatus status;
             BlockChain &bc = *this;
             int count = 0;
-            readRaw(bestHost, i, end, [&bc, &failure, &status, &count](Block& b) {
+
+            // read block headers from validator node 
+            vector<BlockHeader> validationHeaders;
+            readRawHeaders(validationHost, i, end, [&validationHeaders](BlockHeader& b) {
+                validationHeaders.push_back(b);
+            });
+
+            SHA256Hash vLastHash = this->getLastHash();
+
+            // check that the validator nodes headers form a valid POW chain (otherwise fail)
+            vector<SHA256Hash> hashCheck;
+            for(auto header : validationHeaders) {
+                vector<Transaction> empty;
+                Block block(header, empty);
+                if (!block.verifyNonce()) {
+                    return INVALID_NONCE;
+                } 
+
+                if (block.getLastBlockHash() != vLastHash) {
+                    return INVALID_LASTBLOCK_HASH;
+                }
+                vLastHash = block.getHash();
+                hashCheck.push_back(vLastHash);
+            }
+
+
+            readRawBlocks(bestHost, i, end, [&bc, &failure, &status, &count, &hashCheck](Block& b) {
                 if (!failure) {
                     ExecutionStatus addResult = bc.addBlock(b);
+                    if (hashCheck[count] != b.getHash()) return INVALID_LASTBLOCK_HASH;
+                    count++;
                     if (addResult != SUCCESS) {
                         failure = true;
                         status = addResult;

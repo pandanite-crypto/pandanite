@@ -7,11 +7,13 @@ class HostManager {
     public:
         HostManager(json config, string myName="");
         HostManager(); // only used for  mocks
-        std::pair<string,uint64_t> getBestHost();
         size_t size();
         void refreshHostList();
+
+        std::pair<string,uint64_t> getRandomHost();
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
+        
         void addPeer(string addr);
         bool isDisabled();
     protected:

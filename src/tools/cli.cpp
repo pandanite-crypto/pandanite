@@ -41,11 +41,10 @@ int main(int argc, char** argv) {
     cout<<"Enter the mining fee (or 0):"<<endl;
     TransactionAmount fee;
     cin>>fee;
-    std::pair<string,int> best = hosts.getBestHost();
+    std::pair<string,int> best = hosts.getRandomHost();
     string host = best.first;
     
-    int dummy = 0;
-    Transaction t(fromWallet, toWallet, amount, dummy, publicKey, fee);
+    Transaction t(fromWallet, toWallet, amount,publicKey, fee);
     t.sign(publicKey, privateKey);
     cout<<"Creating transaction..."<<endl;
     json result = sendTransaction(host, t);
