@@ -338,6 +338,7 @@ int main(int argc, char **argv) {
         .post("/add_peer", addPeerHandler)
         .post("/submit", submitHandler)
         .get("/gettx/:blockId", getTxHandler)
+        .get("/gettx", getTxHandler)
         .get("/sync/:start/:end", syncHandler)
         .get("/block_headers/:start/:end", blockHeaderHandler)
         .get("/synctx", getTxHandler)
