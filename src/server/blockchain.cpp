@@ -22,6 +22,8 @@
 
 using namespace std;
 
+#define MAX_VALIDATOR_DISCREPANCY 3
+
 void chain_sync(BlockChain& blockchain) {
     unsigned long i = 0;
     int failureCount = 0;
@@ -314,15 +316,19 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-
+    // pick a random host to download block data from:
     std::pair<string,int> bestHostInfo = this->hosts.getRandomHost();
     string bestHost = bestHostInfo.first;
 
+    // pick a random host to validate the blocks against:
     std::pair<string,int> validatorHostInfo = this->hosts.getRandomHost();
     string validationHost = validatorHostInfo.first;
 
+    // make sure they don't diverge by too many blocks
+    if (abs(validatorHostInfo.second - bestHostInfo.second) > MAX_VALIDATOR_DISCREPANCY) return HOSTS_DIVERGE;
 
-    this->targetBlockCount = min(validationHostInfo.second, bestHostInfo.second);
+    // only download a # of blocks across consistent to both hosts:
+    this->targetBlockCount = min(validatorHostInfo.second, bestHostInfo.second);
     int startCount = this->numBlocks;
 
     if (startCount >= this->targetBlockCount) {
@@ -337,10 +343,7 @@ ExecutionStatus BlockChain::startChainSync() {
     for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
         try {
             int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
-            bool failure = false;
-            ExecutionStatus status;
-            BlockChain &bc = *this;
-            int count = 0;
+
 
             // read block headers from validator node 
             vector<BlockHeader> validationHeaders;
@@ -366,13 +369,17 @@ ExecutionStatus BlockChain::startChainSync() {
                 hashCheck.push_back(vLastHash);
             }
 
-
+            bool failure = false;
+            ExecutionStatus status;
+            BlockChain &bc = *this;
+            int count = 0;
             readRawBlocks(bestHost, i, end, [&bc, &failure, &status, &count, &hashCheck](Block& b) {
                 if (!failure) {
                     ExecutionStatus addResult = bc.addBlock(b);
-                    if (hashCheck[count] != b.getHash()) return INVALID_LASTBLOCK_HASH;
-                    count++;
-                    if (addResult != SUCCESS) {
+                    if (hashCheck[count] != b.getHash()) {
+                        failure = true;
+                        status = INVALID_LASTBLOCK_HASH;
+                    } else if (addResult != SUCCESS) {
                         failure = true;
                         status = addResult;
                         Logger::logError("Chain failed at blockID", std::to_string(b.getId()));

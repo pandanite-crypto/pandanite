@@ -164,5 +164,4 @@ std::pair<string, uint64_t> HostManager::getRandomHost() {
     string host = *this->sampleHosts(1).begin();
     uint64_t len = getCurrentBlockCount(host);
     return std::pair<string, uint64_t> (host, len);
-
 }

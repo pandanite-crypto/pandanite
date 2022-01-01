@@ -16,4 +16,4 @@ json addPeerNode(string host_url, string peer_url);
 json submitBlock(string host_url, Block& b);
 void readRawBlocks(string host_url, int startId, int endId, function<void(Block&)> handler);
 void readRawTransactions(string host_url, function<void(Transaction)> handler);
-void readRawHeaders(string host_url, int startId, int endId, function<bool(BlockHeader&)> handler);
+void readRawHeaders(string host_url, int startId, int endId, function<void(BlockHeader&)> handler);

@@ -29,9 +29,11 @@ int main(int argc, char **argv) {
     Logger::logStatus("Starting server...");
     
     HostManager hosts(config, myName);
+    Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
+    Logger::logStatus("RequestManager ready...");
 
-    Logger::logStatus("Ready.");
+    Logger::logStatus("Server Ready.");
     
     auto logsHandler = [&manager](auto *res, auto *req) {
         try {

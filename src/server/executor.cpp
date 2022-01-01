@@ -68,6 +68,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case BLOCK_TIMESTAMP_TOO_OLD:
             return "BLOCK_TIMESTAMP_TOO_OLD";
         break;
+        case HOSTS_DIVERGE:
+            return "HOSTS_DIVERGE";
+        break;
     }
 }
 
