@@ -299,14 +299,14 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee());
 
     if (status != SUCCESS) {
-        Executor::Rollback(this->ledger, deltasExecuted);
+        Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
         if (this->memPool != nullptr) {
             this->memPool->finishBlock(block);
         }
         // add all transactions to txdb:
         for(auto t : block.getTransactions()) {
-            if (!t.isFee()) this->txdb.insertTransaction(t);
+            if (!t.isFee()) this->txdb.insertTransaction(t, block.getId());
         }
         Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
