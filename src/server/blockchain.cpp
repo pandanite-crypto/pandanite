@@ -54,10 +54,6 @@ void chain_sync(BlockChain& blockchain) {
             Logger::logError("chain_sync", string(e.what()));
         }
         blockchain.release();
-        if (i%2000 == 0) { // refresh host list roughly every 3 min
-            Logger::logStatus("chain_sync: Refreshing host list");
-            blockchain.hosts.refreshHostList();
-        }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
     }
@@ -325,11 +321,12 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // pick a random host to download block data from:
-    std::pair<string,int> bestHostInfo = this->hosts.getRandomHost();
+    std::pair<string,uint64_t> bestHostInfo = this->hosts.getTrustedHost();
 
+    uint64_t checkHashesUntilBlock = bestHostInfo.second;
 
     string bestHost = bestHostInfo.first;
-    this->targetBlockCount = bestHostInfo.second;
+    this->targetBlockCount = getCurrentBlockCount(bestHost);
 
     int startCount = this->numBlocks;
 
@@ -348,24 +345,21 @@ ExecutionStatus BlockChain::startChainSync() {
             ExecutionStatus status;
             BlockChain &bc = *this;
             int count = 0;
-            readRawBlocks(bestHost, i, end, [&bc, &failure, &status, &count](Block& b) {
+            readRawBlocks(bestHost, i, end, [&](Block& b) {
                 if (!failure) {
-                    // check that the host sent same block as header chain:
-                    // if (b.getHash() != bc.hosts.getBlockHash(b.getId())) {
-                    //     cout<<"block hash " << SHA256toString(b.getHash())<<endl;
-                    //     cout<<"blockH hash " << SHA256toString(bc.hosts.getBlockHash(b.getId()))<<endl;
-                        
-                    //     status = INVALID_LASTBLOCK_HASH;
-                    //     failure = true;
-                    //     Logger::logError("Header Chain does not match block. Chain failed at blockID", std::to_string(b.getId()));
-                    // } else {
+                    //check that the host sent same block as header chain:
+                    if (b.getId() < checkHashesUntilBlock && b.getHash() != bc.hosts.getBlockHash(b.getId())) {                        
+                        status = INVALID_LASTBLOCK_HASH;
+                        failure = true;
+                        Logger::logError("Header Chain does not match block. Chain failed at blockID", std::to_string(b.getId()));
+                    } else {
                         ExecutionStatus addResult = bc.addBlock(b);
                         if (addResult != SUCCESS) {
                             failure = true;
                             status = addResult;
                             Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
                         }
-                    // }
+                    }
                 } 
             });
             if (failure) {

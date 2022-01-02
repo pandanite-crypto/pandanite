@@ -125,6 +125,7 @@ void HostManager::addPeer(string addr) {
 
 
 SHA256Hash HostManager::getBlockHash(uint64_t blockId) {
+    if (!this->hasTrustedHost) throw std::runtime_error("Cannot lookup block hashes without trusted host.");
     if (blockId > this->validationHashes.size() || blockId < 1) {
         return NULL_SHA256_HASH;
     } else {
@@ -216,8 +217,6 @@ size_t HostManager::size() {
 
 std::pair<string, uint64_t> HostManager::getTrustedHost() {
     if (!this->hasTrustedHost) this->initTrustedHost();
-    // update the block count for host before returning
-    this->trustedHost.second = getCurrentBlockCount(this->trustedHost.first);
     return this->trustedHost;
 }
 
