@@ -60,9 +60,11 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     // add to the chain!
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);
+    this->blockchain->release();
+    
     if (status == SUCCESS) {
         this->mempool->finishBlock(newBlock);
-    
+        
         //pick random neighbor hosts and forward the new block to:
         set<string> neighbors = this->hosts.sampleHosts(NEW_BLOCK_PEER_FANOUT);
         vector<future<void>> reqs;
@@ -80,7 +82,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
             reqs[i].get();
         }
     }
-    this->blockchain->release();
+    
     return result;
 }
 
