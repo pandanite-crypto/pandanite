@@ -71,6 +71,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case HEADER_HASH_INVALID:
             return "HEADER_HASH_INVALID";
         break;
+        case INVALID_TRANSACTION_COUNT:
+            return "INVALID_TRANSACTION_COUNT";
+        break;
     }
 }
 

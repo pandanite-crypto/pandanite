@@ -67,7 +67,7 @@ void HeaderChain::load() {
     this->chainLength = numBlocks;
     this->totalWork = totalWork;
     this->failed = false;
-    Logger::logStatus("Header chain loaded host=" + this->host);
+    Logger::logStatus("Header chain loaded " + to_string(numBlocks) + " headers, host=" + this->host);
 }
 
 

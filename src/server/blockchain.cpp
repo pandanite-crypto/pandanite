@@ -281,6 +281,7 @@ void BlockChain::popBlock() {
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
+    if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
