@@ -39,8 +39,8 @@ void HeaderChain::load() {
         try {
             int end = min(targetBlockCount, (uint64_t) i + BLOCK_HEADERS_PER_FETCH - 1);
             bool failure = false;
-
-            readRawHeaders(this->host, i, end, [&failure, &lastHash, &numBlocks, &totalWork](BlockHeader& b) {
+            vector<SHA256Hash>& hashes = this->blockHashes;
+            readRawHeaders(this->host, i, end, [&hashes, &failure, &lastHash, &numBlocks, &totalWork](BlockHeader& b) {
                 if (failure) return;
                 vector<Transaction> empty;
                 Block block(b, empty);
@@ -50,7 +50,9 @@ void HeaderChain::load() {
                 if (block.getLastBlockHash() != lastHash) {
                     failure = true;
                 }
+                
                 lastHash = block.getHash();
+                hashes.push_back(lastHash);
                 totalWork+= block.getDifficulty();
                 numBlocks++;
             });

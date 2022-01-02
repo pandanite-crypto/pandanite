@@ -10,6 +10,7 @@ class HeaderChain {
         string getHost();
         uint64_t getTotalWork();
         uint64_t getChainLength();
+        vector<SHA256Hash> blockHashes;
     protected:
         string host;
         uint64_t totalWork;

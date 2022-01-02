@@ -97,7 +97,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
     TransactionAmount allEarnings = 0;
     while(true) {
         try {
-            std::pair<string,int> bestHost = hosts.getTrustedHost();
+            std::pair<string,int> bestHost = hosts.getRandomHost();
             if (bestHost.first == "") {
                 Logger::logStatus("no host found");
             }

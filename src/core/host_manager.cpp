@@ -40,7 +40,6 @@ void HostManager::initTrustedHost() {
     vector<future<void>> threads;
     vector<HeaderChain> chains;
 
-
     // start fetch for block headers
     int i = 0;
     for(auto host : hosts) {
@@ -68,6 +67,7 @@ void HostManager::initTrustedHost() {
                 bestWork = chain.getTotalWork();
                 bestLength = chain.getChainLength();
                 bestHost = chain.getHost();
+                this->validationHashes = std::move(chain.blockHashes);
             }
         }
     }
@@ -123,6 +123,14 @@ void HostManager::addPeer(string addr) {
     }
 }
 
+
+SHA256Hash HostManager::getBlockHash(uint64_t blockId) {
+    if (blockId > this->validationHashes.size() || blockId < 1) {
+        return NULL_SHA256_HASH;
+    } else {
+        return this->validationHashes[blockId - 1];
+    }
+}
 
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
@@ -211,4 +219,11 @@ std::pair<string, uint64_t> HostManager::getTrustedHost() {
     // update the block count for host before returning
     this->trustedHost.second = getCurrentBlockCount(this->trustedHost.first);
     return this->trustedHost;
+}
+
+std::pair<string,uint64_t> HostManager::getRandomHost() {
+    set<string> hosts = this->sampleHosts(1);
+    string host = *hosts.begin();
+    uint64_t chainLength = getCurrentBlockCount(host);
+    return std::pair<string, uint64_t>(host, chainLength);
 }

@@ -38,7 +38,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 int toPop = 50;
-                if (blockchain.getBlockCount() - toPop <=10) {
+                if (blockchain.getBlockCount() < 100) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                     blockchain.resetChain();
                 } else {
@@ -105,13 +105,14 @@ void BlockChain::resetChain() {
     genesis.setId(1);
     genesis.addTransaction(fee);
     genesis.setLastBlockHash(NULL_SHA256_HASH);
-    SHA256Hash hash = genesis.getHash();
     
     // compute merkle tree
     MerkleTree m;
     m.setItems(genesis.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     genesis.setMerkleRoot(m.getRootHash());
+
+    SHA256Hash hash = genesis.getHash();
 
     SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
     genesis.setNonce(solution);
@@ -322,7 +323,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // pick a random host to download block data from:
-    std::pair<string,int> bestHostInfo = this->hosts.getTrustedHost();
+    std::pair<string,int> bestHostInfo = this->hosts.getRandomHost();
 
 
     string bestHost = bestHostInfo.first;
@@ -347,12 +348,22 @@ ExecutionStatus BlockChain::startChainSync() {
             int count = 0;
             readRawBlocks(bestHost, i, end, [&bc, &failure, &status, &count](Block& b) {
                 if (!failure) {
-                    ExecutionStatus addResult = bc.addBlock(b);
-                    if (addResult != SUCCESS) {
-                        failure = true;
-                        status = addResult;
-                        Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
-                    }
+                    // check that the host sent same block as header chain:
+                    // if (b.getHash() != bc.hosts.getBlockHash(b.getId())) {
+                    //     cout<<"block hash " << SHA256toString(b.getHash())<<endl;
+                    //     cout<<"blockH hash " << SHA256toString(bc.hosts.getBlockHash(b.getId()))<<endl;
+                        
+                    //     status = INVALID_LASTBLOCK_HASH;
+                    //     failure = true;
+                    //     Logger::logError("Header Chain does not match block. Chain failed at blockID", std::to_string(b.getId()));
+                    // } else {
+                        ExecutionStatus addResult = bc.addBlock(b);
+                        if (addResult != SUCCESS) {
+                            failure = true;
+                            status = addResult;
+                            Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
+                        }
+                    // }
                 } 
             });
             if (failure) {
