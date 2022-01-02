@@ -9,7 +9,6 @@
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/helpers.hpp"
-#include "../core/bloomfilter.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 #include "../server/request_manager.hpp"
@@ -25,8 +24,16 @@ int main(int argc, char **argv) {
     srand(time(0));
     string myName = randomString(25);
     int port = 3000;
+    
+
+    Logger::logStatus("Starting server...");
+    
     HostManager hosts(config, myName);
+    Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
+    Logger::logStatus("RequestManager ready...");
+
+    Logger::logStatus("Server Ready.");
     
     auto logsHandler = [&manager](auto *res, auto *req) {
         try {

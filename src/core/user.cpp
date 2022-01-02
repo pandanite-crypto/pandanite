@@ -35,14 +35,14 @@ PrivateKey User::getPrivateKey() {
     return this->privateKey;
 }
 
-Transaction User::mine(int blockId) {
-    return Transaction(this->getAddress(), blockId);
+Transaction User::mine() {
+    return Transaction(this->getAddress(), BMB(50));
 }
 
-Transaction User::send(User& to, TransactionAmount amount, int blockId) {
+Transaction User::send(User& to, TransactionAmount amount) {
     PublicWalletAddress fromWallet = this->getAddress();
     PublicWalletAddress toWallet = to.getAddress();
-    Transaction t = Transaction(fromWallet, toWallet, amount, blockId, this->publicKey);
+    Transaction t = Transaction(fromWallet, toWallet, amount, this->publicKey);
     this->signTransaction(t);
     return t;
 }

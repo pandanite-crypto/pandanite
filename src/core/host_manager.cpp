@@ -3,6 +3,7 @@
 #include "api.hpp"
 #include "constants.hpp"
 #include "logger.hpp"
+#include "header_chain.hpp"
 #include "../external/http.hpp"
 #include <iostream>
 #include <thread>
@@ -10,7 +11,7 @@
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
-
+#define HEADER_VALIDATION_HOST_COUNT 5
 
 string computeAddress() {
     string rawUrl = exec("curl -s ifconfig.co") ;
@@ -21,6 +22,7 @@ HostManager::HostManager(json config, string myName) {
     this->myName = myName;
     this->myAddress = computeAddress();
     this->disabled = false;
+    this->hasTrustedHost = false;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -29,6 +31,51 @@ HostManager::HostManager(json config, string myName) {
     } else {
         this->refreshHostList();
     }
+}
+
+void HostManager::initTrustedHost() {
+    // pick random hosts
+    set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
+    
+    vector<future<void>> threads;
+    vector<HeaderChain> chains;
+
+
+    // start fetch for block headers
+    int i = 0;
+    for(auto host : hosts) {
+        chains.push_back(HeaderChain(host));
+        Logger::logStatus("Loading header chain from host=" + host);
+        threads.push_back(std::async([&chains, i](){
+            chains[i].load();
+        }));
+        i++;
+    }
+
+    // wait for each header chain to load
+    for(int i = 0; i < threads.size(); i++) {
+        threads[i].get();
+    }
+
+    // pick the best (highest POW) header chain as host:
+    uint64_t bestWork = 0;
+    uint64_t bestLength = 0;
+    string bestHost = "";
+    
+    for(auto chain : chains) {
+        if (chain.valid()) {
+            if (chain.getTotalWork() > bestWork) {
+                bestWork = chain.getTotalWork();
+                bestLength = chain.getChainLength();
+                bestHost = chain.getHost();
+            }
+        }
+    }
+
+    if (bestHost == "") throw std::runtime_error("Could not find valid header chain!");
+
+    this->hasTrustedHost = true;
+    this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
 }
 
 HostManager::HostManager() {
@@ -75,6 +122,7 @@ void HostManager::addPeer(string addr) {
         reqs[i].get();
     }
 }
+
 
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
@@ -158,36 +206,9 @@ size_t HostManager::size() {
     return this->hosts.size();
 }
 
-std::pair<string, uint64_t> HostManager::getBestHost() {
-    // TODO: make this asynchronous
-    uint64_t bestWork = 0;
-    vector<string> bestHosts;
-    vector<future<void>> reqs;
-    std::mutex lock;
-    for(auto host : this->hosts) {
-        reqs.push_back(std::async([host, &bestHosts, &bestWork, &lock]() {
-            try {
-                uint64_t curr = getCurrentBlockCount(host); //getTotalWork(host);
-                lock.lock();
-                if (curr > bestWork) {
-                    bestWork = curr;
-                    bestHosts.clear();
-                    bestHosts.push_back(host);
-                } else if (curr == bestWork) {
-                    bestHosts.push_back(host);
-                }
-                lock.unlock();
-            } catch (std::exception & e) {
-                lock.unlock();
-            }
-        }));
-    }    
-    // block until all requests finish
-    for(int i = 0; i < reqs.size(); i++) {
-        reqs[i].get();
-    }
-
-    if (bestHosts.size() == 0) throw std::runtime_error("Could not get chain length from any host");
-    string bestHost = bestHosts[rand()%bestHosts.size()];
-    return std::pair<string, uint64_t>(bestHost, bestWork);
+std::pair<string, uint64_t> HostManager::getTrustedHost() {
+    if (!this->hasTrustedHost) this->initTrustedHost();
+    // update the block count for host before returning
+    this->trustedHost.second = getCurrentBlockCount(this->trustedHost.first);
+    return this->trustedHost;
 }

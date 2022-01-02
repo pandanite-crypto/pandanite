@@ -18,7 +18,7 @@ TEST(test_accepts_proof_of_work) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     User miner;
     // have miner mine the next block
-    Transaction fee = miner.mine(2);
+    Transaction fee = miner.mine();
     vector<Transaction> transactions;
     Block newBlock;
     newBlock.setId(2);
@@ -46,7 +46,7 @@ TEST(test_fails_when_missing_merkle_root) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     User miner;
     // have miner mine the next block
-    Transaction fee = miner.mine(2);
+    Transaction fee = miner.mine();
     vector<Transaction> transactions;
     Block newBlock;
     newBlock.setId(2);

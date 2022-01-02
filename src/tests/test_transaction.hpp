@@ -12,13 +12,13 @@ TEST(check_transaction_json_serialization) {
     User miner;
     User receiver;
 
-    Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
+    Transaction t = miner.mine();
+    Transaction t2 = miner.send(receiver, BMB(30.0));
     
     ASSERT_TRUE(t2.signatureValid());
 
     // test the send transaction
-    time_t ts = t2.getTimestamp();
+    uint64_t ts = t2.getTimestamp();
     string serialized = t2.toJson().dump();
     json parsed = json::parse(serialized);
     Transaction deserialized = Transaction(parsed);
@@ -43,13 +43,13 @@ TEST(check_transaction_struct_serialization) {
     User miner;
     User receiver;
 
-    Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
+    Transaction t = miner.mine();
+    Transaction t2 = miner.send(receiver, BMB(30.0));
     
     ASSERT_TRUE(t2.signatureValid());
 
     // test the send transaction
-    time_t ts = t2.getTimestamp();
+    uint64_t ts = t2.getTimestamp();
     TransactionInfo serialized = t2.serialize();
     Transaction deserialized = Transaction(serialized);
 
@@ -71,8 +71,8 @@ TEST(check_transaction_copy) {
     User miner;
     User receiver;
 
-    Transaction t = miner.mine(1);
-    Transaction t2 = miner.send(receiver, BMB(30.0), 1);
+    Transaction t = miner.mine();
+    Transaction t2 = miner.send(receiver, BMB(30.0));
     
     Transaction a = t;
     Transaction b = t2;

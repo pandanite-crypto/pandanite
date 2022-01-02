@@ -68,23 +68,23 @@ int main(int argc, char **argv) {
             User u;
             randomUsers.push_back(u);
         }
-        time_t start = std::time(0);
+        uint64_t start = std::time(0);
         Block b;
         Transaction fee = miner.mine(1);
         b.addTransaction(fee);
         for(int i = 0; i < 1500; i++) {
             User r = randomUsers[rand()%randomUsers.size()];
-            Transaction t = miner.send(r, 1 + rand()%5, 1);
+            Transaction t = miner.send(r, 1 + rand()%5);
             b.addTransaction(t);
         }
-        time_t end = std::time(0);
+        uint64_t end = std::time(0);
         averageCreationTime += (end-start);
         cout<<"Time to generate 1500 transactions: " << end-start << " seconds"<<endl;
         LedgerState deltas;
         Ledger ledger;
         ledger.init("./test-data/tmpdb");
         start = std::time(0);
-        ExecutionStatus status = Executor::ExecuteBlock(b, ledger, deltas);
+        ExecutionStatus status = Executor::ExecuteBlock(b, ledger, deltas, BMB(50));
         cout<<"Status: " << executionStatusAsString(status) <<endl;
         end = std::time(0);
         averageValidationTime += (end-start);

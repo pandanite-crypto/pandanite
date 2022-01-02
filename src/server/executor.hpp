@@ -21,6 +21,7 @@ enum ExecutionStatus {
     BLOCK_TIMESTAMP_TOO_OLD,
     UNKNOWN_ERROR,
     QUEUE_FULL,
+    HEADER_HASH_INVALID,
     EXPIRED_TRANSACTION,
     BLOCK_ID_TOO_LARGE,
     INVALID_MERKLE_ROOT,
@@ -34,6 +35,6 @@ class Executor {
     public:
         static void Rollback(Ledger& ledger, LedgerState& deltas);
         static void RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb);
-        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas);
+        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount miningFee);
         static ExecutionStatus ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas);
 };

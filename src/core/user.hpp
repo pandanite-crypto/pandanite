@@ -9,8 +9,8 @@ class User {
         User();
         User(json u);
         json toJson();
-        Transaction send(User & u, TransactionAmount amount, int blockId);
-        Transaction mine(int blockId);
+        Transaction send(User & u, TransactionAmount amount);
+        Transaction mine();
         PublicWalletAddress getAddress();
         PublicKey getPublicKey();
         PrivateKey getPrivateKey();

@@ -68,6 +68,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case BLOCK_TIMESTAMP_TOO_OLD:
             return "BLOCK_TIMESTAMP_TOO_OLD";
         break;
+        case HEADER_HASH_INVALID:
+            return "HEADER_HASH_INVALID";
+        break;
     }
 }
 
@@ -99,14 +102,14 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     }
 }
 
-ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas) {
+ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
     
     if (t.isFee()) {
-        if (amt ==  MINING_FEE) {
+        if (amt ==  blockMiningFee) {
             deposit(to, amt, ledger, deltas);
             return SUCCESS;
         } else {
@@ -114,7 +117,7 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
         }
     }
 
-    if (t.getBlockId() == 1) { // special case genesis block
+    if (blockId == 1) { // special case genesis block
         deposit(to, amt, ledger, deltas);
     } else {
         // from account must exist
@@ -182,10 +185,10 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
         return INVALID_SIGNATURE;
     }
     PublicWalletAddress miner = NULL_ADDRESS;
-    return updateLedger(t, miner, ledger, deltas);
+    return updateLedger(t, miner, ledger, deltas, BMB(0), 0); // ExecuteTransaction is only used on non-fee transactions
 }
 
-ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas) {
+ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee) {
     // try executing each transaction
     bool foundFee = false;
     set<string> nonces;
@@ -205,22 +208,20 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         return NO_MINING_FEE;
     }
 
-    if (curr.getId() >= MINING_PAYMENTS_UNTIL) {
-        if (miningFee > 0) {
-            return INCORRECT_MINING_FEE;
-        } 
-    } else {
-        if (miningFee != MINING_FEE) {
-            return INCORRECT_MINING_FEE;
-        }
+    if (miningFee != blockMiningFee) {
+        return INCORRECT_MINING_FEE;
     }
     for(auto t : curr.getTransactions()) {
-        if (!t.isFee() && !t.signatureValid() && t.getBlockId() != 1) {
+        if (!t.isFee() && !t.signatureValid() && curr.getId() != 1) {
             return INVALID_SIGNATURE;
         }
-        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas);
+        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas, blockMiningFee, curr.getId());
         if (updateStatus != SUCCESS) {
             return updateStatus;
+        } else {
+            // add to txdb:
+            txdb.insertTransaction(t, curr.getId());
+
         }
     }
     return SUCCESS;

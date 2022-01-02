@@ -21,7 +21,7 @@
 using namespace std;
 
 TransactionAmount BMB(double amount) {
-    return amount * DECIMAL_SCALE_FACTOR;
+    return (TransactionAmount)(amount * DECIMAL_SCALE_FACTOR);
 }
 
 string randomString(int len) {
@@ -54,21 +54,21 @@ json readJsonFromFile(string filepath) {
     return json::parse(buffer.str());
 }
 
-std::time_t getCurrentTime() {
+std::uint64_t getCurrentTime() {
     // HACK: return representable time
     return stringToTime(timeToString(std::time(0)));
 }
 
-std::string timeToString(const std::time_t& t) {
+std::string timeToString(const std::uint64_t& t) {
     std::ostringstream oss;
     oss << t;
     return oss.str();
 }
 
-std::time_t stringToTime(const std::string& input)
+std::uint64_t stringToTime(const std::string& input)
 {
     std::istringstream stream(input);
-    time_t t;
+    uint64_t t;
     stream >> t;
     return t;
 }

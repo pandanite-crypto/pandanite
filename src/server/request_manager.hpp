@@ -5,7 +5,6 @@
 #include <list>
 #include "../core/transaction.hpp"
 #include "../core/host_manager.hpp"
-#include "../core/bloomfilter.hpp"
 #include "../core/common.hpp"
 #include "blockchain.hpp"
 #include "mempool.hpp"

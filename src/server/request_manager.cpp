@@ -77,7 +77,8 @@ json RequestManager::verifyTransaction(Transaction& t) {
     json response;
     Block b;
     try {
-        b = this->blockchain->getBlock(t.getBlockId());
+        uint32_t blockId = this->blockchain->findBlockForTransaction(t);
+        b = this->blockchain->getBlock(blockId);
         MerkleTree m;
         m.setItems(b.getTransactions());
         shared_ptr<HashTree> root = m.getMerkleProof(t);
@@ -98,6 +99,7 @@ json RequestManager::getProofOfWork() {
     vector<Transaction> transactions;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
+    result["miningFee"] = this->blockchain->getCurrentMiningFee();
     return result;
 
 }

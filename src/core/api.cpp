@@ -104,11 +104,26 @@ json verifyTransaction(string host_url, Transaction& t) {
     return json::parse(responseStr);
 }
 
-void readRaw(string host_url, int startId, int endId, function<void(Block&)> handler) {
+void readRawHeaders(string host_url, int startId, int endId, function<void(BlockHeader&)> handler) {
+    http::Request request(host_url + "/block_headers/" + std::to_string(startId) + "/" +  std::to_string(endId) );
+    const auto response = request.send("GET", "", {
+        "Content-Type: application/octet-stream"
+    },std::chrono::milliseconds{TIMEOUT_BLOCKHEADERS_MS});
+
+    std::vector<char> bytes(response.body.begin(), response.body.end());
+    BlockHeader* curr = (BlockHeader*)bytes.data();
+    int numBlocks = bytes.size() / sizeof(BlockHeader);
+    for(int i =0; i < numBlocks; i++){
+        BlockHeader t = curr[i];
+        handler(t);
+    }
+}
+
+void readRawBlocks(string host_url, int startId, int endId, function<void(Block&)> handler) {
     http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
+    },std::chrono::milliseconds{TIMEOUT_BLOCK_MS});
     std::vector<char> bytes(response.body.begin(), response.body.end());
     char* buffer = (char*)bytes.data();
     char* currPtr = buffer;

@@ -8,7 +8,7 @@ using namespace std;
 TEST(single_node_works) {
     MerkleTree m;
     User miner;
-    Transaction a = miner.mine(1);
+    Transaction a = miner.mine();
     vector<Transaction> items;
     items.push_back(a);
     m.setItems(items);
@@ -33,9 +33,9 @@ TEST(single_three_nodes_works) {
     MerkleTree m;
     User miner;
     User receiver;
-    Transaction a = miner.mine(1);
-    Transaction b = miner.send(receiver,50,1);
-    Transaction c = miner.send(receiver,50,21);
+    Transaction a = miner.mine();
+    Transaction b = miner.send(receiver,50);
+    Transaction c = miner.send(receiver,50);
     vector<Transaction> items;
     items.push_back(a);
     items.push_back(b);
@@ -54,7 +54,7 @@ TEST(larger_tree_works) {
 
     vector<Transaction> items;
     for(int i =0; i < 4000; i++) {
-        items.push_back(miner.send(receiver,i,1));
+        items.push_back(miner.send(receiver,i));
     }
     m.setItems(items);
     shared_ptr<HashTree> proof = m.getMerkleProof(items[4]);
