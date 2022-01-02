@@ -200,6 +200,7 @@ int main(int argc, char **argv) {
     int threads = config["threads"];
 
     HostManager hosts(config);
+    hosts.getTrustedHost();
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");
