@@ -67,7 +67,7 @@ void HostManager::initTrustedHost() {
                 bestWork = chain.getTotalWork();
                 bestLength = chain.getChainLength();
                 bestHost = chain.getHost();
-                this->validationHashes = std::move(chain.blockHashes);
+                this->validationHashes = chain.blockHashes;
             }
         }
     }
