@@ -10,7 +10,7 @@ class HostManager {
         size_t size();
         void refreshHostList();
 
-        std::pair<string,uint64_t> getRandomHost();
+        std::pair<string,uint64_t> getTrustedHost();
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
         

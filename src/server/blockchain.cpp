@@ -317,18 +317,12 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     // pick a random host to download block data from:
-    std::pair<string,int> bestHostInfo = this->hosts.getRandomHost();
+    std::pair<string,int> bestHostInfo = this->hosts.getTrustedHost();
+
+
     string bestHost = bestHostInfo.first;
+    this->targetBlockCount = bestHostInfo.second;
 
-    // pick a random host to validate the blocks against:
-    std::pair<string,int> validatorHostInfo = this->hosts.getRandomHost();
-    string validationHost = validatorHostInfo.first;
-
-    // make sure they don't diverge by too many blocks
-    if (abs(validatorHostInfo.second - bestHostInfo.second) > MAX_VALIDATOR_DISCREPANCY) return HOSTS_DIVERGE;
-
-    // only download a # of blocks across consistent to both hosts:
-    this->targetBlockCount = min(validatorHostInfo.second, bestHostInfo.second);
     int startCount = this->numBlocks;
 
     if (startCount >= this->targetBlockCount) {
@@ -337,49 +331,19 @@ ExecutionStatus BlockChain::startChainSync() {
 
     int needed = this->targetBlockCount - startCount;
 
-
     // download any remaining blocks in batches
     uint64_t start = std::time(0);
     for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
         try {
             int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
-
-
-            // read block headers from validator node 
-            vector<BlockHeader> validationHeaders;
-            readRawHeaders(validationHost, i, end, [&validationHeaders](BlockHeader& b) {
-                validationHeaders.push_back(b);
-            });
-
-            SHA256Hash vLastHash = this->getLastHash();
-
-            // check that the validator nodes headers form a valid POW chain (otherwise fail)
-            vector<SHA256Hash> hashCheck;
-            for(auto header : validationHeaders) {
-                vector<Transaction> empty;
-                Block block(header, empty);
-                if (!block.verifyNonce()) {
-                    return INVALID_NONCE;
-                } 
-
-                if (block.getLastBlockHash() != vLastHash) {
-                    return INVALID_LASTBLOCK_HASH;
-                }
-                vLastHash = block.getHash();
-                hashCheck.push_back(vLastHash);
-            }
-
             bool failure = false;
             ExecutionStatus status;
             BlockChain &bc = *this;
             int count = 0;
-            readRawBlocks(bestHost, i, end, [&bc, &failure, &status, &count, &hashCheck](Block& b) {
+            readRawBlocks(bestHost, i, end, [&bc, &failure, &status, &count](Block& b) {
                 if (!failure) {
                     ExecutionStatus addResult = bc.addBlock(b);
-                    if (hashCheck[count] != b.getHash()) {
-                        failure = true;
-                        status = INVALID_LASTBLOCK_HASH;
-                    } else if (addResult != SUCCESS) {
+                    if (addResult != SUCCESS) {
                         failure = true;
                         status = addResult;
                         Logger::logError("Chain failed at blockID", std::to_string(b.getId()));

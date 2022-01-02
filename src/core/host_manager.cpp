@@ -159,7 +159,7 @@ size_t HostManager::size() {
     return this->hosts.size();
 }
 
-std::pair<string, uint64_t> HostManager::getRandomHost() {
+std::pair<string, uint64_t> HostManager::getTrustedHost() {
     // return a random host along with it's chain length
     string host = *this->sampleHosts(1).begin();
     uint64_t len = getCurrentBlockCount(host);
