@@ -99,7 +99,7 @@ void BlockChain::resetChain() {
 
     /** TODO: add totals for existing miners **/
     User miner;
-    Transaction fee = miner.mine();
+    Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));
     fee.setTimestamp(0);
     vector<Transaction> transactions;
     Block genesis;
