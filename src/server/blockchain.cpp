@@ -102,6 +102,7 @@ void BlockChain::resetChain() {
     Transaction fee = miner.mine();
     vector<Transaction> transactions;
     Block genesis;
+    genesis.setTimestamp(0);
     genesis.setId(1);
     genesis.addTransaction(fee);
     genesis.setLastBlockHash(NULL_SHA256_HASH);
@@ -237,7 +238,7 @@ uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32
 }
 
 void BlockChain::updateDifficulty() {
-    if (this->numBlocks <= DIFFICULTY_LOOKBACK) return;
+    if (this->numBlocks <= DIFFICULTY_LOOKBACK*2) return;
     if (this->numBlocks % DIFFICULTY_LOOKBACK != 0) return;
     int firstID = this->numBlocks - DIFFICULTY_LOOKBACK;
     int lastID = this->numBlocks;  
