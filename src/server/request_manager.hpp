@@ -30,6 +30,7 @@ class RequestManager {
         string getTotalWork();
         void deleteDB();
     protected:
+        list<Block> toSend;
         HostManager& hosts;
         BlockChain* blockchain;
         MemPool* mempool;

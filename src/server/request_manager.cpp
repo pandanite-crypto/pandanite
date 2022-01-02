@@ -64,22 +64,19 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     
     if (status == SUCCESS) {
         this->mempool->finishBlock(newBlock);
-        
+
         //pick random neighbor hosts and forward the new block to:
         set<string> neighbors = this->hosts.sampleHosts(NEW_BLOCK_PEER_FANOUT);
         vector<future<void>> reqs;
         for(auto neighbor : neighbors) {
-            reqs.push_back(std::async([neighbor, &newBlock](){
+            std::thread{[neighbor, newBlock](){
                 try {
-                    submitBlock(neighbor, newBlock);
+                    Block a = newBlock;
+                    submitBlock(neighbor, a);
                 } catch(...) {
                     Logger::logStatus("Could not forward new block to " + neighbor);
                 }
-            }));
-        }
-
-        for(int i =0 ; i < reqs.size(); i++) {
-            reqs[i].get();
+            }}.detach();
         }
     }
     
