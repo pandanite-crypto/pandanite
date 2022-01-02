@@ -50,6 +50,11 @@ json RequestManager::addTransaction(Transaction& t) {
 
 json RequestManager::submitProofOfWork(Block& newBlock) {
     json result;
+
+    if (newBlock.getId() <= this->blockchain->getBlockCount()) {
+        result["status"] = "SUCCESS";
+        return result;
+    }
     // build map of all public keys in transaction
     this->blockchain->acquire();
     // add to the chain!
@@ -57,8 +62,8 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     result["status"] = executionStatusAsString(status);
     if (status == SUCCESS) {
         this->mempool->finishBlock(newBlock);
-
-        // pick random neighbor hosts and forward the new block to:
+    
+        //pick random neighbor hosts and forward the new block to:
         set<string> neighbors = this->hosts.sampleHosts(NEW_BLOCK_PEER_FANOUT);
         vector<future<void>> reqs;
         for(auto neighbor : neighbors) {
