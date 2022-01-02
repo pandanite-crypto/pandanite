@@ -12,7 +12,6 @@ PandaCoin's are minted by miners who earn rewards. Mining payments occur using t
 ### Technical Implementation
 PandaCoin is written from the ground up in C++. We want the PandaCoin source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built PandaCoin from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
 * Switched encryption scheme from [secp256k1](https://github.com/bitcoin-core/secp256k1) (which is used by ETH & BTC) to [ED25519](https://ed25519.cr.yp.to/) -- results in 8x speedup during verification and public keys half the size. 
-* Transactions are created uniquely to each blockID
 * 10000 transactions per block, 30 second block time
 
 ### Getting Started
