@@ -100,6 +100,7 @@ void BlockChain::resetChain() {
     /** TODO: add totals for existing miners **/
     User miner;
     Transaction fee = miner.mine();
+    fee.setTimestamp(0);
     vector<Transaction> transactions;
     Block genesis;
     genesis.setTimestamp(0);
