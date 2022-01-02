@@ -7,6 +7,7 @@
 #include "request_manager.hpp"
 using namespace std;
 
+#define NEW_BLOCK_PEER_FANOUT 8
 
 RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
@@ -56,6 +57,23 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     result["status"] = executionStatusAsString(status);
     if (status == SUCCESS) {
         this->mempool->finishBlock(newBlock);
+
+        // pick random neighbor hosts and forward the new block to:
+        set<string> neighbors = this->hosts.sampleHosts(NEW_BLOCK_PEER_FANOUT);
+        vector<future<void>> reqs;
+        for(auto neighbor : neighbors) {
+            reqs.push_back(std::async([neighbor, &newBlock](){
+                try {
+                    submitBlock(neighbor, newBlock);
+                } catch(...) {
+                    Logger::logStatus("Could not forward new block to " + neighbor);
+                }
+            }));
+        }
+
+        for(int i =0 ; i < reqs.size(); i++) {
+            reqs[i].get();
+        }
     }
     this->blockchain->release();
     return result;
