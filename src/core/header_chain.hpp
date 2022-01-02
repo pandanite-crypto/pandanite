@@ -1,8 +1,10 @@
 #pragma once
+#include "constants.hpp"
+#include "common.hpp"
 
 class HeaderChain {
     public:
-        HeaderChain(host);
+        HeaderChain(string host);
         void load();
         bool valid();
         string getHost();
