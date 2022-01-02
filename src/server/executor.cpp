@@ -221,6 +221,7 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         } else {
             // add to txdb:
             txdb.insertTransaction(t, curr.getId());
+
         }
     }
     return SUCCESS;
