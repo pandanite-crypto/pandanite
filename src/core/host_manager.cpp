@@ -163,21 +163,17 @@ void HostManager::refreshHostList() {
             if (existing != this->hosts.end()) continue;
 
             try {
-                // if we are a miner (name=""), just add the host
-                if (myName == "") {
-                    this->hosts.push_back(hostUrl);
-                    Logger::logStatus("Adding host: " + hostUrl);
-                } else {
-                    // otherwise, check if the host is live (send name request)
-                    // if live, submit ourselves as a peer to that host.
-                    HostManager& hm = *this;
-                    reqs.push_back(std::async([hostUrl, &hm](){
-                        try {
-                            Logger::logStatus("Adding host: " + hostUrl);
-                            string hostName = getName(hostUrl);
-                            if (hostName != hm.myName) {
-                                hm.hosts.push_back(hostUrl);
-                                // add self as peer to host:
+                // otherwise, check if the host is live (send name request)
+                // if live, submit ourselves as a peer to that host.
+                HostManager& hm = *this;
+                reqs.push_back(std::async([hostUrl, &hm](){
+                    try {
+                        Logger::logStatus("Adding host: " + hostUrl);
+                        string hostName = getName(hostUrl);
+                        if (hostName != hm.myName) {
+                            hm.hosts.push_back(hostUrl);
+                            // add self as peer to host:
+                            if (hm.myName != "" ) {
                                 try {
                                     string myAddress = computeAddress();
                                     addPeerNode(hostUrl, myAddress);
@@ -186,11 +182,11 @@ void HostManager::refreshHostList() {
                                     Logger::logStatus("Failed to register self as peer to " + hostUrl);
                                 }
                             }
-                        } catch (...) {
-                            Logger::logStatus("Host did not respond: " + hostUrl);
                         }
-                    }));
-                }
+                    } catch (...) {
+                        Logger::logStatus("Host did not respond: " + hostUrl);
+                    }
+                }));
             } catch (...) {
                 Logger::logStatus("Host did not respond: " + hostUrl);
             }

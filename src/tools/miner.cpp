@@ -19,7 +19,8 @@ void get_host(HostManager& hosts, std::atomic<uint64_t>& latestBlockId) {
     while (true) {
         try {
             std::pair<string, uint64_t> bestHost = hosts.getTrustedHost();
-            latestBlockId.store(bestHost.second);
+            uint64_t currCount = getCurrentBlockCount(bestHost.first);
+            latestBlockId.store(currCount);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         catch (...) {
@@ -97,12 +98,13 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
     TransactionAmount allEarnings = 0;
     while(true) {
         try {
-            std::pair<string,int> bestHost = hosts.getRandomHost();
+            std::pair<string, uint64_t> bestHost = hosts.getTrustedHost();
+            uint64_t currCount = getCurrentBlockCount(bestHost.first);
             if (bestHost.first == "") {
                 Logger::logStatus("no host found");
             }
 
-            int bestCount = bestHost.second;
+            int bestCount = currCount;
             string host = bestHost.first;
             int nextBlock = bestCount + 1;
             json problem = getMiningProblem(host);

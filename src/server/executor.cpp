@@ -221,10 +221,6 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas, blockMiningFee, curr.getId());
         if (updateStatus != SUCCESS) {
             return updateStatus;
-        } else {
-            // add to txdb:
-            txdb.insertTransaction(t, curr.getId());
-
         }
     }
     return SUCCESS;
