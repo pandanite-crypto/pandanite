@@ -204,7 +204,7 @@ void HostManager::refreshHostList() {
         }
     }
 
-    if (fullHostList.size() == 0) throw std::runtime_error("Could not fetch host directory.");
+    if (fullHostList.size() == 0) return;
 
     // iterate through all listed peer hosts
     for(auto hostJson : fullHostList) {
