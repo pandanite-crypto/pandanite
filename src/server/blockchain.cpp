@@ -38,7 +38,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 // find a new trusted host
-                this->hosts.initTrustedHost();
+                blockchain.hosts.initTrustedHost();
                 int toPop = 50;
                 if (blockchain.getBlockCount() < 100) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
