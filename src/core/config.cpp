@@ -1,9 +1,24 @@
 #include "config.hpp"
 #include <vector>
 #include <string>
+#include <iostream>
 using namespace std;
 
 json getConfig(int argc, char**argv) {
+    cout<<"░░░░░░░░▄██▄░░░░░░▄▄░░"<<endl;
+    cout<<"░░░░░░░▐███▀░░░░░▄███▌"<<endl;
+    cout<<"░░▄▀░░▄█▀▀░░░░░░░░▀██░"<<endl;
+    cout<<"░█░░░██░░░░░░░░░░░░░░░"<<endl;
+    cout<<"█▌░░▐██░░▄██▌░░▄▄▄░░░▄"<<endl;
+    cout<<"██░░▐██▄░▀█▀░░░▀██░░▐▌"<<endl;
+    cout<<"██▄░▐███▄▄░░▄▄▄░▀▀░▄██"<<endl;
+    cout<<"▐███▄██████▄░▀░▄█████▌"<<endl;
+    cout<<"▐████████████▀▀██████░"<<endl;
+    cout<<"░▐████▀██████░░█████░░"<<endl;
+    cout<<"░░░▀▀▀░░█████▌░████▀░░"<<endl;
+    cout<<"░░░░░░░░░▀▀███░▀▀▀░░░░"<<endl;
+
+
     std::vector<std::string> args(argv, argv + argc);  
     // should read from config when available
     std::vector<string>::iterator it;
