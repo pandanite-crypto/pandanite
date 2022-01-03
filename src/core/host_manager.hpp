@@ -21,6 +21,9 @@ class HostManager {
         
         void addPeer(string addr);
         bool isDisabled();
+        
+        void acquire();
+        void release();
     protected:
         std::mutex lock;
         bool disabled;
@@ -33,5 +36,8 @@ class HostManager {
         vector<string> hostSources;
         vector<string> hosts;
         vector<SHA256Hash> validationHashes;
+
+        vector<std::thread> syncThread;
+        friend void peer_sync(HostManager& hm);
 };
 

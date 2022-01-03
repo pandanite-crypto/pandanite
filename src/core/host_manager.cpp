@@ -13,9 +13,30 @@ using namespace std;
 #define ADD_PEER_BRANCH_FACTOR 10
 #define HEADER_VALIDATION_HOST_COUNT 5
 
+
+
+
+/*
+    Fetches the public IP of the node
+*/
 string computeAddress() {
     string rawUrl = exec("curl -s ifconfig.co") ;
     return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
+}
+
+/*
+    This thread periodically updates all neighboring hosts with the 
+    current nodes IP 
+*/  
+void peer_sync(HostManager& hm) {
+    while(true) {
+        for(auto host : hm.hosts) {
+            try {
+                addPeerNode(host, hm.myAddress);
+            } catch (...) { }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+    }
 }
 
 HostManager::HostManager(json config, string myName) {
@@ -31,22 +52,26 @@ HostManager::HostManager(json config, string myName) {
         this->hosts.push_back("http://localhost:3000");
     } else {
         this->refreshHostList();
+        this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
     }
 }
 
-
-
+// Only used for tests
 HostManager::HostManager() {
     this->disabled = true;
 }
 
+
+/*
+    Loads header chains from peers and validates them, storing hash headers from highest POW chain
+*/
 void HostManager::initTrustedHost() {
     // pick random hosts
     set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
     
     vector<HeaderChain> chains;
 
-    // start fetch for block headers
+    // fetch block headers from each host
     int i = 0;
     for(auto host : hosts) {
         chains.push_back(HeaderChain(host));
@@ -65,26 +90,31 @@ void HostManager::initTrustedHost() {
                 bestWork = chain.getTotalWork();
                 bestLength = chain.getChainLength();
                 bestHost = chain.getHost();
+                // store the validation hashes 
                 this->validationHashes = chain.blockHashes;
             }
         }
     }
 
-    if (bestHost == "") throw std::runtime_error("Could not find valid header chain!");
+    if (bestHost == "") {
+        throw std::runtime_error("Could not find valid header chain!");
+    }
 
     this->hasTrustedHost = true;
     this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
     this->trustedWork = bestWork;
 }
 
+/*
+    returns the total POW of trusted host
+*/
 uint64_t HostManager::getTrustedHostWork() {
     return this->trustedWork;
 }
 
-bool HostManager::isDisabled() {
-    return this->disabled;
-}
-
+/*
+    Returns N unique random hosts
+*/
 set<string> HostManager::sampleHosts(int count) {
     int numToPick = min(count, (int) this->hosts.size());
     set<string> sampledHosts;
@@ -94,50 +124,54 @@ set<string> HostManager::sampleHosts(int count) {
     return sampledHosts;
 }
 
+
+/*
+    Adds a peer to the host list, 
+*/
 void HostManager::addPeer(string addr) {
     // check if we already have this peer host
-    this->lock.lock();
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
-        this->lock.unlock();
         return;
     } 
-    this->lock.unlock();
 
-    HostManager& hm = *this;
-    std::thread([addr, &hm]() {
-        // sleep for a while before pinging to see if host is reachable
-        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
-        try {
-            string name = getName(addr);
-        } catch(...) {
-            return;
-        }
-        
-        // add to our host list
-        hm.lock.lock();
-        hm.hosts.push_back(addr);
-        hm.lock.unlock();
-        // pick random neighbor hosts and forward the addPeer request to them:
-        set<string> neighbors = hm.sampleHosts(ADD_PEER_BRANCH_FACTOR);
-        vector<future<void>> reqs;
-        for(auto neighbor : neighbors) {
-            reqs.push_back(std::async([neighbor, addr](){
-                try {
-                    addPeerNode(neighbor, addr);
-                } catch(...) {
-                    Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
-                }
-            }));
-        }
+    // check if the host is reachable:
+    try {
+        string name = getName(addr);
+    } catch(...) {
+        // if not exit
+        return;
+    }
+    
+    // add to our host list
+    this->hosts.push_back(addr);
+    // pick random neighbor hosts and forward the addPeer request to them:
+    set<string> neighbors = this->sampleHosts(ADD_PEER_BRANCH_FACTOR);
+    vector<future<void>> reqs;
+    for(auto neighbor : neighbors) {
+        reqs.push_back(std::async([neighbor, addr](){
+            try {
+                addPeerNode(neighbor, addr);
+            } catch(...) {
+                Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
+            }
+        }));
+    }
 
-        for(int i =0 ; i < reqs.size(); i++) {
-            reqs[i].get();
-        }
-    }).detach();
+    for(int i =0 ; i < reqs.size(); i++) {
+        reqs[i].get();
+    }   
 }
 
 
+bool HostManager::isDisabled() {
+    return this->disabled;
+}
+
+
+/*
+    Returns the trusted hosts block hash for blockID
+*/
 SHA256Hash HostManager::getBlockHash(uint64_t blockId) {
     if (!this->hasTrustedHost) throw std::runtime_error("Cannot lookup block hashes without trusted host.");
     if (blockId > this->validationHashes.size() || blockId < 1) {
@@ -147,74 +181,55 @@ SHA256Hash HostManager::getBlockHash(uint64_t blockId) {
     }
 }
 
+/*
+    Downloads an initial list of peers and validates connectivity to them
+*/
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     
     set<string> fullHostList;
-    try {
-        // Iterate through all host sources until we find one that gives us
-        // an initial peer list
-        for (int i = 0; i < this->hostSources.size(); i++) {
-            try {
-                string hostUrl = this->hostSources[i];
-                http::Request request{hostUrl};
-                const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-                json hostList = json::parse(std::string{response.body.begin(), response.body.end()});
-                for(auto host : hostList) {
-                    fullHostList.insert(string(host));
-                }
-            } catch (...) {
-                continue;
-            }
-        }
-        if (fullHostList.size() == 0) throw std::runtime_error("Could not fetch host directory.");
-        
-        vector<future<void>> reqs;
-        for(auto hostJson : fullHostList) {
-            // check if we've already added this host
-            string hostUrl = string(hostJson);
-            auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
-            if (existing != this->hosts.end()) continue;
 
-            try {
-                // otherwise, check if the host is live (send name request)
-                // if live, submit ourselves as a peer to that host.
-                HostManager& hm = *this;
-                reqs.push_back(std::async([hostUrl, &hm](){
-                    try {
-                        Logger::logStatus("Adding host: " + hostUrl);
-                        string hostName = getName(hostUrl);
-                        if (hostName != hm.myName) {
-                            hm.hosts.push_back(hostUrl);
-                            // add self as peer to host:
-                            if (hm.myName != "" ) {
-                                try {
-                                    string myAddress = computeAddress();
-                                    addPeerNode(hostUrl, myAddress);
-                                    Logger::logStatus("Sent self (" + myAddress + ") as new peer to " + hostUrl);
-                                } catch(...) {
-                                    Logger::logStatus("Failed to register self as peer to " + hostUrl);
-                                }
-                            }
-                        }
-                    } catch (...) {
-                        Logger::logStatus("Host did not respond: " + hostUrl);
-                    }
-                }));
-            } catch (...) {
-                Logger::logStatus("Host did not respond: " + hostUrl);
+    // Iterate through all host sources until we find one that gives us an initial peer list
+    for (int i = 0; i < this->hostSources.size(); i++) {
+        try {
+            string hostUrl = this->hostSources[i];
+            http::Request request{hostUrl};
+            const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
+            json hostList = json::parse(std::string{response.body.begin(), response.body.end()});
+            for(auto host : hostList) {
+                fullHostList.insert(string(host));
             }
+        } catch (...) {
+            continue;
         }
-        // block until all requests finish or timeout
-        for(int i = 0; i < reqs.size(); i++) {
-            reqs[i].get();
-        }
+    }
 
-    } catch (std::exception &e) {
-        Logger::logError("HostManager::refreshHostList", string(e.what()));
+    if (fullHostList.size() == 0) throw std::runtime_error("Could not fetch host directory.");
+
+    // iterate through all listed peer hosts
+    for(auto hostJson : fullHostList) {
+        // If we've already seen this host skip
+        string hostUrl = string(hostJson);
+        auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
+        if (existing != this->hosts.end()) continue;
+
+        // if we haven't, try connecting to the host to confirm it's up
+        try {
+            Logger::logStatus("Adding host: " + hostUrl);
+            string hostName = getName(hostUrl);
+            if (hostName != this->myName) {
+                this->hosts.push_back(hostUrl);
+            }
+        } catch (...) {
+            Logger::logStatus("Host did not respond: " + hostUrl);
+        }
     }
 }
 
+
+/*
+    Returns a list of all peer hosts
+*/
 vector<string> HostManager::getHosts(bool includeSelf) {
     vector<string> ret = this->hosts;
     if (includeSelf) ret.push_back(this->myAddress);
@@ -225,11 +240,17 @@ size_t HostManager::size() {
     return this->hosts.size();
 }
 
+/*
+    Returns the current trusted host
+*/
 std::pair<string, uint64_t> HostManager::getTrustedHost() {
     if (!this->hasTrustedHost) this->initTrustedHost();
     return this->trustedHost;
 }
 
+/*
+    Returns a random host
+*/
 std::pair<string,uint64_t> HostManager::getRandomHost() {
     set<string> hosts = this->sampleHosts(1);
     string host = *hosts.begin();
