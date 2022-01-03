@@ -307,7 +307,6 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         for(auto t : block.getTransactions()) {
             if (!t.isFee()) this->txdb.insertTransaction(t, block.getId());
         }
-        Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
         this->numBlocks++;
         this->totalWork += block.getDifficulty();
@@ -315,24 +314,44 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty();
+        Logger::logStatus("Added block " + to_string(block.getId()));
     }
     return status;
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-    // pick a random host to download block data from:
+    // get chain w/ highest POW amongst random peers
     std::pair<string,uint64_t> bestHostInfo = this->hosts.getTrustedHost();
 
-    uint64_t checkHashesUntilBlock = bestHostInfo.second;
+    uint64_t checkHashesUntilBlock = bestHostInfo.second; // NOTE: bestHostInfo.second = length of trusted chain
+
+    // If our current chain is lower POW than the trusted host
+    // remove anything that does not align with the hashes of the trusted chain
+    if (this->hosts.getTrustedHostWork() > this->getTotalWork()) {
+        // iterate through our current chain until a hash diverges from trusted chain
+        uint64_t toPop = 0;
+        for(uint64_t i = 1; i <= this->numBlocks; i++) {
+            SHA256Hash trustedHash = this->hosts.getBlockHash(i);
+            SHA256Hash myHash = this->getBlock(i).getHash();
+            if (trustedHash != myHash) {
+                toPop = this->numBlocks - i + 1;
+                break;
+            }
+        }
+
+        for (uint64_t i = 0; i < toPop; i++) {
+            if (this->numBlocks == 1) break;
+            this->popBlock();
+        }
+        // pop all subsequent blocks
+    } else {
+        return SUCCESS;
+    }
 
     string bestHost = bestHostInfo.first;
     this->targetBlockCount = getCurrentBlockCount(bestHost);
 
     int startCount = this->numBlocks;
-
-    if (startCount >= this->targetBlockCount) {
-        return SUCCESS;
-    }
 
     int needed = this->targetBlockCount - startCount;
 
@@ -347,7 +366,7 @@ ExecutionStatus BlockChain::startChainSync() {
             int count = 0;
             readRawBlocks(bestHost, i, end, [&](Block& b) {
                 if (!failure) {
-                    //check that the host sent same block as header chain:
+                    //check that the host sent same block as trusted chain headers:
                     if (b.getId() < checkHashesUntilBlock && b.getHash() != bc.hosts.getBlockHash(b.getId())) {                        
                         status = INVALID_LASTBLOCK_HASH;
                         failure = true;

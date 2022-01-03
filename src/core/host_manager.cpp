@@ -23,6 +23,7 @@ HostManager::HostManager(json config, string myName) {
     this->myAddress = computeAddress();
     this->disabled = false;
     this->hasTrustedHost = false;
+    this->trustedWork = 0;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -31,6 +32,12 @@ HostManager::HostManager(json config, string myName) {
     } else {
         this->refreshHostList();
     }
+}
+
+
+
+HostManager::HostManager() {
+    this->disabled = true;
 }
 
 void HostManager::initTrustedHost() {
@@ -76,10 +83,11 @@ void HostManager::initTrustedHost() {
 
     this->hasTrustedHost = true;
     this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
+    this->trustedWork = bestWork;
 }
 
-HostManager::HostManager() {
-    this->disabled = true;
+uint64_t HostManager::getTrustedHostWork() {
+    return this->trustedWork;
 }
 
 bool HostManager::isDisabled() {
