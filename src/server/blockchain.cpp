@@ -344,8 +344,6 @@ ExecutionStatus BlockChain::startChainSync() {
             this->popBlock();
         }
         // pop all subsequent blocks
-    } else {
-        return SUCCESS;
     }
 
     string bestHost = bestHostInfo.first;

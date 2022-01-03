@@ -44,23 +44,14 @@ void HostManager::initTrustedHost() {
     // pick random hosts
     set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
     
-    vector<future<void>> threads;
     vector<HeaderChain> chains;
 
     // start fetch for block headers
     int i = 0;
     for(auto host : hosts) {
         chains.push_back(HeaderChain(host));
-        Logger::logStatus("Loading header chain from host=" + host);
-        threads.push_back(std::async([&chains, i](){
-            chains[i].load();
-        }));
+        chains[i].load();
         i++;
-    }
-
-    // wait for each header chain to load
-    for(int i = 0; i < threads.size(); i++) {
-        threads[i].get();
     }
 
     // pick the best (highest POW) header chain as host:
@@ -105,10 +96,12 @@ set<string> HostManager::sampleHosts(int count) {
 
 void HostManager::addPeer(string addr) {
     // check if we already have this peer host
+    this->lock.lock();
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
         return;
     } 
+    this->lock.unlock();
 
     HostManager& hm = *this;
     std::thread([addr, &hm]() {
@@ -197,7 +190,7 @@ void HostManager::refreshHostList() {
                                 try {
                                     string myAddress = computeAddress();
                                     addPeerNode(hostUrl, myAddress);
-                                    Logger::logStatus("Added " + myAddress + " as peer to " + hostUrl);
+                                    Logger::logStatus("Sent self (" + myAddress + ") as new peer to " + hostUrl);
                                 } catch(...) {
                                     Logger::logStatus("Failed to register self as peer to " + hostUrl);
                                 }
