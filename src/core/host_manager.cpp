@@ -189,7 +189,7 @@ void HostManager::refreshHostList() {
     
     set<string> fullHostList;
 
-    // Iterate through all host sources until we find one that gives us an initial peer list
+    // Iterate through all host sources merging into a combined peer list
     for (int i = 0; i < this->hostSources.size(); i++) {
         try {
             string hostUrl = this->hostSources[i];
@@ -208,20 +208,20 @@ void HostManager::refreshHostList() {
 
     // iterate through all listed peer hosts
     for(auto hostJson : fullHostList) {
-        // If we've already seen this host skip
+        // if we've already added this host skip
         string hostUrl = string(hostJson);
         auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
         if (existing != this->hosts.end()) continue;
 
-        // if we haven't, try connecting to the host to confirm it's up
+        // otherwise try connecting to the host to confirm it's up
         try {
-            Logger::logStatus("Adding host: " + hostUrl);
+            
             string hostName = getName(hostUrl);
-            if (hostName != this->myName) {
-                this->hosts.push_back(hostUrl);
-            }
+            this->hosts.push_back(hostUrl);
+            Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
+            
         } catch (...) {
-            Logger::logStatus("Host did not respond: " + hostUrl);
+            Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
         }
     }
 }
