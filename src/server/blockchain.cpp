@@ -54,6 +54,7 @@ void chain_sync(BlockChain& blockchain) {
             }
         } catch(std::exception & e) {
             Logger::logError("chain_sync", string(e.what()));
+            blockchain.hosts.initTrustedHost();
         }
         blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -394,7 +395,7 @@ ExecutionStatus BlockChain::startChainSync() {
     uint64_t final = std::time(0);
     uint64_t d = final - start;
     stringstream s;
-    s<<"Downloaded " << needed <<" blocks in " << d << " seconds";
+    s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
     if (needed > 1) Logger::logStatus(s.str());
     return SUCCESS;
 }

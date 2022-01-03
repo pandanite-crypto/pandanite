@@ -192,6 +192,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
+            hosts.initTrustedHost();
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }

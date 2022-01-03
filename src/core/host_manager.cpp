@@ -26,7 +26,7 @@ string computeAddress() {
 
 /*
     This thread periodically updates all neighboring hosts with the 
-    current nodes IP 
+    nodes current IP 
 */  
 void peer_sync(HostManager& hm) {
     while(true) {
@@ -73,6 +73,7 @@ void HostManager::initTrustedHost() {
 
     // fetch block headers from each host
     int i = 0;
+    // TODO: this absolutely needs to be multi-threaded
     for(auto host : hosts) {
         chains.push_back(HeaderChain(host));
         chains[i].load();

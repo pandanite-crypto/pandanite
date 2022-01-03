@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     cout<<"Enter the mining fee (or 0):"<<endl;
     TransactionAmount fee;
     cin>>fee;
-    std::pair<string,int> best = hosts.getRandomHost();
+    std::pair<string,int> best = hosts.getTrustedHost();
     string host = best.first;
     
     Transaction t(fromWallet, toWallet, amount,publicKey, fee);
@@ -50,4 +50,5 @@ int main(int argc, char** argv) {
         cout<<"Transaction failed: " << result["status"]<<endl;
     }
     cout<<"Finished."<<endl;
+    return 0;
 }
