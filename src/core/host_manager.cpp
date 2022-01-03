@@ -104,14 +104,14 @@ void HostManager::addPeer(string addr) {
     this->lock.unlock();
 
     HostManager& hm = *this;
-    std::thread([addr, &hm]() {
-        // sleep for a while before pinging to see if host is reachable
-        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
-        try {
-            string name = getName(addr);
-        } catch(...) {
-            return;
-        }
+    // std::thread([addr, &hm]() {
+    //     // sleep for a while before pinging to see if host is reachable
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+    //     try {
+    //         string name = getName(addr);
+    //     } catch(...) {
+    //         return;
+    //     }
         
         // add to our host list
         hm.lock.lock();
@@ -133,7 +133,7 @@ void HostManager::addPeer(string addr) {
         for(int i =0 ; i < reqs.size(); i++) {
             reqs[i].get();
         }
-    }).detach();
+    // }).detach();
 }
 
 
