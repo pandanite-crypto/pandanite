@@ -47,7 +47,7 @@ sudo pip3 install conan
 ```
 git clone https://github.com/mr-pandabear/panda-coin.git
 cd panda-coin
-git checkout master
+git checkout stable
 mkdir build
 cd build
 conan install ..
