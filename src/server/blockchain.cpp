@@ -37,6 +37,8 @@ void chain_sync(BlockChain& blockchain) {
                 failureCount++;
             }
             if (failureCount > 3) {
+                // find a new trusted host
+                this->hosts.initTrustedHost();
                 int toPop = 50;
                 if (blockchain.getBlockCount() < 100) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
@@ -56,6 +58,8 @@ void chain_sync(BlockChain& blockchain) {
         blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
+        // resync headers and find new peer ~27 hrs
+        if (i % 1000000 == 0) this->hosts.initTrustedHost();
     }
 }
 
@@ -338,12 +342,11 @@ ExecutionStatus BlockChain::startChainSync() {
                 break;
             }
         }
-
+        // pop all subsequent blocks
         for (uint64_t i = 0; i < toPop; i++) {
             if (this->numBlocks == 1) break;
             this->popBlock();
         }
-        // pop all subsequent blocks
     }
 
     string bestHost = bestHostInfo.first;
