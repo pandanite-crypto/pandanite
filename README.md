@@ -17,7 +17,7 @@ PandaCoin is written from the ground up in C++. We want the PandaCoin source cod
 ### Getting Started
 *Windows*: Only binaries are available for windows they can be downloaded here:
 
-https://github.com/mr-pandabear/panda-coin/files/7709628/win32_release_binaries.zip
+https://github.com/mr-pandabear/panda-coin/releases/download/v0.2-alpha/panda-coin-win-20211221.zip
 
 - Run keygen.exe, this generates a keys.json file in the same folder as miner.exe, copy this file and keep it safe.
 - Run miner.exe, the miner will start running and should indicate that it is loading blocks to solve.
