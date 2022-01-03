@@ -54,7 +54,11 @@ void chain_sync(BlockChain& blockchain) {
             }
         } catch(std::exception & e) {
             Logger::logError("chain_sync", string(e.what()));
-            blockchain.hosts.initTrustedHost();
+            try {
+                blockchain.hosts.initTrustedHost();
+            } catch (...) {
+                Logger::logError("chain_sync", "No new host found. Running as solo node.");
+            }
         }
         blockchain.release();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
