@@ -59,7 +59,7 @@ void chain_sync(BlockChain& blockchain) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
         // resync headers and find new peer ~27 hrs
-        if (i % 1000000 == 0) this->hosts.initTrustedHost();
+        if (i % 1000000 == 0) blockchain.hosts.initTrustedHost();
     }
 }
 
