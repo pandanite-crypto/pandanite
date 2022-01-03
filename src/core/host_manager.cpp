@@ -110,25 +110,37 @@ void HostManager::addPeer(string addr) {
         return;
     } 
 
-    // add it
-    this->hosts.push_back(addr);
-    
-    // pick random neighbor hosts and forward the addPeer request to them:
-    set<string> neighbors = this->sampleHosts(ADD_PEER_BRANCH_FACTOR);
-    vector<future<void>> reqs;
-    for(auto neighbor : neighbors) {
-        reqs.push_back(std::async([neighbor, addr](){
-            try {
-                addPeerNode(neighbor, addr);
-            } catch(...) {
-                Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
-            }
-        }));
-    }
+    HostManager& hm = *this;
+    std::thread([addr, &hm]() {
+        // sleep for a while before pinging to see if host is reachable
+        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+        try {
+            string name = getName(addr);
+        } catch(...) {
+            return;
+        }
+        
+        // add to our host list
+        hm.lock.lock();
+        hm.hosts.push_back(addr);
+        hm.lock.unlock();
+        // pick random neighbor hosts and forward the addPeer request to them:
+        set<string> neighbors = hm.sampleHosts(ADD_PEER_BRANCH_FACTOR);
+        vector<future<void>> reqs;
+        for(auto neighbor : neighbors) {
+            reqs.push_back(std::async([neighbor, addr](){
+                try {
+                    addPeerNode(neighbor, addr);
+                } catch(...) {
+                    Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
+                }
+            }));
+        }
 
-    for(int i =0 ; i < reqs.size(); i++) {
-        reqs[i].get();
-    }
+        for(int i =0 ; i < reqs.size(); i++) {
+            reqs[i].get();
+        }
+    }).detach();
 }
 
 

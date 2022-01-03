@@ -1,6 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include <set>
+#include <mutex>
 using namespace std;
 
 class HostManager {
@@ -21,6 +22,7 @@ class HostManager {
         void addPeer(string addr);
         bool isDisabled();
     protected:
+        std::mutex lock;
         bool disabled;
         bool hasTrustedHost;
         string myAddress;
