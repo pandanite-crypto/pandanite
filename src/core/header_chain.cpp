@@ -30,7 +30,15 @@ uint64_t HeaderChain::getChainLength() {
 }
 
 void HeaderChain::load() {
-    uint64_t targetBlockCount = getCurrentBlockCount(this->host);
+
+    uint64_t targetBlockCount;
+    try {
+        targetBlockCount = getCurrentBlockCount(this->host);
+    } catch (...) {
+        this->failed = true;
+        return;
+    }
+    
     SHA256Hash lastHash = NULL_SHA256_HASH;
     uint64_t numBlocks = 0;
     uint64_t totalWork = 0;
