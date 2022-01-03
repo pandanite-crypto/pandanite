@@ -150,6 +150,7 @@ void HostManager::addPeer(string addr) {
     vector<future<void>> reqs;
     for(auto neighbor : neighbors) {
         reqs.push_back(std::async([neighbor, addr](){
+            if (neighbor == addr) return;
             try {
                 addPeerNode(neighbor, addr);
             } catch(...) {
