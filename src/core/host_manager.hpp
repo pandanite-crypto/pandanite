@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include <set>
 #include <mutex>
+ #include <thread>
 using namespace std;
 
 class HostManager {
