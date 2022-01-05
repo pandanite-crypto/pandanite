@@ -56,7 +56,7 @@ json readJsonFromFile(string filepath) {
 
 std::uint64_t getCurrentTime() {
     // HACK: return representable time
-    return stringToTime(timeToString(std::time(0)));
+    return std::time(0);
 }
 
 std::string timeToString(const std::uint64_t& t) {

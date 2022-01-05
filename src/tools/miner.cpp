@@ -128,9 +128,9 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             Transaction fee(wallet, problem["miningFee"]);
             Block newBlock;
 
-            
+            uint64_t lastTimestamp = std::time(0);
             try { // TODO: remove try catch when all servers are patched with timestamp 
-                uint64_t lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
+                lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
 
                 // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
                 // if it's not then your system clock is wonky, so we just make up a date:
@@ -143,7 +143,12 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
 
+
             TransactionAmount total = problem["miningFee"];
+            if (newBlock.getTimestamp() < lastTimestamp) {
+                newBlock.setTimestamp(lastTimestamp);
+            }
+        
             for(auto t : transactions) {
                 newBlock.addTransaction(t);
                 total += t.getTransactionFee();

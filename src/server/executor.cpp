@@ -73,6 +73,8 @@ string executionStatusAsString(ExecutionStatus status) {
         break;
         case INVALID_TRANSACTION_COUNT:
             return "INVALID_TRANSACTION_COUNT";
+        case BLOCK_TIMESTAMP_IN_FUTURE:
+            return "BLOCK_TIMESTAMP_IN_FUTURE";
         break;
     }
 }
