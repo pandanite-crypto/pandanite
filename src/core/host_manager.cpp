@@ -30,12 +30,13 @@ string computeAddress() {
 */  
 void peer_sync(HostManager& hm) {
     while(true) {
+        hm.myAddress = computeAddress();
         for(auto host : hm.hosts) {
             try {
                 addPeerNode(host, hm.myAddress);
             } catch (...) { }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(300000));
     }
 }
 
@@ -68,7 +69,11 @@ HostManager::HostManager() {
 void HostManager::initTrustedHost() {
     // pick random hosts
     set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
-    
+
+    if (hosts.size() == 0) {
+        Logger::logStatus("No hosts found");
+    }
+
     vector<HeaderChain> chains;
 
     // fetch block headers from each host
