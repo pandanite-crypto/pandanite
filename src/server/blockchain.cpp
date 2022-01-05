@@ -28,6 +28,7 @@ void chain_sync(BlockChain& blockchain) {
     unsigned long i = 0;
     int failureCount = 0;
     while(true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         blockchain.acquire();
         try {
             ExecutionStatus valid;
@@ -61,7 +62,6 @@ void chain_sync(BlockChain& blockchain) {
             }
         }
         blockchain.release();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
         // resync headers and find new trusted peer ~27 hrs
         if (i % 1000000 == 0) blockchain.hosts.initTrustedHost();

@@ -14,6 +14,7 @@ MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 
 void mempool_sync(MemPool& mempool) {
     while(true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         Transaction t;
         mempool.sendLock.lock();
         if (mempool.toSend.size() == 0) {
