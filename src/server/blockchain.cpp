@@ -291,6 +291,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getId() > TIMESTAMP_VERIFICATION_START) {
         Block lastBlock = blockStore.getBlock(this->getBlockCount());
         if (block.getTimestamp() < lastBlock.getTimestamp()) return BLOCK_TIMESTAMP_TOO_OLD;
+        uint64_t currT = getCurrentTime();
+        if (block.getTimestamp() > currT) return BLOCK_TIMESTAMP_IN_FUTURE;
     }
 
     // compute merkle tree and verify root matches;

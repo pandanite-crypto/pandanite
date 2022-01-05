@@ -68,6 +68,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case BLOCK_TIMESTAMP_TOO_OLD:
             return "BLOCK_TIMESTAMP_TOO_OLD";
         break;
+        case BLOCK_TIMESTAMP_IN_FUTURE:
+            return "BLOCK_TIMESTAMP_IN_FUTURE";
+        break;
     }
 }
 

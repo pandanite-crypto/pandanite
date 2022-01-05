@@ -122,11 +122,17 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
             int challengeSize = problem["challengeSize"];
 
+            uint64_t lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
+
             // create fee to our wallet:
             Transaction fee(wallet, nextBlock);
             Block newBlock;
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
+
+            if (newBlock.getTimestamp() < lastTimestamp) {
+                newBlock.setTimestamp(lastTimestamp);
+            }
 
             TransactionAmount total = MINING_FEE;
             if (newBlock.getId() >= MINING_PAYMENTS_UNTIL) {
