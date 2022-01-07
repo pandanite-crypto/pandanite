@@ -55,7 +55,9 @@ HostManager::HostManager(json config) {
         this->hostSources.push_back(h);
     }
     if (this->hostSources.size() == 0) {
-        this->hosts.push_back("http://localhost:3000");
+        string localhost = "http://localhost:3000";
+        this->hosts.push_back(localhost);
+        this->hostPings[localhost] = std::time(0);
     } else {
         this->refreshHostList();
         this->syncThread.push_back(std::thread(peer_sync, ref(*this)));

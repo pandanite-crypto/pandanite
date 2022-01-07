@@ -52,7 +52,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     json result;
 
     if (newBlock.getId() <= this->blockchain->getBlockCount()) {
-        result["status"] = "SUCCESS";
+        result["status"] = executionStatusAsString(INVALID_BLOCK_ID);
         return result;
     }
     // build map of all public keys in transaction

@@ -187,6 +187,7 @@ int main(int argc, char **argv) {
                             }
                             Block block(blockH, transactions);
                             json response = manager.submitProofOfWork(block);
+                            Logger::logStatus("got proof of work" + response.dump());
                             res->end(response.dump());
                         }
                     }
