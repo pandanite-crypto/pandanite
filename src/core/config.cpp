@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <thread>
 using namespace std;
 
 json getConfig(int argc, char**argv) {
@@ -27,12 +28,22 @@ json getConfig(int argc, char**argv) {
     bool local = false;
     string customIp = "";
     string customName = randomString(25);
-    int customPort = 3000;    
-    int threads = 1;
+    int customPort = 3000;
+    int threads = std::thread::hardware_concurrency();
+    int thread_priority = 0;
+
+    if (threads == 0) {
+        threads = 1;
+    }
 
     it = std::find(args.begin(), args.end(), "-t");
-    if (it++ != args.end()) {
-        threads = std::stoi(*it);
+    if (it != args.end()) {
+        threads = std::stoi(*it++);
+    }
+
+    it = std::find(args.begin(), args.end(), "--priority");
+    if (it != args.end()) {
+        thread_priority = std::stoi(*it++);
     }
 
     it = std::find(args.begin(), args.end(), "-ip");
@@ -66,6 +77,7 @@ json getConfig(int argc, char**argv) {
     config["port"] = customPort;
     config["name"] = customName;
     config["ip"] = customIp;
+    config["thread_priority"] = thread_priority;
     config["hostSources"] = json::array();
 
     if (local) {
