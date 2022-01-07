@@ -7,9 +7,10 @@ using namespace std;
 
 class HostManager {
     public:
-        HostManager(json config, string myName="");
+        HostManager(json config);
         HostManager(); // only used for  mocks
         size_t size();
+        string computeAddress();
         void refreshHostList();
         void initTrustedHost();
 
@@ -19,6 +20,7 @@ class HostManager {
         std::pair<string,uint64_t> getRandomHost();
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
+        string getAddress();
         
         void addPeer(string addr);
         bool isDisabled();
@@ -29,8 +31,10 @@ class HostManager {
         std::mutex lock;
         bool disabled;
         bool hasTrustedHost;
-        string myAddress;
-        string myName;
+        string ip;
+        int port;
+        string name;
+        string address;
         
         std::pair<string,uint64_t> trustedHost;
         uint64_t trustedWork;

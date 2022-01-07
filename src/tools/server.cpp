@@ -18,17 +18,11 @@ using namespace std;
 
 
 int main(int argc, char **argv) {  
-
+    srand(time(0));
     json config = getConfig(argc, argv);
 
-    srand(time(0));
-    string myName = randomString(25);
-    int port = 3000;
-    
-
     Logger::logStatus("Starting server...");
-    
-    HostManager hosts(config, myName);
+    HostManager hosts(config);
     Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
     Logger::logStatus("RequestManager ready...");
@@ -71,8 +65,8 @@ int main(int argc, char **argv) {
         }
     };
 
-    auto nameHandler = [&myName](auto *res, auto *req) {
-        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(myName);
+    auto nameHandler = [&config](auto *res, auto *req) {
+        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(string(config["name"]));
     };
 
     auto peerHandler = [&manager](auto *res, auto *req) {
@@ -351,8 +345,10 @@ int main(int argc, char **argv) {
         .get("/synctx", getTxHandler)
         .post("/add_transaction", addTransactionHandler)
         .post("/verify_transaction", verifyTransactionHandler)
-        .listen(port, [port](auto *token) {
-            Logger::logStatus("Started server");
+        .listen((int)config["port"], [&hosts](auto *token) {
+            Logger::logStatus("===============================");
+            Logger::logStatus("Started server: " + hosts.getAddress());
+            Logger::logStatus("===============================");
         }).run();
 
 }

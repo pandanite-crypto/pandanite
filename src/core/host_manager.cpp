@@ -11,7 +11,7 @@
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
-#define HEADER_VALIDATION_HOST_COUNT 5
+#define HEADER_VALIDATION_HOST_COUNT 3
 
 
 
@@ -19,9 +19,14 @@ using namespace std;
 /*
     Fetches the public IP of the node
 */
-string computeAddress() {
-    string rawUrl = exec("curl -s ifconfig.co") ;
-    return "http://" + rawUrl.substr(0, rawUrl.size() - 1) + ":3000";
+string HostManager::computeAddress() {
+    if (this->ip == "") {
+        string rawUrl = exec("curl -s4 ifconfig.co") ;
+        this->address = "http://" + rawUrl.substr(0, rawUrl.size() - 1)  + ":" + to_string(this->port);
+    } else {
+        this->address = this->ip + ":" + to_string(this->port);
+    }
+    return this->address;
 }
 
 /*
@@ -30,19 +35,21 @@ string computeAddress() {
 */  
 void peer_sync(HostManager& hm) {
     while(true) {
-        hm.myAddress = computeAddress();
         for(auto host : hm.hosts) {
             try {
-                addPeerNode(host, hm.myAddress);
+                addPeerNode(host, hm.computeAddress());
             } catch (...) { }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(300000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
     }
 }
 
-HostManager::HostManager(json config, string myName) {
-    this->myName = myName;
-    this->myAddress = computeAddress();
+HostManager::HostManager(json config) {
+    this->name = config["name"];
+    this->port = config["port"];
+    this->ip = config["ip"];
+    this->computeAddress();
+
     this->disabled = false;
     this->hasTrustedHost = false;
     this->trustedWork = 0;
@@ -55,6 +62,10 @@ HostManager::HostManager(json config, string myName) {
         this->refreshHostList();
         this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
     }
+}
+
+string HostManager::getAddress() {
+    return this->address;
 }
 
 // Only used for tests
@@ -239,7 +250,7 @@ void HostManager::refreshHostList() {
 */
 vector<string> HostManager::getHosts(bool includeSelf) {
     vector<string> ret = this->hosts;
-    if (includeSelf) ret.push_back(this->myAddress);
+    if (includeSelf) ret.push_back(this->address);
     return ret;
 }
 

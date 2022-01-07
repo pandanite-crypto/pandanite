@@ -22,8 +22,6 @@
 
 using namespace std;
 
-#define MAX_VALIDATOR_DISCREPANCY 3
-
 void chain_sync(BlockChain& blockchain) {
     unsigned long i = 0;
     int failureCount = 0;
@@ -56,7 +54,11 @@ void chain_sync(BlockChain& blockchain) {
         } catch(std::exception & e) {
             Logger::logError("chain_sync", string(e.what()));
             try {
-                blockchain.hosts.initTrustedHost();
+                failureCount++;
+                if (failureCount > 3) {
+                    blockchain.hosts.initTrustedHost();
+                    failureCount = 0;
+                }
             } catch (...) {
                 Logger::logError("chain_sync", "No new host found. Running as solo node.");
             }

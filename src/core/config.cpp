@@ -1,4 +1,5 @@
 #include "config.hpp"
+#include "helpers.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -24,11 +25,30 @@ json getConfig(int argc, char**argv) {
     std::vector<string>::iterator it;
     bool testnet = false;
     bool local = false;
+    string customIp = "";
+    string customName = randomString(25);
+    int customPort = 3000;    
     int threads = 1;
 
     it = std::find(args.begin(), args.end(), "-t");
     if (it++ != args.end()) {
         threads = std::stoi(*it);
+    }
+
+    it = std::find(args.begin(), args.end(), "-ip");
+    if (it++ != args.end()) {
+        customIp = string(*it);
+    }
+
+
+    it = std::find(args.begin(), args.end(), "-n");
+    if (it++ != args.end()) {
+        customName = string(*it);
+    }
+
+    it = std::find(args.begin(), args.end(), "-p");
+    if (it++ != args.end()) {
+        customPort = std::stoi(*it);
     }
 
     it = std::find(args.begin(), args.end(), "--testnet");
@@ -43,6 +63,9 @@ json getConfig(int argc, char**argv) {
 
     json config;
     config["threads"] = threads;
+    config["port"] = customPort;
+    config["name"] = customName;
+    config["ip"] = customIp;
     config["hostSources"] = json::array();
 
     if (local) {
