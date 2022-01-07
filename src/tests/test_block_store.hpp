@@ -5,7 +5,7 @@ using namespace std;
 
 TEST(test_blockstore_stores_block) {
     BlockStore blocks;
-    blocks.init("./data/tmpdb");
+    blocks.init("./test-data/tmpdb");
     Block a;
     a.setId(2);
     User miner;
@@ -27,7 +27,7 @@ TEST(test_blockstore_stores_block) {
 
 TEST(test_blockstore_stores_multiple) {
     BlockStore blocks;
-    blocks.init("./data/tmpdb");
+    blocks.init("./test-data/tmpdb");
     
 
     User miner;
@@ -57,7 +57,7 @@ TEST(test_blockstore_stores_multiple) {
 
 TEST(test_blockstore_returns_valid_raw_data) {
     BlockStore blocks;
-    blocks.init("./data/tmpdb");
+    blocks.init("./test-data/tmpdb");
 
     User miner;
     User receiver;

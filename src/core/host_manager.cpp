@@ -20,6 +20,7 @@ string computeAddress() {
 HostManager::HostManager(json config, string myName) {
     this->myName = myName;
     this->myAddress = computeAddress();
+    this->disabled = false;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -31,6 +32,11 @@ HostManager::HostManager(json config, string myName) {
 }
 
 HostManager::HostManager() {
+    this->disabled = true;
+}
+
+bool HostManager::isDisabled() {
+    return this->disabled;
 }
 
 set<string> HostManager::sampleHosts(int count) {
@@ -43,15 +49,16 @@ set<string> HostManager::sampleHosts(int count) {
 }
 
 void HostManager::addPeer(string addr) {
+    // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
-        Logger::logStatus("Host already in list");
         return;
     } 
 
+    // add it
     this->hosts.push_back(addr);
     
-    // pick random hosts and add send cascade:
+    // pick random neighbor hosts and forward the addPeer request to them:
     set<string> neighbors = this->sampleHosts(ADD_PEER_BRANCH_FACTOR);
     vector<future<void>> reqs;
     for(auto neighbor : neighbors) {
@@ -74,6 +81,8 @@ void HostManager::refreshHostList() {
     
     set<string> fullHostList;
     try {
+        // Iterate through all host sources until we find one that gives us
+        // an initial peer list
         for (int i = 0; i < this->hostSources.size(); i++) {
             try {
                 string hostUrl = this->hostSources[i];
@@ -91,14 +100,19 @@ void HostManager::refreshHostList() {
         
         vector<future<void>> reqs;
         for(auto hostJson : fullHostList) {
+            // check if we've already added this host
             string hostUrl = string(hostJson);
             auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
             if (existing != this->hosts.end()) continue;
+
             try {
+                // if we are a miner (name=""), just add the host
                 if (myName == "") {
                     this->hosts.push_back(hostUrl);
                     Logger::logStatus("Adding host: " + hostUrl);
                 } else {
+                    // otherwise, check if the host is live (send name request)
+                    // if live, submit ourselves as a peer to that host.
                     HostManager& hm = *this;
                     reqs.push_back(std::async([hostUrl, &hm](){
                         try {
@@ -116,7 +130,7 @@ void HostManager::refreshHostList() {
                                 }
                             }
                         } catch (...) {
-                            Logger::logStatus("Failed to load name");
+                            Logger::logStatus("Host did not respond: " + hostUrl);
                         }
                     }));
                 }

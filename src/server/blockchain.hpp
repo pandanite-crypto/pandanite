@@ -13,12 +13,14 @@
 #include "executor.hpp"
 #include "block_store.hpp"
 #include "ledger.hpp"
-
+#include "tx_store.hpp"
 using namespace std;
+
+class MemPool;
 
 class BlockChain {
     public:
-        BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="");
+        BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
         void sync();
         void acquire();
         void release();
@@ -31,7 +33,9 @@ class BlockChain {
         ExecutionStatus addBlock(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
-        std::pair<uint8_t*, size_t>  getBlockHeaders(uint32_t start, uint32_t end);
+        BlockHeader getBlockHeader(uint32_t blockId);
+        TransactionAmount getWalletValue(PublicWalletAddress addr);
+        void setMemPool(MemPool * memPool);
         void initChain();
         void resetChain();
         void popBlock();
@@ -39,10 +43,12 @@ class BlockChain {
         void closeDB();
     protected:
         HostManager& hosts;
+        MemPool * memPool;
         int numBlocks;
         uint64_t totalWork;
         BlockStore blockStore;
         Ledger ledger;
+        TransactionStore txdb;
         SHA256Hash lastHash;
         int difficulty;
         void updateDifficulty(Block& b);

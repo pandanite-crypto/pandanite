@@ -68,6 +68,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case BLOCK_TIMESTAMP_TOO_OLD:
             return "BLOCK_TIMESTAMP_TOO_OLD";
         break;
+        case BLOCK_TIMESTAMP_IN_FUTURE:
+            return "BLOCK_TIMESTAMP_IN_FUTURE";
+        break;
     }
 }
 
@@ -160,7 +163,7 @@ void Executor::Rollback(Ledger& ledger, LedgerState& deltas) {
     }
 }
 
-void Executor::RollbackBlock(Block& curr, Ledger& ledger) {
+void Executor::RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb) {
     PublicWalletAddress miner;
     for(auto t : curr.getTransactions()) {
         if (t.isFee()) {
@@ -171,6 +174,9 @@ void Executor::RollbackBlock(Block& curr, Ledger& ledger) {
     for(int i = curr.getTransactions().size() - 1; i >=0; i--) {
         Transaction t = curr.getTransactions()[i];
         rollbackLedger(t, miner, ledger);
+        if (!t.isFee()) {
+            txdb.removeTransaction(t);
+        }
     }
 }
 
@@ -182,7 +188,7 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
     return updateLedger(t, miner, ledger, deltas);
 }
 
-ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState& deltas) {
+ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas) {
     // try executing each transaction
     bool foundFee = false;
     set<string> nonces;
@@ -194,6 +200,8 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState&
             miner = t.toWallet();
             miningFee = t.getAmount();
             foundFee = true;
+        } else if (txdb.hasTransaction(t) && curr.getId() != 1) {
+            return EXPIRED_TRANSACTION;
         }
     }
     if (!foundFee) {
@@ -210,16 +218,8 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, LedgerState&
         }
     }
     for(auto t : curr.getTransactions()) {
-        if (nonces.find(t.getNonce())!= nonces.end()) {
-            return INVALID_TRANSACTION_NONCE;
-        } else {
-            nonces.insert(t.getNonce());
-        }
         if (!t.isFee() && !t.signatureValid() && t.getBlockId() != 1) {
             return INVALID_SIGNATURE;
-        }
-        if (t.getBlockId() != curr.getId()) {
-            return INVALID_BLOCK_ID;
         }
         ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas);
         if (updateStatus != SUCCESS) {

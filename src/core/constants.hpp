@@ -5,6 +5,7 @@
 #define TIMEOUT_MS 5000
 #define TIMEOUT_SUBMIT_MS 45000
 #define BLOCKS_PER_FETCH 200
+#define BLOCK_HEADERS_PER_FETCH 2000
 #define DEFAULT_BLOOMFILTER_BITS 8000
 #define DEFAULT_BLOOMFILTER_HASHES 5
 
@@ -13,6 +14,7 @@
 #define DEFAULT_GENESIS_USER_PATH "./keys/miner.json"
 #define DEFAULT_CONFIG_FILE_PATH "./config.json"
 #define LEDGER_FILE_PATH "./data/ledger"
+#define TXDB_FILE_PATH "./data/txdb"
 #define BLOCK_STORE_FILE_PATH "./data/blocks"
 
 // Blocks

@@ -13,46 +13,22 @@
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 #include "../server/request_manager.hpp"
+#include "../core/config.hpp"
 using namespace std;
 
 
-int main(int argc, char **argv) {    
-    json config = readJsonFromFile(DEFAULT_CONFIG_FILE_PATH);
+
+int main(int argc, char **argv) {  
+
+    json config = getConfig(argc, argv);
+
     srand(time(0));
     string myName = randomString(25);
-    int port = config["port"];
-
-    if (argc > 1) {
-        string logfile = string(argv[1]);
-        Logger::file.open(logfile);
-    }
+    int port = 3000;
     HostManager hosts(config, myName);
     RequestManager manager(hosts);
- 
-    uWS::App().get("/name", [&myName](auto *res, auto *req) {
-        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(myName);
-    }).get("/total_work", [&manager](auto *res, auto *req) {
-        try {
-            std::string count = manager.getTotalWork();
-            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
-        } catch(const std::exception &e) {
-            Logger::logError("/total_work", e.what());
-        } catch(...) {
-            Logger::logError("/total_work", "unknown");
-        }
-    }).get("/peers", [&manager](auto *res, auto *req) {
-        json response = manager.getPeers();
-        res->end(response.dump());
-    }).get("/block_count", [&manager](auto *res, auto *req) {
-        try {
-            std::string count = manager.getBlockCount();
-            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
-        } catch(const std::exception &e) {
-            Logger::logError("/block_count", e.what());
-        } catch(...) {
-            Logger::logError("/block_count", "unknown");
-        }
-    }).get("/logs", [&manager](auto *res, auto *req) {
+    
+    auto logsHandler = [&manager](auto *res, auto *req) {
         try {
             string s = "";
             for(auto str : Logger::buffer) {
@@ -64,7 +40,9 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/logs", "unknown");
         }
-    }).get("/stats", [&manager](auto *res, auto *req) {
+    };
+
+    auto statsHandler = [&manager](auto *res, auto *req) {
         try {
             json stats = manager.getStats();
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(stats.dump());
@@ -73,7 +51,40 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/stats", "unknown");
         }
-    }).get("/block/:b", [&manager](auto *res, auto *req) {
+    };
+
+    auto totalWorkHandler = [&manager](auto *res, auto *req) {
+        try {
+            std::string count = manager.getTotalWork();
+            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
+        } catch(const std::exception &e) {
+            Logger::logError("/total_work", e.what());
+        } catch(...) {
+            Logger::logError("/total_work", "unknown");
+        }
+    };
+
+    auto nameHandler = [&myName](auto *res, auto *req) {
+        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(myName);
+    };
+
+    auto peerHandler = [&manager](auto *res, auto *req) {
+        json response = manager.getPeers();
+        res->end(response.dump());
+    };
+
+    auto blockCountHandler = [&manager](auto *res, auto *req) {
+        try {
+            std::string count = manager.getBlockCount();
+            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
+        } catch(const std::exception &e) {
+            Logger::logError("/block_count", e.what());
+        } catch(...) {
+            Logger::logError("/block_count", "unknown");
+        }
+    };
+
+    auto blockHandler = [&manager](auto *res, auto *req) {
         json result;
         try {
             int idx = std::stoi(string(req->getParameter(0)));
@@ -90,7 +101,9 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/block", "unknown");
         }
-    }).get("/ledger/:user", [&manager](auto *res, auto *req) {
+    };
+
+    auto ledgerHandler = [&manager](auto *res, auto *req) {
         try {
             PublicWalletAddress w = stringToWalletAddress(string(req->getParameter(0)));
             json ledger = manager.getLedger(w);
@@ -100,7 +113,10 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/ledger", "unknown");
         }
-    }).post("/add_peer", [&manager](auto *res, auto *req) {
+    };
+
+
+    auto addPeerHandler = [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -120,7 +136,10 @@ int main(int argc, char **argv) {
                 }
             }
         });
-    }).post("/submit", [&manager](auto *res, auto *req) {
+    };
+
+
+    auto submitHandler = [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -169,25 +188,27 @@ int main(int argc, char **argv) {
                 
             }
         });
-    }).get("/gettx/:blockId", [&manager](auto *res, auto *req) {
+    };
+
+    auto getTxHandler = [&manager](auto *res, auto *req) {
         try {
-            int blockId = std::stoi(string(req->getParameter(0)));
             res->writeHeader("Content-Type", "application/octet-stream");
-            std::pair<char*, size_t> buffer = manager.getRawTransactionDataForBlock(blockId);
-            Logger::logStatus("Sending transactions byte count=" + std::to_string(buffer.second));
+            std::pair<char*, size_t> buffer = manager.getRawTransactionData();
             std::string_view str(buffer.first, buffer.second);
             res->write(str);
             delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
+            Logger::logError("/gettx", e.what());
         } catch(...) {
-            Logger::logError("/sync", "unknown");
+            Logger::logError("/gettx", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).get("/mine", [&manager](auto *res, auto *req) {
+    };
+
+    auto mineHandler = [&manager](auto *res, auto *req) {
         try {
             json response = manager.getProofOfWork();
             res->end(response.dump());
@@ -196,7 +217,9 @@ int main(int argc, char **argv) {
         } catch(...) {
             Logger::logError("/mine", "unknown");
         }
-    }).get("/sync/:start/:end", [&manager](auto *res, auto *req) {
+    };
+
+    auto syncHandler = [&manager](auto *res, auto *req) {
         try {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
@@ -220,16 +243,21 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).get("/block_headers/:start/:end", [&manager](auto *res, auto *req) {
+    };
+
+    auto blockHeaderHandler = [&manager](auto *res, auto *req) {
         try {
-            uint32_t start = std::stoi(string(req->getParameter(0)));
-            uint32_t end = std::stoi(string(req->getParameter(1)));
+            int start = std::stoi(string(req->getParameter(0)));
+            int end = std::stoi(string(req->getParameter(1)));
+            if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
+                Logger::logError("/block_headers", "invalid range requested");
+                res->end("");
+            }
             res->writeHeader("Content-Type", "application/octet-stream");
             for (int i = start; i <=end; i++) {
-                std::pair<uint8_t*, size_t> buffer = manager.getBlockHeaders(start, end);
-                std::string_view str((char*)buffer.first, buffer.second);
+                BlockHeader b = manager.getBlockHeader(i);
+                std::string_view str((char*)&b, sizeof(BlockHeader));
                 res->write(str);
-                delete buffer.first;
             }
             res->end("");
         } catch(const std::exception &e) {
@@ -240,62 +268,9 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).get("/synctx", [&manager](auto *res, auto *req) {
-        try {
-            res->writeHeader("Content-Type", "application/octet-stream");
-            std::pair<char*, size_t> buffer = manager.getRawTransactionData();
-            std::string_view str(buffer.first, buffer.second);
-            res->write(str);
-            delete buffer.first;
-            res->end("");
-        } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
-        } catch(...) {
-            Logger::logError("/sync", "unknown");
-        }
-        res->onAborted([res]() {
-            res->end("ABORTED");
-        });
-    }).post("/synctx", [&manager](auto *res, auto *req) {
-        res->onAborted([res]() {
-            res->end("ABORTED");
-        });
-        std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
-            buffer.append(data.data(), data.length());
-            if (last) {
-                try {
-                    if (buffer.length() < sizeof(BloomFilterInfo)) {
-                        json response;
-                        response["error"] = "Malformed bloomfilter";
-                        Logger::logError("/synctx","Malformed bloomfilter");
-                        res->end(response.dump());
-                    } else {
-                        BloomFilterInfo header = *(BloomFilterInfo*)(buffer.c_str());
-                        int numBytes = header.numBits/8;
-                        if (buffer.length() < (sizeof(BloomFilterInfo) + numBytes)) {
-                            json response;
-                            response["error"] = "Malformed bloomfilter";
-                            Logger::logError("/synctx","Malformed bloomfilter");
-                            res->end(response.dump());
-                        } else {
-                            res->writeHeader("Content-Type", "application/octet-stream");
-                            BloomFilter seen((char*)buffer.c_str());
-                            std::pair<char*, size_t> buffer = manager.getRawTransactionData(seen);
-                            std::string_view str(buffer.first, buffer.second);
-                            res->write(str);
-                            delete buffer.first;
-                            res->end("");
-                        }
-                    }
-                }  catch(const std::exception &e) {
-                    Logger::logError("/synctx", e.what());
-                } catch(...) {
-                    Logger::logError("/synctx", "unknown");
-                }
-            }
-        });
-    }).post("/add_transaction", [&manager](auto *res, auto *req) {
+    };
+
+    auto addTransactionHandler = [&manager](auto *res, auto *req) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -322,7 +297,9 @@ int main(int argc, char **argv) {
                 }
             }
         });
-    }).post("/verify_transaction", [&manager](auto *res, auto *req) {
+    };
+
+    auto verifyTransactionHandler = [&manager](auto *res, auto *req) {
         /* Allocate automatic, stack, variable as usual */
         std::string buffer;
         /* Move it to storage of lambda */
@@ -345,9 +322,30 @@ int main(int argc, char **argv) {
         res->onAborted([res]() {
             res->end("ABORTED");
         });
-    }).listen(port, [port](auto *token) {
-        Logger::logStatus("Started server");
-    }).run();
+    };
+
+ 
+    uWS::App()
+        .get("/name", nameHandler)
+        .get("/total_work", totalWorkHandler)
+        .get("/peers", peerHandler)
+        .get("/block_count", blockCountHandler)
+        .get("/logs", logsHandler)
+        .get("/stats", statsHandler)
+        .get("/block/:b", blockHandler)
+        .get("/ledger/:user", ledgerHandler)
+        .get("/mine", mineHandler)
+        .post("/add_peer", addPeerHandler)
+        .post("/submit", submitHandler)
+        .get("/gettx/:blockId", getTxHandler)
+        .get("/sync/:start/:end", syncHandler)
+        .get("/block_headers/:start/:end", blockHeaderHandler)
+        .get("/synctx", getTxHandler)
+        .post("/add_transaction", addTransactionHandler)
+        .post("/verify_transaction", verifyTransactionHandler)
+        .listen(port, [port](auto *token) {
+            Logger::logStatus("Started server");
+        }).run();
 
 }
 

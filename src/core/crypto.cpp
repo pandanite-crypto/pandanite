@@ -1,7 +1,12 @@
 
 #include "crypto.hpp"
 #include <iostream>
+#include <atomic>
+#include <thread>
+#include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
+#include "../external/sha256/sha2.hpp" 
+#include "../core/logger.hpp"
 using namespace std;
 
 SHA256Hash SHA256(const char* buffer, size_t len) {
@@ -12,6 +17,18 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
     SHA256_Final(ret.data(), &sha256);
     return ret;
 }
+
+
+std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
+    std::array<uint8_t, 32> ret;
+    sha256_ctx sha256;
+    sha256_init(&sha256);
+    sha256_update(&sha256, (const unsigned char*) buffer, len);
+    sha256_final(&sha256, ret.data());
+    return ret;
+}
+
+
 
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
     RIPEMD160Hash ret;
@@ -215,23 +232,47 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSi
 //     return NULL_SHA256_HASH;
 // }
 
+
 SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, function<bool()> problemValid) {
+    SHA256Hash solution;
+    std::atomic<bool> aFound(false);
+    miner_status status;
+    status.hash_count = 0;
+
+    mineHash(target, challengeSize, solution, aFound, status, problemValid);
+
+    if (aFound.load()) {
+        return solution;
+    }
+
+    return NULL_SHA256_HASH;
+}
+
+void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& solution, std::atomic<bool>& aFound, miner_status& status, function<bool()> problemValid) {
     // By @Shifu!
     vector<uint8_t> concat;
-    concat.resize(2*32);
-    for(size_t i = 0; i < 32; i++) concat[i]=target[i];
+    uint64_t hash_count = 0;
+    std::random_device t_rand;
+
+    concat.resize(2 * 32);
+    for (size_t i = 0; i < 32; i++) concat[i] = target[i];
     // fill with random data for privacy (one cannot guess number of tries later)
-    for(size_t i=32; i<64;++i) concat[i]=rand()%256;
-    while (true) {
-        *reinterpret_cast<uint64_t*>(concat.data()+32)+=1;
-        SHA256Hash fullHash  = SHA256((const char*)concat.data(), concat.size());
-        bool found= checkLeadingZeroBits(fullHash, challengeSize);
-        if (found) {
-            SHA256Hash solution;
-            memcpy(solution.data(),concat.data()+32,32);
-            return solution;
+    for (size_t i = 32; i < 64; ++i) concat[i] = t_rand() % 256;
+
+    do {
+        hash_count++;
+        *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
+        SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
+        bool found = checkLeadingZeroBits(fullHash, challengeSize);
+        if (found && !aFound.load()) {
+            aFound.store(true);
+            memcpy(solution.data(), concat.data() + 32, 32);
+            break;
         }
-        if (!problemValid()) break;
-    }
-    return NULL_SHA256_HASH;
+
+    } while (problemValid() && !aFound.load());
+
+    status._lock.lock();
+    status.hash_count += hash_count;
+    status._lock.unlock();
 }

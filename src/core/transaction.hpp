@@ -11,11 +11,7 @@ using namespace std;
 struct TransactionInfo {
     int blockId;
     char signature[64];
-#ifdef SECP256K1
-    char signingKey[64];
-#else
     char signingKey[32];
-#endif
     time_t timestamp;
     char nonce[TRANSACTION_NONCE_SIZE];
     PublicWalletAddress to;

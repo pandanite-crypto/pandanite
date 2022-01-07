@@ -5,31 +5,32 @@
 #include <thread>
 #include <mutex>
 #include <list>
+#include <map>
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "../core/bloomfilter.hpp"
-#include "blockchain.hpp"
 #include "executor.hpp"
 using namespace std;
+
+class BlockChain;
 
 class MemPool {
     public:
         MemPool(HostManager& h, BlockChain &b);
         void sync();
         ExecutionStatus addTransaction(Transaction t);
-        void finishBlock(int blockId);
+        void finishBlock(Block& block);
         bool hasTransaction(Transaction t);
-        set<Transaction>& getTransactions(int blockId);
+        size_t size();
         std::pair<char*, size_t> getRaw();
-        std::pair<char*, size_t> getRaw(BloomFilter& seen);
-        std::pair<char*, size_t> getRaw(int blockId);
     protected:
+        map<PublicWalletAddress,TransactionAmount> mempoolOutgoing;
         list<Transaction> toSend;
-        BloomFilter seenTransactions;
         BlockChain & blockchain;
         HostManager & hosts;
-        map<int, set<Transaction>> transactionQueue;
+        set<Transaction> transactionQueue;
         vector<std::thread> syncThread;
         std::mutex lock;
+        std::mutex sendLock;
         friend void mempool_sync(MemPool& mempool);
 };

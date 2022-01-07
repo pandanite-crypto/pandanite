@@ -2,6 +2,7 @@ main
 keys/
 build/
 data/
+test-data/
 bin/
 .vscode/
 CMakeFiles/

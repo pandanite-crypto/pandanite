@@ -8,11 +8,27 @@
 using namespace std;
 
 
-RequestManager::RequestManager(HostManager& hosts) : hosts(hosts) {
-    this->blockchain = new BlockChain(hosts);
+RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
+    this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
     this->mempool = new MemPool(hosts, *this->blockchain);
-    this->blockchain->sync();
+    if (!hosts.isDisabled()) {
+        this->blockchain->sync();
+     
+        // initialize the mempool with a random peers transactions:
+        auto randomHost = hosts.sampleHosts(1);
+        if (randomHost.size() > 0) {
+            try {
+                string host = *randomHost.begin();
+                readRawTransactions(host, [&](Transaction t) {
+                    mempool->addTransaction(t);
+                });
+            } catch(...) {}
+        }
+    }
     this->mempool->sync();
+    this->blockchain->setMemPool(this->mempool);
+
+
 }
 
 void RequestManager::deleteDB() {
@@ -39,7 +55,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);
     if (status == SUCCESS) {
-        this->mempool->finishBlock(newBlock.getId());
+        this->mempool->finishBlock(newBlock);
     }
     this->blockchain->release();
     return result;
@@ -82,16 +98,18 @@ json RequestManager::getProofOfWork() {
     vector<Transaction> transactions;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
+    BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
+    result["lastTimestamp"] = timeToString(last.timestamp);
     return result;
 
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t index) {
-    return this->blockchain->getRaw(index);
+std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
+    return this->blockchain->getRaw(blockId);
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getBlockHeaders(uint32_t start, uint32_t end) {
-    return this->blockchain->getBlockHeaders(start, end);
+BlockHeader RequestManager::getBlockHeader(uint32_t blockId) {
+    return this->blockchain->getBlockHeader(blockId);
 }
 
 
@@ -99,16 +117,8 @@ std::pair<char*, size_t> RequestManager::getRawTransactionData() {
     return this->mempool->getRaw();
 }
 
-std::pair<char*, size_t> RequestManager::getRawTransactionData(BloomFilter & seen) {
-    return this->mempool->getRaw(seen);
-}
-
-std::pair<char*, size_t> RequestManager::getRawTransactionDataForBlock(uint32_t blockId) {
-    return this->mempool->getRaw(blockId);
-}
-
-json RequestManager::getBlock(uint32_t index) {
-    return this->blockchain->getBlock(index).toJson();
+json RequestManager::getBlock(uint32_t blockId) {
+    return this->blockchain->getBlock(blockId).toJson();
 }
 
 json RequestManager::getPeers() {
@@ -158,7 +168,7 @@ json RequestManager::getStats() {
     info["num_coins"] = coins;
     info["num_wallets"] = wallets;
     int blockId = this->blockchain->getBlockCount();
-    info["pending_transactions"]= this->mempool->getTransactions(blockId + 1).size();
+    info["pending_transactions"]= this->mempool->size();
     
     int idx = this->blockchain->getBlockCount();
     Block a = this->blockchain->getBlock(idx);

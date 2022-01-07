@@ -1,7 +1,6 @@
 #include "../core/user.hpp"
 #include "../core/transaction.hpp"
 #include "../core/block.hpp"
-#include "nlohmann/json.hpp"
 #include <ctime>
 #include <iostream>
 using namespace std;

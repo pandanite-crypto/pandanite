@@ -14,21 +14,19 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(HostManager& hosts);
+        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
         json addTransaction(Transaction& t);
         json getProofOfWork();
         json submitProofOfWork(Block & block);
-        json getBlock(uint32_t index);
+        json getBlock(uint32_t blockId);
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(Transaction& t);
         json getPeers();
         json addPeer(string host);
-        std::pair<uint8_t*, size_t> getBlockHeaders(uint32_t start, uint32_t end);
-        std::pair<uint8_t*, size_t> getRawBlockData(uint32_t index);
+        BlockHeader getBlockHeader(uint32_t blockId);
+        std::pair<uint8_t*, size_t> getRawBlockData(uint32_t blockId);
         std::pair<char*, size_t> getRawTransactionData();
-        std::pair<char*, size_t> getRawTransactionData(BloomFilter& seen);
-        std::pair<char*, size_t> getRawTransactionDataForBlock(uint32_t blockId);
         string getBlockCount();
         string getTotalWork();
         void deleteDB();

@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
         cout<<"Time to generate 1500 transactions: " << end-start << " seconds"<<endl;
         LedgerState deltas;
         Ledger ledger;
-        ledger.init("./data/tmpdb");
+        ledger.init("./test-data/tmpdb");
         start = std::time(0);
         ExecutionStatus status = Executor::ExecuteBlock(b, ledger, deltas);
         cout<<"Status: " << executionStatusAsString(status) <<endl;

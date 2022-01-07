@@ -17,7 +17,7 @@
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "blockchain.hpp"
-
+#include "mempool.hpp"
 
 using namespace std;
 
@@ -60,11 +60,14 @@ void chain_sync(BlockChain& blockchain) {
     }
 }
 
-BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath) : hosts(hosts) {
+BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
     if (ledgerPath == "") ledgerPath = LEDGER_FILE_PATH;
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
-    ledger.init(ledgerPath);
-    blockStore.init(blockPath);
+    if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
+    this->memPool = nullptr;
+    this->ledger.init(ledgerPath);
+    this->blockStore.init(blockPath);
+    this->txdb.init(txdbPath);
     this->initChain();
 }
 
@@ -100,12 +103,14 @@ void BlockChain::resetChain() {
 }
 
 void BlockChain::closeDB() {
+    txdb.closeDB();
     ledger.closeDB();
     blockStore.closeDB();
 }
 
 void BlockChain::deleteDB() {
     this->closeDB();
+    txdb.deleteDB();
     ledger.deleteDB();
     blockStore.deleteDB();
 }
@@ -115,8 +120,9 @@ std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
     return this->blockStore.getRawData(blockId);
 }
 
-std::pair<uint8_t*, size_t> BlockChain::getBlockHeaders(uint32_t start, uint32_t end) {
-    return this->blockStore.getBlockHeaders(start, end);
+BlockHeader BlockChain::getBlockHeader(uint32_t blockId) {
+    if (blockId < 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    return this->blockStore.getBlockHeader(blockId);
 }
 
 void BlockChain::sync() {
@@ -151,15 +157,21 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     if (!t.signatureValid()) return INVALID_SIGNATURE;
     LedgerState deltas;
     // verify the transaction is consistent with ledger
+    this->lock.lock();
     ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
 
     //roll back the ledger to it's original state:
     Executor::Rollback(this->getLedger(), deltas);
+    this->lock.unlock();
     return status;
 }
 
 SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
+}
+
+TransactionAmount BlockChain::getWalletValue(PublicWalletAddress addr) {
+    return this->getLedger().getWalletValue(addr);
 }
 
 int computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
@@ -241,13 +253,17 @@ void BlockChain::updateDifficulty(Block& block) {
     }
 }
 
+void BlockChain::setMemPool(MemPool * memPool) {
+    this->memPool = memPool;
+}
+
 uint8_t BlockChain::getDifficulty() {
     return this->difficulty;
 }
 
 void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
-    Executor::RollbackBlock(last, this->ledger);
+    Executor::RollbackBlock(last, this->ledger, this->txdb);
     this->numBlocks--;
     this->totalWork -= last.getDifficulty();
     this->blockStore.setTotalWork(this->totalWork);
@@ -275,6 +291,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getId() > TIMESTAMP_VERIFICATION_START) {
         Block lastBlock = blockStore.getBlock(this->getBlockCount());
         if (block.getTimestamp() < lastBlock.getTimestamp()) return BLOCK_TIMESTAMP_TOO_OLD;
+        uint64_t currT = getCurrentTime();
+        if (block.getTimestamp() > currT) return BLOCK_TIMESTAMP_IN_FUTURE;
     }
 
     // compute merkle tree and verify root matches;
@@ -282,12 +300,18 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     m.setItems(block.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
-    LedgerState deltasFromBlock;
-    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, deltasFromBlock);
+    LedgerState deltasExecuted;
+    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasExecuted);
     if (status != SUCCESS) {
-        //revert ledger
-        Executor::Rollback(this->ledger, deltasFromBlock);
+        Executor::Rollback(this->ledger, deltasExecuted);
     } else {
+        if (this->memPool != nullptr) {
+            this->memPool->finishBlock(block);
+        }
+        // add all transactions to txdb:
+        for(auto t : block.getTransactions()) {
+            if (!t.isFee()) this->txdb.insertTransaction(t);
+        }
         Logger::logStatus("Added block " + to_string(block.getId()));
         this->blockStore.setBlock(block);
         this->numBlocks++;
