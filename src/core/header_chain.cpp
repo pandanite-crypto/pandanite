@@ -42,6 +42,7 @@ void HeaderChain::load() {
     SHA256Hash lastHash = NULL_SHA256_HASH;
     uint64_t numBlocks = 0;
     uint64_t totalWork = 0;
+    
     // download any remaining blocks in batches
     for(int i = 1; i <= targetBlockCount; i+=BLOCK_HEADERS_PER_FETCH) {
         try {
@@ -81,7 +82,6 @@ void HeaderChain::load() {
     this->chainLength = numBlocks;
     this->totalWork = totalWork;
     this->failed = false;
-    Logger::logStatus("Header chain loaded " + to_string(numBlocks) + " headers, host=" + this->host);
 }
 
 

@@ -363,9 +363,9 @@ int main(int argc, char **argv) {
         .post("/add_transaction", addTransactionHandler)
         .post("/verify_transaction", verifyTransactionHandler)
         .listen((int)config["port"], [&hosts](auto *token) {
-            Logger::logStatus("===============================");
+            Logger::logStatus("==========================================");
             Logger::logStatus("Started server: " + hosts.getAddress());
-            Logger::logStatus("===============================");
+            Logger::logStatus("==========================================");
         }).run();
 
 }

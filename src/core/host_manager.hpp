@@ -38,6 +38,8 @@ class HostManager {
         
         std::pair<string,uint64_t> trustedHost;
         uint64_t trustedWork;
+        
+        map<string,uint64_t> hostPings;
         vector<string> hostSources;
         vector<string> hosts;
         vector<SHA256Hash> validationHashes;

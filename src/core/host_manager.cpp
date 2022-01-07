@@ -12,9 +12,7 @@ using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
 #define HEADER_VALIDATION_HOST_COUNT 3
-
-
-
+#define HOST_MIN_FRESHNESS 180 * 60000 // 3 hours
 
 /*
     Fetches the public IP of the node
@@ -89,12 +87,23 @@ void HostManager::initTrustedHost() {
 
     // fetch block headers from each host
     int i = 0;
-    // TODO: this absolutely needs to be multi-threaded
+    
+    vector<std::thread> threads;
     for(auto host : hosts) {
-        chains.push_back(HeaderChain(host));
-        chains[i].load();
+        chains.push_back(HeaderChain(string(host)));
+        int i = chains.size() - 1;
+        string currHost = string(host);
+        threads.emplace_back(
+            std::thread([&chains, currHost, i](){
+                Logger::logStatus(">> Loading headers from " + currHost + "...");
+                chains[i].load();
+                Logger::logStatus(">> Loaded " + to_string(chains[i].getChainLength()) + " headers, host=" + currHost);
+            })
+        );
         i++;
     }
+
+    for (auto& th : threads) th.join();
 
     // pick the best (highest POW) header chain as host:
     uint64_t bestWork = 0;
@@ -133,10 +142,20 @@ uint64_t HostManager::getTrustedHostWork() {
     Returns N unique random hosts
 */
 set<string> HostManager::sampleHosts(int count) {
-    int numToPick = min(count, (int) this->hosts.size());
+    vector<string> freshHosts;
+    for (auto pair : this->hostPings) {
+        uint64_t lastPingDelta = std::time(0) - pair.second;
+        // only return peers that have pinged in the last hour
+        if (lastPingDelta < HOST_MIN_FRESHNESS) { 
+            freshHosts.push_back(pair.first);
+        }
+    }
+
+    int numToPick = min(count, (int)freshHosts.size());
     set<string> sampledHosts;
     while(sampledHosts.size() < numToPick) {
-        sampledHosts.insert(this->hosts[rand()%this->hosts.size()]);
+        string host = freshHosts[rand()%freshHosts.size()];
+        sampledHosts.insert(host);
     }
     return sampledHosts;
 }
@@ -149,6 +168,7 @@ void HostManager::addPeer(string addr) {
     // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
+        this->hostPings[addr] = std::time(0);
         return;
     } 
 
@@ -236,6 +256,7 @@ void HostManager::refreshHostList() {
             
             string hostName = getName(hostUrl);
             this->hosts.push_back(hostUrl);
+            this->hostPings[hostUrl] = std::time(0);
             Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
             
         } catch (...) {
@@ -249,7 +270,14 @@ void HostManager::refreshHostList() {
     Returns a list of all peer hosts
 */
 vector<string> HostManager::getHosts(bool includeSelf) {
-    vector<string> ret = this->hosts;
+    vector<string> ret;
+    for (auto pair : this->hostPings) {
+        uint64_t lastPingDelta = std::time(0) - pair.second;
+        // only return peers that have pinged in the last hour
+        if (lastPingDelta < HOST_MIN_FRESHNESS) { 
+            ret.push_back(pair.first);
+        }
+    }
     if (includeSelf) ret.push_back(this->address);
     return ret;
 }
