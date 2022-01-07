@@ -38,12 +38,12 @@ json getConfig(int argc, char**argv) {
 
     it = std::find(args.begin(), args.end(), "-t");
     if (it != args.end()) {
-        threads = std::stoi(*it++);
+        threads = std::stoi(*++it);
     }
 
     it = std::find(args.begin(), args.end(), "--priority");
     if (it != args.end()) {
-        thread_priority = std::stoi(*it++);
+        thread_priority = std::stoi(*++it);
     }
 
     it = std::find(args.begin(), args.end(), "-ip");
