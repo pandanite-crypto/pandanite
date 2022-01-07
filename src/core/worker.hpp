@@ -22,6 +22,10 @@
 #define THREAD_PRIORITY_IDLE 19
 #endif
 
+#ifndef SCHED_IDLE
+#define SCHED_IDLE SCHED_OTHER
+#endif
+
 struct Job {
     string host;
     Block newBlock;
