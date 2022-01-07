@@ -1,4 +1,5 @@
 #include <App.h>
+#include <HttpResponse.h>
 #include <string>
 #include <mutex>
 #include <thread>
@@ -15,6 +16,10 @@
 #include "../core/config.hpp"
 using namespace std;
 
+
+void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=4000000) {
+    if (buf.size() > maxSize) ptr->end("Buffer Overflow");
+}
 
 
 int main(int argc, char **argv) {  
@@ -124,6 +129,7 @@ int main(int argc, char **argv) {
         std::string buffer;
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
             if (last) {
                 try {
                     string url = string(buffer);
@@ -147,6 +153,7 @@ int main(int argc, char **argv) {
         std::string buffer;
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
             if (last) {
                 try {
                     if (buffer.length() < sizeof(BlockHeader) + sizeof(TransactionInfo)) {
@@ -158,6 +165,14 @@ int main(int argc, char **argv) {
                         char * ptr = (char*)buffer.c_str();
                         BlockHeader blockH = *((BlockHeader*)ptr);
                         ptr += sizeof(BlockHeader);
+                        
+                        if (buffer.size() < sizeof(BlockHeader) + blockH.numTransactions*sizeof(TransactionInfo)) {
+                            json response;
+                            response["error"] = "Malformed block";
+                            Logger::logError("/submit","Malformed block");
+                            res->end(response.dump());
+                        }
+
                         vector<Transaction> transactions;
                         if (blockH.numTransactions > MAX_TRANSACTIONS_PER_BLOCK) {
                             json response;
@@ -278,6 +293,7 @@ int main(int argc, char **argv) {
         std::string buffer;
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
             if (last) {
                 try {
                     if (buffer.length() < sizeof(TransactionInfo)) {
@@ -306,6 +322,7 @@ int main(int argc, char **argv) {
         /* Move it to storage of lambda */
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
             if (last) {
                 if (buffer.length() < sizeof(TransactionInfo)) {
                     json response;
