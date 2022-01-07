@@ -168,7 +168,7 @@ std::pair<string, uint64_t> HostManager::getBestHost() {
         reqs.push_back(std::async([host, &bestHosts, &bestWork, &lock]() {
             try {
                 uint64_t curr = getCurrentBlockCount(host); //getTotalWork(host);
-                lock.lock();
+                std::unique_lock<std::mutex> ulock(lock);
                 if (curr > bestWork) {
                     bestWork = curr;
                     bestHosts.clear();
@@ -176,9 +176,7 @@ std::pair<string, uint64_t> HostManager::getBestHost() {
                 } else if (curr == bestWork) {
                     bestHosts.push_back(host);
                 }
-                lock.unlock();
             } catch (std::exception & e) {
-                lock.unlock();
             }
         }));
     }    

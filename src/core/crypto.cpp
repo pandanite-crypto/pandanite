@@ -9,6 +9,8 @@
 #include "../core/logger.hpp"
 using namespace std;
 
+#define SLOPPY_TASK_CYCLE 1000
+
 SHA256Hash SHA256(const char* buffer, size_t len) {
     std::array<uint8_t, 32> ret;
     SHA256_CTX sha256;
@@ -232,47 +234,39 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSi
 //     return NULL_SHA256_HASH;
 // }
 
-
-SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, function<bool()> problemValid) {
-    SHA256Hash solution;
-    std::atomic<bool> aFound(false);
-    miner_status status;
-    status.hash_count = 0;
-
-    mineHash(target, challengeSize, solution, aFound, status, problemValid);
-
-    if (aFound.load()) {
-        return solution;
-    }
-
-    return NULL_SHA256_HASH;
-}
-
-void mineHash(SHA256Hash target, unsigned char challengeSize, SHA256Hash& solution, std::atomic<bool>& aFound, miner_status& status, function<bool()> problemValid) {
+SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
     // By @Shifu!
     vector<uint8_t> concat;
-    uint64_t hash_count = 0;
+    SHA256Hash solution;
     std::random_device t_rand;
+    uint32_t i = 0;
 
     concat.resize(2 * 32);
     for (size_t i = 0; i < 32; i++) concat[i] = target[i];
     // fill with random data for privacy (one cannot guess number of tries later)
     for (size_t i = 32; i < 64; ++i) concat[i] = t_rand() % 256;
 
-    do {
-        hash_count++;
+    while(true) {
+        i++;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
         SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
         bool found = checkLeadingZeroBits(fullHash, challengeSize);
-        if (found && !aFound.load()) {
-            aFound.store(true);
+
+        if (found) {
             memcpy(solution.data(), concat.data() + 32, 32);
             break;
         }
 
-    } while (problemValid() && !aFound.load());
+        if (i == SLOPPY_TASK_CYCLE) {
+            i = 0;
+            incrementHashCount(SLOPPY_TASK_CYCLE);
 
-    status._lock.lock();
-    status.hash_count += hash_count;
-    status._lock.unlock();
+            if (stop()) {
+                solution = NULL_SHA256_HASH;
+                break;
+            }
+        }
+    };
+
+    return solution;
 }
