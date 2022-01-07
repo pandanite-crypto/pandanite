@@ -18,17 +18,19 @@ using namespace std;
 void get_host(HostManager& hosts, std::atomic<uint64_t>& latestBlockId) {
     while (true) {
         try {
-            std::pair<string, uint64_t> bestHost = hosts.getBestHost();
-            latestBlockId.store(bestHost.second);
+            std::pair<string, uint64_t> bestHost = hosts.getTrustedHost();
+            uint64_t currCount = getCurrentBlockCount(bestHost.first);
+            latestBlockId.store(currCount);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         catch (...) {
+
         }
     }
 }
 
 void get_status(miner_status& status) {
-    time_t start = std::time(0);
+    uint64_t start = std::time(0);
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::minutes(1));
@@ -95,17 +97,16 @@ SHA256Hash start_mining_threads(SHA256Hash target, unsigned char challengeSize, 
 
 void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts, std::atomic<uint64_t>& latestBlockId, miner_status& status) {
     TransactionAmount allEarnings = 0;
-    BloomFilter bf;
     while(true) {
         try {
-            std::pair<string,int> bestHost = hosts.getBestHost();
+            std::pair<string, uint64_t> bestHost = hosts.getTrustedHost();
+            uint64_t currCount = getCurrentBlockCount(bestHost.first);
             if (bestHost.first == "") {
                 Logger::logStatus("no host found");
             }
 
-            int bestCount = bestHost.second;
             string host = bestHost.first;
-            int nextBlock = bestCount + 1;
+            int nextBlock = currCount + 1;
             json problem = getMiningProblem(host);
 
             // download transactions
@@ -123,24 +124,25 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             int challengeSize = problem["challengeSize"];
 
             // create fee to our wallet:
-            Transaction fee(wallet, nextBlock);
+            Transaction fee(wallet, problem["miningFee"]);
             Block newBlock;
+
+            
+            try {
+                uint64_t lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
+
+                // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
+                // if it's not then your system clock is wonky, so we just make up a date:
+                if (newBlock.getTimestamp() < lastTimestamp) {
+                    newBlock.setTimestamp(lastTimestamp + 1);
+                }
+            } catch (...) {}
+
+
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
 
-            
-            uint64_t lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
-
-            // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
-            // if it's not then your system clock is wonky, so we just make up a date:
-            if (newBlock.getTimestamp() < lastTimestamp) {
-                newBlock.setTimestamp(lastTimestamp + 1);
-            }
-
-            TransactionAmount total = MINING_FEE;
-            if (newBlock.getId() >= MINING_PAYMENTS_UNTIL) {
-                total = 0;
-            }
+            TransactionAmount total = problem["miningFee"];
             for(auto t : transactions) {
                 newBlock.addTransaction(t);
                 total += t.getTransactionFee();
@@ -153,13 +155,13 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             newBlock.setLastBlockHash(lastHash);
             SHA256Hash hash = newBlock.getHash();
 
-            time_t block_start = std::time(0);
+            uint64_t block_start = std::time(0);
 
             SHA256Hash solution = start_mining_threads(hash, challengeSize, thread_count, status, [&nextBlock, &latestBlockId]() {
                 return nextBlock == (latestBlockId.load() + 1);
             });
 
-            time_t block_end = std::time(0);
+            uint64_t block_end = std::time(0);
             bool accepted;
             uint32_t elapsed;
             nlohmann::json result;
@@ -203,6 +205,7 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
+            hosts.initTrustedHost();
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
@@ -213,6 +216,7 @@ int main(int argc, char **argv) {
     int threads = config["threads"];
 
     HostManager hosts(config);
+    hosts.getTrustedHost();
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");
