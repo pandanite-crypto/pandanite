@@ -97,6 +97,7 @@ SHA256Hash start_mining_threads(SHA256Hash target, unsigned char challengeSize, 
 
 void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts, std::atomic<uint64_t>& latestBlockId, miner_status& status) {
     TransactionAmount allEarnings = 0;
+    int failureCount = 0;
     while(true) {
         try {
             std::pair<string, uint64_t> bestHost = hosts.getTrustedHost();
@@ -205,7 +206,11 @@ void run_mining(PublicWalletAddress wallet, int thread_count, HostManager& hosts
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
-            hosts.initTrustedHost();
+            failureCount++;
+            if (failureCount > 5) {
+                hosts.initTrustedHost();
+                failureCount = 0;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }

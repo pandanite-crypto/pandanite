@@ -17,7 +17,7 @@
 using namespace std;
 
 
-void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=4000000) {
+void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=8000000) {
     if (buf.size() > maxSize) ptr->end("Buffer Overflow");
 }
 
