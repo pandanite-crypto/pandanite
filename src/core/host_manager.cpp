@@ -86,8 +86,10 @@ uint64_t HostManager::getNetworkTimestamp() {
         }
     }
     
-    std::sort(deltas.begin(), deltas.end());
+    if (deltas.size() == 0) return std::time(0);
 
+    std::sort(deltas.begin(), deltas.end());
+    
     // compute median
     uint64_t medianTime;
     if (deltas.size() % 2 == 0) {
