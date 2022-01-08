@@ -104,6 +104,12 @@ void BlockChain::resetChain() {
     this->totalWork = 0;
     this->lastHash = NULL_SHA256_HASH;
 
+    // reset the ledger & tx stores
+    this->ledger.clear();
+    this->blockStore.clear();
+    this->txdb.clear();
+    
+
     /** TODO: add totals for existing miners **/
     User miner;
     Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));

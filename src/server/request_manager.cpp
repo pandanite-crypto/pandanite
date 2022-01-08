@@ -188,9 +188,8 @@ json RequestManager::getStats() {
         return info;
     }
     int coins = this->blockchain->getBlockCount()*50;
-    int wallets = this->blockchain->getLedger().size();
     info["num_coins"] = coins;
-    info["num_wallets"] = wallets;
+    info["num_wallets"] = 0;
     int blockId = this->blockchain->getBlockCount();
     info["pending_transactions"]= this->mempool->size();
     

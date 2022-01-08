@@ -220,7 +220,7 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::functio
     for (size_t i = 32; i < 64; ++i) concat[i] = t_rand() % 256;
 
     while(true) {
-        i++;
+        ++i;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
         SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
         bool found = checkLeadingZeroBits(fullHash, challengeSize);

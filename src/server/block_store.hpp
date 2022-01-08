@@ -2,11 +2,11 @@
 #include "leveldb/db.h"
 #include "../core/common.hpp"
 #include "../core/block.hpp"
+#include "data_store.hpp"
 
-class BlockStore {
+class BlockStore : public DataStore {
     public:
         BlockStore();
-        void init(string path);
         bool hasBlock(uint32_t blockId);
         Block getBlock(uint32_t blockId);
         std::pair<uint8_t*, size_t> getRawData(uint32_t blockId);
@@ -17,11 +17,6 @@ class BlockStore {
         void setTotalWork(uint64_t work);
         uint64_t getTotalWork();
         bool hasBlockCount();
-        void deleteDB();
-        void closeDB();
     protected:
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block);
-        leveldb::DB *db;
-        size_t numBlocks;
-        string path;
 };

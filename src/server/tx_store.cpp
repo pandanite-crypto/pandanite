@@ -1,6 +1,5 @@
 #include "tx_store.hpp"
 #include <thread>
-#include <experimental/filesystem>
 
 
 TransactionStore::TransactionStore() {
@@ -12,7 +11,6 @@ bool TransactionStore::hasTransaction(Transaction &t) {
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
     return (status.ok());
-
 }
 
 uint32_t TransactionStore::blockForTransaction(Transaction &t) {

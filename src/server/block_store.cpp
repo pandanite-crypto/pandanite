@@ -1,43 +1,19 @@
 #include <iostream>
 #include <thread>
-#include <experimental/filesystem>
 #include "../core/crypto.hpp"
 #include "../core/transaction.hpp"
 #include "../core/logger.hpp"
 #include "block_store.hpp"
 using namespace std;
 
+#define BLOCK_COUNT_KEY "BLOCK_COUNT"
+#define TOTAL_WORK_KEY "TOTAL_WORK"
 
 BlockStore::BlockStore() {
-    this->db = NULL;
-}
-
-void BlockStore::closeDB() {
-    delete db;
-}
-
-void BlockStore::deleteDB() {
-    leveldb::Options options;
-    leveldb::Status status = leveldb::DestroyDB(this->path, options);
-    experimental::filesystem::remove_all(this->path); 
-    if(!status.ok()) throw std::runtime_error("Could not close BlockStore db : " + status.ToString());
-}
-
-void BlockStore::init(string path) {
-    if (this->db) {
-        this->closeDB();
-    }
-    this->path = path;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    this->numBlocks = 0;
-    leveldb::Options options;
-    options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options, path, &this->db);
-    if(!status.ok()) throw std::runtime_error("Could not write BlockStore db : " + status.ToString());
 }
 
 void BlockStore::setBlockCount(size_t count) {
-    string countKey = "BLOCK_COUNT";
+    string countKey = BLOCK_COUNT_KEY;
     size_t num = count;
     leveldb::Slice key = leveldb::Slice(countKey);
     leveldb::Slice slice = leveldb::Slice((const char*)&num, sizeof(size_t));
@@ -48,7 +24,7 @@ void BlockStore::setBlockCount(size_t count) {
 }
 
 size_t BlockStore::getBlockCount() {
-    string countKey = "BLOCK_COUNT";
+    string countKey = BLOCK_COUNT_KEY;
     leveldb::Slice key = leveldb::Slice(countKey);
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
@@ -58,7 +34,7 @@ size_t BlockStore::getBlockCount() {
 }
 
 void BlockStore::setTotalWork(uint64_t count) {
-    string countKey = "TOTAL_WORK";
+    string countKey = TOTAL_WORK_KEY;
     uint64_t num = count;
     leveldb::Slice key = leveldb::Slice(countKey);
     leveldb::Slice slice = leveldb::Slice((const char*)&num, sizeof(uint64_t));
@@ -69,7 +45,7 @@ void BlockStore::setTotalWork(uint64_t count) {
 }
 
 uint64_t BlockStore::getTotalWork() {
-    string countKey = "TOTAL_WORK";
+    string countKey = TOTAL_WORK_KEY;
     leveldb::Slice key = leveldb::Slice(countKey);
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
@@ -78,12 +54,8 @@ uint64_t BlockStore::getTotalWork() {
     return ret;
 }
 
-
-void setTotalWork(uint64_t work);
-        uint64_t getTotalWork();
-
 bool BlockStore::hasBlockCount() {
-    string countKey = "BLOCK_COUNT";
+    string countKey = BLOCK_COUNT_KEY;
     leveldb::Slice key = leveldb::Slice(countKey);
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);

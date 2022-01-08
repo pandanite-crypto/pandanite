@@ -10,6 +10,21 @@ void DataStore::closeDB() {
     delete db;
 }
 
+string DataStore::getPath() {
+    return this->path;
+}
+
+void DataStore::clear() {
+    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    for (it->SeekToFirst(); it->Valid(); it->Next()) {
+        string key = it->key().ToString();
+        leveldb::Status status = db->Delete(leveldb::WriteOptions(), key);
+        if(!status.ok()) throw std::runtime_error("Could not clear data store : " + status.ToString());
+    }
+    assert(it->status().ok()); 
+    delete it;
+}
+
 void DataStore::deleteDB() {
     leveldb::Options options;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
