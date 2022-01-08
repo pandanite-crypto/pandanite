@@ -132,9 +132,8 @@ int main(int argc, char **argv) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    string url = string(buffer);
-                    Logger::logStatus("Adding peer : " + url);
-                    json result = manager.addPeer(url);
+                    json data = json::parse(string(buffer));
+                    json result = manager.addPeer(data["address"], data["time"]);
                     res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
                 }  catch(const std::exception &e) {
                     Logger::logError("/add_peer", e.what());

@@ -32,9 +32,12 @@ json getBlockData(string host_url, int idx) {
     return json::parse(responseStr);  
 }
 
-json addPeerNode(string host_url, string peer_url) {
+json pingPeer(string host_url, string peer_url, uint64_t networkTime) {
+    json info;
+    info["address"] = peer_url;
+    info["time"] = networkTime;
     http::Request request{host_url + "/add_peer"};
-    const auto response = request.send("POST",peer_url,{
+    const auto response = request.send("POST", info.dump(), {
         "Content-Type: text/plain"
     },std::chrono::milliseconds{TIMEOUT_MS});
     string responseStr = std::string{response.body.begin(), response.body.end()};

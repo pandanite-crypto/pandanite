@@ -153,8 +153,8 @@ json RequestManager::getPeers() {
     return peers;
 }
 
-json RequestManager::addPeer(string host) {
-    this->hosts.addPeer(host);
+json RequestManager::addPeer(string address, uint64_t time) {
+    this->hosts.addPeer(address, time);
     json ret;
     ret["status"] = executionStatusAsString(SUCCESS);
     return ret;

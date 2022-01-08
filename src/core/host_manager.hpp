@@ -21,8 +21,9 @@ class HostManager {
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
         string getAddress();
+        uint64_t getNetworkTimestamp();
         
-        void addPeer(string addr);
+        void addPeer(string addr, uint64_t time);
         bool isDisabled();
         
         void acquire();
@@ -39,7 +40,8 @@ class HostManager {
         std::pair<string,uint64_t> trustedHost;
         uint64_t trustedWork;
         
-        map<string,uint64_t> hostPings;
+        map<string,uint64_t> hostPingTimes;
+        map<string,int32_t> peerClockDeltas;
         vector<string> hostSources;
         vector<string> hosts;
         vector<SHA256Hash> validationHashes;

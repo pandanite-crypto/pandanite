@@ -104,12 +104,11 @@ void BlockChain::resetChain() {
     this->totalWork = 0;
     this->lastHash = NULL_SHA256_HASH;
 
-    // reset the ledger & tx stores
+    // reset the ledger, block & tx stores
     this->ledger.clear();
     this->blockStore.clear();
     this->txdb.clear();
     
-
     /** TODO: add totals for existing miners **/
     User miner;
     Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));
@@ -303,10 +302,27 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     if (block.getId() != 1) {
-        Block lastBlock = blockStore.getBlock(this->getBlockCount());
-        if (block.getTimestamp() < lastBlock.getTimestamp()) return BLOCK_TIMESTAMP_TOO_OLD;
-        uint64_t currT = getCurrentTime();
-        if (block.getTimestamp() > currT) return BLOCK_TIMESTAMP_IN_FUTURE;
+        // block must be less than 2 hrs into future from network time
+        uint64_t maxTime = this->hosts.getNetworkTimestamp() + 120*60;
+        if (block.getTimestamp() > maxTime) return BLOCK_TIMESTAMP_IN_FUTURE;
+
+        // block must be after the median timestamp of last 10 blocks
+        if (this->numBlocks > 10) {
+            vector<uint64_t> times;
+            for(int i = 0; i < 10; i++) {
+                Block b = this->getBlock(this->numBlocks - i);
+                times.push_back(b.getTimestamp());
+            }
+            std::sort(times.begin(), times.end());
+            // compute median
+            uint64_t medianTime;
+            if (times.size() % 2 == 0) {
+                medianTime = (times[times.size()/2] + times[times.size()/2 - 1])/2;
+            } else {
+                medianTime = times[times.size()/2];
+            }
+            if (block.getTimestamp() < medianTime) return BLOCK_TIMESTAMP_TOO_OLD;
+        }
     }
     // compute merkle tree and verify root matches;
     MerkleTree m;

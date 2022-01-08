@@ -36,7 +36,7 @@ void peer_sync(HostManager& hm) {
     while(true) {
         for(auto host : hm.hosts) {
             try {
-                addPeerNode(host, hm.computeAddress());
+                pingPeer(host, hm.computeAddress(), std::time(0));
             } catch (...) { }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(30000));
@@ -58,7 +58,8 @@ HostManager::HostManager(json config) {
     if (this->hostSources.size() == 0) {
         string localhost = "http://localhost:3000";
         this->hosts.push_back(localhost);
-        this->hostPings[localhost] = std::time(0);
+        this->hostPingTimes[localhost] = std::time(0);
+        this->peerClockDeltas[localhost] = 0;
     } else {
         this->refreshHostList();
         this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
@@ -73,6 +74,32 @@ string HostManager::getAddress() {
 HostManager::HostManager() {
     this->disabled = true;
 }
+
+uint64_t HostManager::getNetworkTimestamp() {
+    // find deltas of all hosts that pinged recently
+    vector<int32_t> deltas;
+    for (auto pair : this->hostPingTimes) {
+        uint64_t lastPingAge = std::time(0) - pair.second;
+        // only use peers that have pinged in the last hour
+        if (lastPingAge < HOST_MIN_FRESHNESS) { 
+            deltas.push_back(this->peerClockDeltas[pair.first]);
+        }
+    }
+    
+    std::sort(deltas.begin(), deltas.end());
+
+    // compute median
+    uint64_t medianTime;
+    if (deltas.size() % 2 == 0) {
+        int32_t avg = (deltas[deltas.size()/2] + deltas[deltas.size()/2 - 1])/2;
+        medianTime = std::time(0) + avg;
+    } else {
+        int32_t delta = deltas[deltas.size()/2];
+        medianTime = std::time(0) + delta;
+    }
+
+    return medianTime;
+}   
 
 
 /*
@@ -146,10 +173,10 @@ uint64_t HostManager::getTrustedHostWork() {
 */
 set<string> HostManager::sampleHosts(int count) {
     vector<string> freshHosts;
-    for (auto pair : this->hostPings) {
-        uint64_t lastPingDelta = std::time(0) - pair.second;
+    for (auto pair : this->hostPingTimes) {
+        uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged in the last hour
-        if (lastPingDelta < HOST_MIN_FRESHNESS) { 
+        if (lastPingAge < HOST_MIN_FRESHNESS) { 
             freshHosts.push_back(pair.first);
         }
     }
@@ -167,11 +194,13 @@ set<string> HostManager::sampleHosts(int count) {
 /*
     Adds a peer to the host list, 
 */
-void HostManager::addPeer(string addr) {
+void HostManager::addPeer(string addr, uint64_t time) {
     // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
-        this->hostPings[addr] = std::time(0);
+        this->hostPingTimes[addr] = std::time(0);
+        // record how much our system clock differs from theirs:
+        this->peerClockDeltas[addr] = std::time(0) - time;
         return;
     } 
 
@@ -192,7 +221,7 @@ void HostManager::addPeer(string addr) {
         reqs.push_back(std::async([neighbor, addr](){
             if (neighbor == addr) return;
             try {
-                addPeerNode(neighbor, addr);
+                pingPeer(neighbor, addr, std::time(0));
             } catch(...) {
                 Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
             }
@@ -266,7 +295,7 @@ void HostManager::refreshHostList() {
                     string hostName = getName(hostUrl);
                     lock.lock();
                     hm.hosts.push_back(hostUrl);
-                    hm.hostPings[hostUrl] = std::time(0);
+                    hm.hostPingTimes[hostUrl] = std::time(0);
                     lock.unlock();
                     Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
                 } catch (...) {
@@ -284,7 +313,7 @@ void HostManager::refreshHostList() {
 */
 vector<string> HostManager::getHosts(bool includeSelf) {
     vector<string> ret;
-    for (auto pair : this->hostPings) {
+    for (auto pair : this->hostPingTimes) {
         uint64_t lastPingDelta = std::time(0) - pair.second;
         // only return peers that have pinged in the last hour
         if (lastPingDelta < HOST_MIN_FRESHNESS) { 
