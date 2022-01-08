@@ -269,7 +269,6 @@ void HostManager::refreshHostList() {
                     hm.hostPings[hostUrl] = std::time(0);
                     lock.unlock();
                     Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
-                    
                 } catch (...) {
                     Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
                 }

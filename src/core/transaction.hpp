@@ -5,9 +5,6 @@
 #include <optional>
 using namespace std;
 
-#define ADDRESS_CHAR_COUNT 53
-#define SIGNATURE_CHAR_COUNT 78
-
 struct TransactionInfo {
     char signature[64];
     char signingKey[32];
