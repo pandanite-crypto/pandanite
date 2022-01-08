@@ -7,6 +7,7 @@
 #include "../external/http.hpp"
 #include <iostream>
 #include <thread>
+#include <mutex>
 #include <future>
 using namespace std;
 
@@ -88,8 +89,6 @@ void HostManager::initTrustedHost() {
     vector<HeaderChain> chains;
 
     // fetch block headers from each host
-    int i = 0;
-    
     vector<std::thread> threads;
     Logger::logStatus("Validating header chains from peers [This may take 15-20 minutes]");
     for(auto host : hosts) {
@@ -103,7 +102,6 @@ void HostManager::initTrustedHost() {
                 Logger::logStatus(">> Loaded " + to_string(chains[i].getChainLength()) + " headers, host=" + currHost);
             })
         );
-        i++;
     }
 
     for (auto& th : threads) th.join();
@@ -253,6 +251,7 @@ void HostManager::refreshHostList() {
 
     // iterate through all listed peer hosts
     vector<std::thread> threads;
+    std::mutex lock;
     for(auto hostJson : fullHostList) {
         // if we've already added this host skip
         string hostUrl = string(hostJson);
@@ -262,11 +261,13 @@ void HostManager::refreshHostList() {
         // otherwise try connecting to the host to confirm it's up
         HostManager & hm = *this;
         threads.emplace_back(
-            std::thread([hostUrl, &hm](){
+            std::thread([hostUrl, &hm, &lock](){
                 try {
                     string hostName = getName(hostUrl);
+                    lock.lock();
                     hm.hosts.push_back(hostUrl);
                     hm.hostPings[hostUrl] = std::time(0);
+                    lock.unlock();
                     Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
                     
                 } catch (...) {
