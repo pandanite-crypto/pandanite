@@ -91,13 +91,14 @@ void HostManager::initTrustedHost() {
     int i = 0;
     
     vector<std::thread> threads;
+    Logger::logStatus("Validating header chains from peers [This may take 15-20 minutes]");
     for(auto host : hosts) {
         chains.push_back(HeaderChain(string(host)));
         int i = chains.size() - 1;
         string currHost = string(host);
         threads.emplace_back(
             std::thread([&chains, currHost, i](){
-                Logger::logStatus(">> Loading headers from " + currHost + "...");
+                Logger::logStatus(">> Loading headers from " + currHost);
                 chains[i].load();
                 Logger::logStatus(">> Loaded " + to_string(chains[i].getChainLength()) + " headers, host=" + currHost);
             })
@@ -127,6 +128,8 @@ void HostManager::initTrustedHost() {
     if (bestHost == "") {
         throw std::runtime_error("Could not find valid header chain!");
     }
+
+    Logger::logStatus(GREEN + "[ FINISHED ]" + RESET);
 
     this->hasTrustedHost = true;
     this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
@@ -227,6 +230,8 @@ SHA256Hash HostManager::getBlockHash(uint64_t blockId) {
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     
+    Logger::logStatus("Finding peers...");
+
     set<string> fullHostList;
 
     // Iterate through all host sources merging into a combined peer list
@@ -247,6 +252,7 @@ void HostManager::refreshHostList() {
     if (fullHostList.size() == 0) return;
 
     // iterate through all listed peer hosts
+    vector<std::thread> threads;
     for(auto hostJson : fullHostList) {
         // if we've already added this host skip
         string hostUrl = string(hostJson);
@@ -254,17 +260,22 @@ void HostManager::refreshHostList() {
         if (existing != this->hosts.end()) continue;
 
         // otherwise try connecting to the host to confirm it's up
-        try {
-            
-            string hostName = getName(hostUrl);
-            this->hosts.push_back(hostUrl);
-            this->hostPings[hostUrl] = std::time(0);
-            Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
-            
-        } catch (...) {
-            Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
-        }
+        HostManager & hm = *this;
+        threads.emplace_back(
+            std::thread([hostUrl, &hm](){
+                try {
+                    string hostName = getName(hostUrl);
+                    hm.hosts.push_back(hostUrl);
+                    hm.hostPings[hostUrl] = std::time(0);
+                    Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
+                    
+                } catch (...) {
+                    Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
+                }
+            })
+        );
     }
+    for (auto& th : threads) th.join();
 }
 
 
