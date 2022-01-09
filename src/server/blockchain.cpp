@@ -128,7 +128,7 @@ void BlockChain::resetChain() {
     genesis.setId(1);
     genesis.addTransaction(fee);
     genesis.setLastBlockHash(NULL_SHA256_HASH);
-    addGenesisTransactions(genesis);
+    // addGenesisTransactions(genesis);
     
     // compute merkle tree
     MerkleTree m;

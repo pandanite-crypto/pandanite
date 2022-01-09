@@ -13,7 +13,7 @@ using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
 #define HEADER_VALIDATION_HOST_COUNT 3
-#define HOST_MIN_FRESHNESS 180 * 60000 // 3 hours
+#define HOST_MIN_FRESHNESS 180 * 60 // 3 hours
 
 /*
     Fetches the public IP of the node

@@ -54,7 +54,12 @@ void Worker::loop(void)
 
     if (solution != NULL_SHA256_HASH) {
         job.newBlock.setNonce(solution);
-        submit(job);
+        try {
+            submit(job);
+        } catch(...) {
+            Logger::logStatus(RED + "[ SUBMIT FAILED ] " + RESET);
+        }
+        
     }
 }
 
