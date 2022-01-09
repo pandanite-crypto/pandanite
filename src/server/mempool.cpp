@@ -59,7 +59,7 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     ExecutionStatus status;
     this->lock.lock();
     if (this->transactionQueue.find(t) != this->transactionQueue.end()) {
-        status = SUCCESS;
+        status = ALREADY_IN_QUEUE;
         this->lock.unlock();
         return status;
     }
