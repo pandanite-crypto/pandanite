@@ -113,11 +113,9 @@ void MemPool::finishBlock(Block& block) {
     this->lock.lock();
     // erase all of this blocks included transactions from the mempool
     for(auto tx : block.getTransactions()) {
-        Logger::logStatus("TX: " + tx.toJson().dump());
         auto it = this->transactionQueue.find(tx);
         if (it != this->transactionQueue.end()) {
             this->transactionQueue.erase(it);
-            Logger::logStatus("TX ERASED");
             if (!tx.isFee()) {
                 this->mempoolOutgoing[tx.fromWallet()] -= tx.getAmount();
                 if (this->mempoolOutgoing[tx.fromWallet()] == 0) {

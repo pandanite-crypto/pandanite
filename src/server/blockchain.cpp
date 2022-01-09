@@ -209,6 +209,11 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
 
     //roll back the ledger to it's original state:
     Executor::Rollback(this->getLedger(), deltas);
+
+    if (this->txdb.hasTransaction(t)) {
+        status = EXPIRED_TRANSACTION;
+    }
+
     this->lock.unlock();
     return status;
 }
