@@ -18,6 +18,16 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->signingKey = signingKey;
 }
 
+Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp) {
+    this->from = from;
+    this->to = to;
+    this->amount = amount;
+    this->isTransactionFee = false;
+    this->timestamp = timestamp;
+    this->fee = fee;
+    this->signingKey = signingKey;
+}
+
 Transaction::Transaction() {
 
 }

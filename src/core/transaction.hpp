@@ -23,6 +23,7 @@ class Transaction {
         Transaction(const Transaction & t);
         Transaction(PublicWalletAddress to, TransactionAmount fee);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee=0);
+        Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp=0);
         Transaction(const TransactionInfo& t);
         TransactionInfo serialize();
         json toJson();
