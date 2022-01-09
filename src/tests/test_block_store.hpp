@@ -77,3 +77,19 @@ TEST(test_blockstore_returns_valid_raw_data) {
     blocks.closeDB();
     blocks.deleteDB();
 }
+
+
+TEST(test_blockstore_stores_bigint) {
+    BlockStore blocks;
+    blocks.init("./test-data/tmpdb");
+
+    Bigint a = 2;
+    Bigint b = a.pow(10);
+    blocks.setTotalWork(b);
+
+    Bigint c = blocks.getTotalWork();
+
+    ASSERT_TRUE(b==c);
+    blocks.closeDB();
+    blocks.deleteDB();
+}

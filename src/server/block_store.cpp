@@ -33,25 +33,25 @@ size_t BlockStore::getBlockCount() {
     return ret;
 }
 
-void BlockStore::setTotalWork(uint64_t count) {
+void BlockStore::setTotalWork(Bigint count) {
     string countKey = TOTAL_WORK_KEY;
-    uint64_t num = count;
+    string sz = to_string(count);
     leveldb::Slice key = leveldb::Slice(countKey);
-    leveldb::Slice slice = leveldb::Slice((const char*)&num, sizeof(uint64_t));
+    leveldb::Slice slice = leveldb::Slice((const char*)sz.c_str(), sz.size());
     leveldb::WriteOptions write_options;
     write_options.sync = true;
     leveldb::Status status = db->Put(write_options, key, slice);
     if(!status.ok()) throw std::runtime_error("Could not write block count to DB : " + status.ToString());
 }
 
-uint64_t BlockStore::getTotalWork() {
+Bigint BlockStore::getTotalWork() {
     string countKey = TOTAL_WORK_KEY;
     leveldb::Slice key = leveldb::Slice(countKey);
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
     if(!status.ok()) throw std::runtime_error("Could not read block count from DB : " + status.ToString());
-    uint64_t ret = *((uint64_t*)value.c_str());
-    return ret;
+    Bigint b(value);
+    return b;
 }
 
 bool BlockStore::hasBlockCount() {

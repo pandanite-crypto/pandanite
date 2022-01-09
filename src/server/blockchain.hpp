@@ -25,7 +25,7 @@ class BlockChain {
         void acquire();
         void release();
         Block getBlock(uint32_t blockId);
-        uint64_t getTotalWork();
+        Bigint getTotalWork();
         uint8_t getDifficulty();
         uint32_t getBlockCount();
         uint32_t getCurrentMiningFee();
@@ -47,7 +47,7 @@ class BlockChain {
         HostManager& hosts;
         MemPool * memPool;
         int numBlocks;
-        uint64_t totalWork;
+        Bigint totalWork;
         BlockStore blockStore;
         Ledger ledger;
         TransactionStore txdb;

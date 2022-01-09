@@ -137,7 +137,7 @@ void HostManager::initTrustedHost() {
     for (auto& th : threads) th.join();
 
     // pick the best (highest POW) header chain as host:
-    uint64_t bestWork = 0;
+    Bigint bestWork = 0;
     uint64_t bestLength = 0;
     string bestHost = "";
     
@@ -167,7 +167,7 @@ void HostManager::initTrustedHost() {
 /*
     returns the total POW of trusted host
 */
-uint64_t HostManager::getTrustedHostWork() {
+Bigint HostManager::getTrustedHostWork() {
     return this->trustedWork;
 }
 

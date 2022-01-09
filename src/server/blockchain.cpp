@@ -205,7 +205,7 @@ uint32_t BlockChain::getCurrentMiningFee() {
     }
 }
 
-uint64_t BlockChain::getTotalWork() {
+Bigint BlockChain::getTotalWork() {
     return this->totalWork;
 }
 
@@ -300,7 +300,8 @@ void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
     Executor::RollbackBlock(last, this->ledger, this->txdb);
     this->numBlocks--;
-    this->totalWork -= last.getDifficulty();
+    Bigint base = 2;
+    this->totalWork -= base.pow((int)last.getDifficulty());
     this->blockStore.setTotalWork(this->totalWork);
     this->blockStore.setBlockCount(this->numBlocks);
     if (this->getBlockCount() > 1) {
@@ -366,7 +367,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         }
         this->blockStore.setBlock(block);
         this->numBlocks++;
-        this->totalWork += block.getDifficulty();
+        Bigint base = 2;
+        this->totalWork += base.pow((int)block.getDifficulty());
         this->blockStore.setTotalWork(this->totalWork);
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();

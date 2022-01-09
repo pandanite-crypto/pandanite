@@ -8,12 +8,12 @@ class HeaderChain {
         void load();
         bool valid();
         string getHost();
-        uint64_t getTotalWork();
+        Bigint getTotalWork();
         uint64_t getChainLength();
         vector<SHA256Hash> blockHashes;
     protected:
         string host;
-        uint64_t totalWork;
+        Bigint totalWork;
         uint64_t chainLength;
         bool failed;
 };

@@ -16,7 +16,7 @@ class HostManager {
 
         SHA256Hash getBlockHash(uint64_t blockId);
         std::pair<string,uint64_t> getTrustedHost();
-        uint64_t getTrustedHostWork();
+        Bigint getTrustedHostWork();
         std::pair<string,uint64_t> getRandomHost();
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);
@@ -39,7 +39,7 @@ class HostManager {
         string version;
         
         std::pair<string,uint64_t> trustedHost;
-        uint64_t trustedWork;
+        Bigint trustedWork;
         
         map<string,uint64_t> hostPingTimes;
         map<string,int32_t> peerClockDeltas;

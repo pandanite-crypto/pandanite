@@ -14,8 +14,8 @@ class BlockStore : public DataStore {
         void setBlock(Block& b);
         void setBlockCount(size_t count);
         size_t getBlockCount();
-        void setTotalWork(uint64_t work);
-        uint64_t getTotalWork();
+        void setTotalWork(Bigint work);
+        Bigint getTotalWork();
         bool hasBlockCount();
     protected:
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block);

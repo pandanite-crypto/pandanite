@@ -1,17 +1,13 @@
 #pragma once
 #include "../external/json.hpp"
+#include "../external/bigint/bigint.h"
 #include "openssl/sha.h"
  #include "openssl/ripemd.h"
 #include <map>
 #include <vector>
 #include <string>
 #include <array>
-
-#ifdef SECP256K1
-#include <secp256k1.h>
-#include <secp256k1_preallocated.h>
-#endif
-
+using namespace Dodecahedron;
 using namespace std;
 using namespace nlohmann;
 

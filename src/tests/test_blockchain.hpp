@@ -62,7 +62,14 @@ TEST(check_popping_block) {
     ExecutionStatus status = blockchain->addBlock(newBlock);
     ASSERT_EQUAL(blockchain->getLedger().getWalletValue(miner.getAddress()), BMB(50));
     blockchain->popBlock();
-    ASSERT_EQUAL(blockchain->getLedger().getWalletValue(miner.getAddress()), BMB(0));
+    bool threw = false;
+    // wallet should no longer exist:
+    try {
+        blockchain->getLedger().getWalletValue(miner.getAddress());
+    } catch (...) {
+        threw = true;
+    }
+    ASSERT_EQUAL(threw, true);
     blockchain->deleteDB();
     delete blockchain;
 }
@@ -143,8 +150,12 @@ TEST(check_sending_transaction_updates_ledger) {
     Ledger& ledger = blockchain->getLedger();
     double minerTotal = ledger.getWalletValue(miner.getAddress());
     double otherTotal = ledger.getWalletValue(other.getAddress());
-    uint64_t totalWork = blockchain->getTotalWork();
-    ASSERT_EQUAL(totalWork, 3*16);
+    Bigint totalWork = blockchain->getTotalWork();
+    Bigint base = 2;
+    Bigint work = base.pow(16);
+    Bigint num = 3;
+    Bigint total = num * work;
+    ASSERT_EQUAL(totalWork, total);
     ASSERT_EQUAL(minerTotal, BMB(80.0));
     ASSERT_EQUAL(otherTotal, BMB(20.0));
     blockchain->deleteDB();

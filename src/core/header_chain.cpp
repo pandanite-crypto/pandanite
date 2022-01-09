@@ -20,7 +20,7 @@ string HeaderChain::getHost() {
     return this->host;
 }
 
-uint64_t HeaderChain::getTotalWork() {
+Bigint HeaderChain::getTotalWork() {
     if (this->failed) return 0;
     return this->totalWork;
 }
@@ -41,7 +41,7 @@ void HeaderChain::load() {
     
     SHA256Hash lastHash = NULL_SHA256_HASH;
     uint64_t numBlocks = 0;
-    uint64_t totalWork = 0;
+    Bigint totalWork = 0;
     
     // download any remaining blocks in batches
     for(int i = 1; i <= targetBlockCount; i+=BLOCK_HEADERS_PER_FETCH) {
@@ -62,7 +62,8 @@ void HeaderChain::load() {
                 
                 lastHash = block.getHash();
                 hashes.push_back(lastHash);
-                totalWork+= block.getDifficulty();
+                Bigint base = 2;
+                totalWork+= base.pow((int)block.getDifficulty());
                 numBlocks++;
             });
             if (failure) {

@@ -169,8 +169,8 @@ string RequestManager::getBlockCount() {
 }
 
 string RequestManager::getTotalWork() {
-    uint64_t totalWork = this->blockchain->getTotalWork();
-    return std::to_string(totalWork);
+    Bigint totalWork = this->blockchain->getTotalWork();
+    return to_string(totalWork);
 }
 
 json RequestManager::getStats() {
