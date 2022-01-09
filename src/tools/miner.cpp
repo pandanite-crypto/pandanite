@@ -88,17 +88,17 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     time_t blockstart = std::time(0);
 
+    std::pair<string, uint64_t> randomHost = hosts.getRandomHost();
+    if (randomHost.first == "") {
+        Logger::logStatus("no host found");
+        return;
+    }
+
+    string host = randomHost.first;
+
     while(true) {
         try {
-            std::pair<string, uint64_t> bestHost = hosts.getRandomHost();
-            uint64_t currCount = getCurrentBlockCount(bestHost.first);
-            if (bestHost.first == "") {
-                Logger::logStatus("no host found");
-            }
-
-            string host = bestHost.first;
-
-
+            uint64_t currCount = getCurrentBlockCount(host);
             if (latest_block_id < currCount) {
                 status._lock.lock();
                 if (status.block_hashrates.size() >= 10) {
@@ -183,11 +183,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
-            failureCount++;
-            if (failureCount > 5) {
-                hosts.initTrustedHost();
-                failureCount = 0;
-            }
+            host = hosts.getRandomHost().first;
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
