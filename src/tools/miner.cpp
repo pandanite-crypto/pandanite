@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
         workers.push_back(std::move(new Worker(thread_priority)));
     }
 
-    std::thread status_thread(get_status, ref(status));
+    // std::thread status_thread(get_status, ref(status));
     std::thread mining_thread(get_work, wallet, ref(hosts), ref(status));
     mining_thread.join();
 }
