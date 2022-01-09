@@ -36,7 +36,7 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
     json info;
     info["address"] = peer_url;
     info["time"] = networkTime;
-    info["verson"] = version;
+    info["version"] = version;
     http::Request request{host_url + "/add_peer"};
     const auto response = request.send("POST", info.dump(), {
         "Content-Type: text/plain"
