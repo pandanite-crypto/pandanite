@@ -1,6 +1,7 @@
 
 #pragma once
 #include "../core/block.hpp"
+#include "../core/common.hpp"
 
 void addGenesisTransactions(Block &b) {
 	b.addTransaction(Transaction(NULL_ADDRESS, stringToWalletAddress("00E9826757F00E3379D7D769983F0039428AC2A2657CAE43E4"), 7055500000, NULL_KEY, 0, 0));

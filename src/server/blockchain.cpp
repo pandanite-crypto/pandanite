@@ -122,11 +122,13 @@ void BlockChain::resetChain() {
     this->txdb.clear();
     
 
+    // used to create genesis.json
+    // Block genesis;
     // User miner;
     // Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));
     // fee.setTimestamp(0);
     // vector<Transaction> transactions;
-    // Block genesis;
+    
     // genesis.setTimestamp(0);
     // genesis.setId(1);
     // genesis.addTransaction(fee);
@@ -145,6 +147,7 @@ void BlockChain::resetChain() {
     // genesis.setNonce(solution);
 
     // writeJsonToFile(genesis.toJson(), "genesis.json");
+    
     json genesisData = readJsonFromFile("genesis.json");
     Block genesis(genesisData);
 
