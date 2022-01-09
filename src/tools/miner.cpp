@@ -184,6 +184,8 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
             host = hosts.getRandomHost().first;
+            latest_block_id = 0;
+            Logger::logStatus("Switching host to: " + host);
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
