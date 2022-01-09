@@ -12,12 +12,12 @@ Bamboo is minted by miners who earn rewards. Mining payments occur using the fol
 ### Technical Implementation
 Bamboo is written from the ground up in C++. We want the Bamboo source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built Bamboo from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
 * Switched encryption scheme from [secp256k1](https://github.com/bitcoin-core/secp256k1) (which is used by ETH & BTC) to [ED25519](https://ed25519.cr.yp.to/) -- results in 8x speedup during verification and public keys half the size. 
-* 10000 transactions per block, 30 second block time
+* Up to 25,000 transactions per block, 90 second block time
 
 ### Getting Started
 *Windows*: Only binaries are available for windows they can be downloaded here:
 
-https://github.com/mr-pandabear/panda-coin/releases/download/v0.2-alpha/panda-coin-win-20211221.zip
+https://github.com/mr-pandabear/bamboo/releases/download/v0.2-miner-alpha/bamboo-win.zip
 
 - Run keygen.exe, this generates a keys.json file in the same folder as miner.exe, copy this file and keep it safe.
 - Run miner.exe, the miner will start running and should indicate that it is loading blocks to solve.
@@ -47,7 +47,7 @@ sudo pip3 install conan
 ```
 git clone https://github.com/mr-pandabear/bamboo.git
 cd bamboo
-git checkout stable
+git checkout master
 mkdir build
 cd build
 conan install ..
