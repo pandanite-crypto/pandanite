@@ -38,11 +38,6 @@ void RequestManager::deleteDB() {
 
 json RequestManager::addTransaction(Transaction& t) {
     json result;
-    
-    if (this->mempool->hasTransaction(t)) {
-        result["status"] = executionStatusAsString(SUCCESS);    
-        return result;
-    }
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
     return result;
 }

@@ -194,6 +194,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 }
 
 int main(int argc, char **argv) {
+    srand(std::time(0));
     json config = getConfig(argc, argv);
     int threads = config["threads"];
     int thread_priority = config["thread_priority"];

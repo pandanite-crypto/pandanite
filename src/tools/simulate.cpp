@@ -32,6 +32,7 @@ void simulate_transactions(HostManager& hosts) {
 
 
 int main(int argc, char **argv) {
+    srand(std::time(0));
     json config = getConfig(argc, argv);
     HostManager hosts(config);
     vector<std::thread> requests;
