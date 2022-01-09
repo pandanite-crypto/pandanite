@@ -98,6 +98,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     while(true) {
         try {
+            Logger::logStatus("Fetching data from host=" + host);
             uint64_t currCount = getCurrentBlockCount(host);
             if (latest_block_id < currCount) {
                 status._lock.lock();
@@ -183,7 +184,10 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
         } catch (const std::exception& e) {
             Logger::logError("run_mining", string(e.what()));
-            host = hosts.getRandomHost().first;
+            try {
+                host = hosts.getRandomHost().first;
+            } catch(...) {}
+            latest_block_id = 0;
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }

@@ -20,11 +20,14 @@
 #include "blockchain.hpp"
 #include "mempool.hpp"
 
+#define FORK_CHAIN_POP_COUNT 15
+
 using namespace std;
 
 void chain_sync(BlockChain& blockchain) {
     unsigned long i = 0;
     int failureCount = 0;
+    int connectionFailureCount = 0;
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         blockchain.acquire();
@@ -37,9 +40,8 @@ void chain_sync(BlockChain& blockchain) {
             }
             if (failureCount > 3) {
                 // find a new trusted host
-                blockchain.hosts.initTrustedHost();
-                int toPop = 50;
-                if (blockchain.getBlockCount() < 100) {
+                int toPop = FORK_CHAIN_POP_COUNT;
+                if (blockchain.getBlockCount() < FORK_CHAIN_POP_COUNT + 1) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                     blockchain.resetChain();
                 } else {
@@ -54,10 +56,10 @@ void chain_sync(BlockChain& blockchain) {
         } catch(std::exception & e) {
             Logger::logError("chain_sync", string(e.what()));
             try {
-                failureCount++;
-                if (failureCount > 3) {
+                connectionFailureCount++;
+                if (connectionFailureCount > 3) {
                     blockchain.hosts.initTrustedHost();
-                    failureCount = 0;
+                    connectionFailureCount = 0;
                 }
             } catch (...) {
                 Logger::logError("chain_sync", "No new host found. Running as solo node.");
@@ -291,7 +293,7 @@ void BlockChain::popBlock() {
     this->blockStore.setBlockCount(this->numBlocks);
     if (this->getBlockCount() > 1) {
         Block newLast = this->getBlock(this->getBlockCount());
-        this->updateDifficulty();
+        this->difficulty = newLast.getDifficulty();
         this->lastHash = newLast.getHash();
     } else {
         this->resetChain();
@@ -369,12 +371,14 @@ ExecutionStatus BlockChain::startChainSync() {
     // remove anything that does not align with the hashes of the trusted chain
     if (this->hosts.getTrustedHostWork() > this->getTotalWork()) {
         // iterate through our current chain until a hash diverges from trusted chain
+        Logger::logStatus("Finding chain divergance");
         uint64_t toPop = 0;
         for(uint64_t i = 1; i <= this->numBlocks; i++) {
             SHA256Hash trustedHash = this->hosts.getBlockHash(i);
             SHA256Hash myHash = this->getBlock(i).getHash();
             if (trustedHash != myHash) {
                 toPop = this->numBlocks - i + 1;
+                Logger::logStatus("toPop = " + to_string(toPop));
                 break;
             }
         }

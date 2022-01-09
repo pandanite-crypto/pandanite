@@ -125,7 +125,6 @@ void MemPool::finishBlock(Block& block) {
                 }
             }
         }
-        Logger::logStatus("END");
     }
     this->lock.unlock();
 }

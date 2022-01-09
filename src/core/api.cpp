@@ -85,7 +85,7 @@ json sendTransaction(string host_url, Transaction& t) {
     }
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
+    },std::chrono::milliseconds{TIMEOUT_MS * 3});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
     return json::parse(responseStr);
 }

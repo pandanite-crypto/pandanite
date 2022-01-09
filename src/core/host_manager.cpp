@@ -343,6 +343,9 @@ std::pair<string, uint64_t> HostManager::getTrustedHost() {
 */
 std::pair<string,uint64_t> HostManager::getRandomHost() {
     set<string> hosts = this->sampleHosts(1);
+    if (hosts.size() == 0) {
+        return std::pair<string, uint64_t>("", 0);
+    }
     string host = *hosts.begin();
     uint64_t chainLength = getCurrentBlockCount(host);
     return std::pair<string, uint64_t>(host, chainLength);
