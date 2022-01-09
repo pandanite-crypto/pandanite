@@ -22,6 +22,9 @@
 #include "genesis.hpp"
 
 #define FORK_CHAIN_POP_COUNT 15
+#define FORK_RESET_RETRIES 3
+#define MAX_DISCONNECTS_BEFORE_RESET 10
+#define FAILURES_BEFORE_POP_ATTEMPT 1
 
 using namespace std;
 
@@ -41,12 +44,12 @@ void chain_sync(BlockChain& blockchain) {
                 failureCount++;
             }
 
-            if (chainPopCount > 3) {
+            if (chainPopCount > FORK_RESET_RETRIES) {
                 blockchain.hosts.initTrustedHost();
                 chainPopCount = 0;
                 failureCount = 0;
             }
-            if (failureCount > 3) {
+            if (failureCount > FAILURES_BEFORE_POP_ATTEMPT) {
                 int toPop = FORK_CHAIN_POP_COUNT;
                 if (blockchain.getBlockCount() < FORK_CHAIN_POP_COUNT + 1) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
@@ -64,7 +67,7 @@ void chain_sync(BlockChain& blockchain) {
             Logger::logError("chain_sync", string(e.what()));
             try {
                 connectionFailureCount++;
-                if (connectionFailureCount > 3) {
+                if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
                     blockchain.hosts.initTrustedHost();
                     connectionFailureCount = 0;
                 }
