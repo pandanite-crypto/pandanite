@@ -9,7 +9,7 @@ using namespace std;
 class TransactionStore : public DataStore {
     public:
         TransactionStore();
-        bool hasTransaction(Transaction &t);
+        bool hasTransaction(const Transaction &t);
         uint32_t blockForTransaction(Transaction &t);
         void insertTransaction(Transaction& t, uint32_t blockId);
         void removeTransaction(Transaction & t);

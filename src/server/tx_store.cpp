@@ -5,7 +5,7 @@
 TransactionStore::TransactionStore() {
 }
 
-bool TransactionStore::hasTransaction(Transaction &t) {
+bool TransactionStore::hasTransaction(const Transaction &t) {
     SHA256Hash txHash = t.getHash();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
