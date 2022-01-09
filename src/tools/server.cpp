@@ -71,7 +71,10 @@ int main(int argc, char **argv) {
     };
 
     auto nameHandler = [&config](auto *res, auto *req) {
-        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(string(config["name"]));
+        json response;
+        response["name"] = string(config["name"]);
+        response["version"] = BUILD_VERSION;
+        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(response.dump());
     };
 
     auto peerHandler = [&manager](auto *res, auto *req) {
