@@ -118,28 +118,32 @@ void BlockChain::resetChain() {
     this->blockStore.clear();
     this->txdb.clear();
     
-    /** TODO: add totals for existing miners **/
-    User miner;
-    Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));
-    fee.setTimestamp(0);
-    vector<Transaction> transactions;
-    Block genesis;
-    genesis.setTimestamp(0);
-    genesis.setId(1);
-    genesis.addTransaction(fee);
-    genesis.setLastBlockHash(NULL_SHA256_HASH);
-    addGenesisTransactions(genesis);
+
+    // User miner;
+    // Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));
+    // fee.setTimestamp(0);
+    // vector<Transaction> transactions;
+    // Block genesis;
+    // genesis.setTimestamp(0);
+    // genesis.setId(1);
+    // genesis.addTransaction(fee);
+    // genesis.setLastBlockHash(NULL_SHA256_HASH);
+    // addGenesisTransactions(genesis);
     
-    // compute merkle tree
-    MerkleTree m;
-    m.setItems(genesis.getTransactions());
-    SHA256Hash computedRoot = m.getRootHash();
-    genesis.setMerkleRoot(m.getRootHash());
+    // // compute merkle tree
+    // MerkleTree m;
+    // m.setItems(genesis.getTransactions());
+    // SHA256Hash computedRoot = m.getRootHash();
+    // genesis.setMerkleRoot(m.getRootHash());
 
-    SHA256Hash hash = genesis.getHash();
+    // SHA256Hash hash = genesis.getHash();
 
-    SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
-    genesis.setNonce(solution);
+    // SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
+    // genesis.setNonce(solution);
+
+    // writeJsonToFile(genesis.toJson(), "genesis.json");
+    json genesisData = readJsonFromFile("genesis.json");
+    Block genesis(genesisData);
 
     ExecutionStatus status = this->addBlock(genesis);
     if (status != SUCCESS) {
