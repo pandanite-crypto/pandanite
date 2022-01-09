@@ -1,6 +1,7 @@
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "../core/user.hpp"
+#include "../core/config.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "../core/block.hpp"
@@ -11,12 +12,12 @@ using namespace std;
 
 int TOTAL;
 void simulate_transactions(HostManager& hosts) {
-    string filepath = "./keys/miner2.json";
+    string filepath = "./keys.json";
     User miner(readJsonFromFile(filepath));
-    std::pair<string,int> best = hosts.getTrustedHost();
+    std::pair<string,int> best = hosts.getRandomHost();
     while(true) {
         try {
-            if (rand()%1000==0) best = hosts.getTrustedHost();
+            if (rand()%1000==0) best = hosts.getRandomHost();
             string host = best.first;
             Transaction t = miner.send(miner, 1 + rand()%5);
             json result = sendTransaction(host, t);
@@ -31,9 +32,7 @@ void simulate_transactions(HostManager& hosts) {
 
 
 int main(int argc, char **argv) {
-    json config;
-    config["hostSources"] = json::array();
-    config["hostSources"].push_back("http://ec2-34-218-176-84.us-west-2.compute.amazonaws.com/hosts");
+    json config = getConfig(argc, argv);
     HostManager hosts(config);
     vector<std::thread> requests;
     std::thread sim_thread(simulate_transactions, ref(hosts));

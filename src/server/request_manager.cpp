@@ -63,8 +63,6 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     this->blockchain->release();
     
     if (status == SUCCESS) {
-        this->mempool->finishBlock(newBlock);
-
         //pick random neighbor hosts and forward the new block to:
         set<string> neighbors = this->hosts.sampleHosts(NEW_BLOCK_PEER_FANOUT);
         vector<future<void>> reqs;
