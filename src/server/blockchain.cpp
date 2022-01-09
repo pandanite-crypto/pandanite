@@ -19,6 +19,7 @@
 #include "../core/user.hpp"
 #include "blockchain.hpp"
 #include "mempool.hpp"
+#include "genesis.hpp"
 
 #define FORK_CHAIN_POP_COUNT 15
 
@@ -46,7 +47,6 @@ void chain_sync(BlockChain& blockchain) {
                 failureCount = 0;
             }
             if (failureCount > 3) {
-                // find a new trusted host
                 int toPop = FORK_CHAIN_POP_COUNT;
                 if (blockchain.getBlockCount() < FORK_CHAIN_POP_COUNT + 1) {
                     Logger::logStatus("chain_sync: 3 failures,resetting chain.");
@@ -58,7 +58,6 @@ void chain_sync(BlockChain& blockchain) {
                     }
                     chainPopCount += 1;
                 }
-                
                 failureCount = 0;
             }
         } catch(std::exception & e) {
@@ -129,6 +128,7 @@ void BlockChain::resetChain() {
     genesis.setId(1);
     genesis.addTransaction(fee);
     genesis.setLastBlockHash(NULL_SHA256_HASH);
+    addGenesisTransactions(genesis);
     
     // compute merkle tree
     MerkleTree m;

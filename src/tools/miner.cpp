@@ -98,7 +98,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     while(true) {
         try {
-            Logger::logStatus("Fetching data from host=" + host);
+
             uint64_t currCount = getCurrentBlockCount(host);
             if (latest_block_id < currCount) {
                 status._lock.lock();
