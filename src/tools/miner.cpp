@@ -90,7 +90,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     while(true) {
         try {
-            std::pair<string, uint64_t> bestHost = hosts.getTrustedHost();
+            std::pair<string, uint64_t> bestHost = hosts.getRandomHost();
             uint64_t currCount = getCurrentBlockCount(bestHost.first);
             if (bestHost.first == "") {
                 Logger::logStatus("no host found");
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
     int thread_priority = config["thread_priority"];
 
     HostManager hosts(config);
-    hosts.getTrustedHost();
+
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");
