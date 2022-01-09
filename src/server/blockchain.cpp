@@ -28,6 +28,7 @@ void chain_sync(BlockChain& blockchain) {
     unsigned long i = 0;
     int failureCount = 0;
     int connectionFailureCount = 0;
+    int chainPopCount = 0;
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         blockchain.acquire();
@@ -37,6 +38,12 @@ void chain_sync(BlockChain& blockchain) {
             if (valid != SUCCESS) {
                 Logger::logStatus("chain_sync: failed: " + executionStatusAsString(valid));
                 failureCount++;
+            }
+
+            if (chainPopCount > 3) {
+                blockchain.hosts.initTrustedHost();
+                chainPopCount = 0;
+                failureCount = 0;
             }
             if (failureCount > 3) {
                 // find a new trusted host
@@ -49,6 +56,7 @@ void chain_sync(BlockChain& blockchain) {
                     for(int j = 0; j < toPop; j++) {
                         blockchain.popBlock();
                     }
+                    chainPopCount += 1;
                 }
                 
                 failureCount = 0;
