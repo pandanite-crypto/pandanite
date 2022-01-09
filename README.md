@@ -17,7 +17,7 @@ Bamboo is written from the ground up in C++. We want the Bamboo source code to b
 ### Getting Started
 *Windows*: Only binaries are available for windows they can be downloaded here:
 
-https://github.com/mr-pandabear/panda-coin/releases/download/v0.2-alpha/panda-coin-win-20211221.zip
+https://github.com/mr-pandabear/bamboo/releases/download/v0.2-miner-alpha/bamboo-win.zip
 
 - Run keygen.exe, this generates a keys.json file in the same folder as miner.exe, copy this file and keep it safe.
 - Run miner.exe, the miner will start running and should indicate that it is loading blocks to solve.
