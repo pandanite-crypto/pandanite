@@ -23,7 +23,7 @@ class HostManager {
         string getAddress();
         uint64_t getNetworkTimestamp();
         
-        void addPeer(string addr, uint64_t time);
+        void addPeer(string addr, uint64_t time, string version);
         bool isDisabled();
         
         void acquire();
@@ -36,6 +36,7 @@ class HostManager {
         int port;
         string name;
         string address;
+        string version;
         
         std::pair<string,uint64_t> trustedHost;
         uint64_t trustedWork;

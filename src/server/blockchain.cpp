@@ -305,7 +305,10 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
+    if (block.getDifficulty() != this->difficulty) {
+        Logger::logStatus("Mine: " + to_string(this->difficulty) + " THEIRS: " + to_string(block.getDifficulty()));
+        return INVALID_DIFFICULTY;
+    }
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     if (block.getId() != 1) {
@@ -357,6 +360,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->lastHash = block.getHash();
         this->updateDifficulty();
         Logger::logStatus("Added block " + to_string(block.getId()));
+        Logger::logStatus("difficulty= " + to_string(block.getDifficulty()));
     }
     return status;
 }

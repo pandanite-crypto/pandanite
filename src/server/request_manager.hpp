@@ -22,7 +22,7 @@ class RequestManager {
         json getStats();
         json verifyTransaction(Transaction& t);
         json getPeers();
-        json addPeer(string address, uint64_t time);
+        json addPeer(string address, uint64_t time, string version);
         BlockHeader getBlockHeader(uint32_t blockId);
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t blockId);
         std::pair<char*, size_t> getRawTransactionData();

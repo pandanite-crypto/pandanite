@@ -36,7 +36,7 @@ void peer_sync(HostManager& hm) {
     while(true) {
         for(auto host : hm.hosts) {
             try {
-                pingPeer(host, hm.computeAddress(), std::time(0));
+                pingPeer(host, hm.computeAddress(), std::time(0), hm.version);
             } catch (...) { }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(30000));
@@ -47,6 +47,7 @@ HostManager::HostManager(json config) {
     this->name = config["name"];
     this->port = config["port"];
     this->ip = config["ip"];
+    this->version = BUILD_VERSION;
     this->computeAddress();
 
     this->disabled = false;
@@ -196,7 +197,8 @@ set<string> HostManager::sampleHosts(int count) {
 /*
     Adds a peer to the host list, 
 */
-void HostManager::addPeer(string addr, uint64_t time) {
+void HostManager::addPeer(string addr, uint64_t time, string version) {
+    if (version != this->version) return;
     // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
@@ -219,11 +221,12 @@ void HostManager::addPeer(string addr, uint64_t time) {
     // pick random neighbor hosts and forward the addPeer request to them:
     set<string> neighbors = this->sampleHosts(ADD_PEER_BRANCH_FACTOR);
     vector<future<void>> reqs;
+    string _version = this->version;
     for(auto neighbor : neighbors) {
-        reqs.push_back(std::async([neighbor, addr](){
+        reqs.push_back(std::async([neighbor, addr, _version](){
             if (neighbor == addr) return;
             try {
-                pingPeer(neighbor, addr, std::time(0));
+                pingPeer(neighbor, addr, std::time(0), _version);
             } catch(...) {
                 Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
             }
