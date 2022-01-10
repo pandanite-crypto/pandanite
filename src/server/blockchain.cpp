@@ -39,16 +39,16 @@ void chain_sync(BlockChain& blockchain) {
         try {
             ExecutionStatus valid;
             valid = blockchain.startChainSync();
+            connectionFailureCount = 0;
             if (valid != SUCCESS) {
                 Logger::logStatus("chain_sync: failed: " + executionStatusAsString(valid));
                 failureCount++;
             } else {
                 failureCount = 0;
-                connectionFailureCount = 0;
             }
 
             if (chainPopCount > FORK_RESET_RETRIES) {
-                blockchain.hosts.getGoodHost();
+                blockchain.hosts.initTrustedHost();
                 chainPopCount = 0;
                 failureCount = 0;
             }
@@ -71,7 +71,7 @@ void chain_sync(BlockChain& blockchain) {
             try {
                 connectionFailureCount++;
                 if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
-                    blockchain.hosts.getGoodHost();
+                    blockchain.hosts.initTrustedHost();
                     connectionFailureCount = 0;
                 }
             } catch (...) {
@@ -81,7 +81,7 @@ void chain_sync(BlockChain& blockchain) {
         blockchain.release();
         i++;
         // resync headers and find new peer ~27 hrs
-        if (i % 1000000 == 0) blockchain.hosts.getGoodHost();
+        if (i % 1000000 == 0) blockchain.hosts.initTrustedHost();
     }
 }
 
