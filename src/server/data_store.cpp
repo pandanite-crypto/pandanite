@@ -1,6 +1,6 @@
 #include "data_store.hpp"
 #include <thread>
-#include <experimental/filesystem>
+#include <filesystem>
 
 DataStore::DataStore() {
     this->db = NULL;
@@ -28,7 +28,7 @@ void DataStore::clear() {
 void DataStore::deleteDB() {
     leveldb::Options options;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
-    experimental::filesystem::remove_all(this->path); 
+    filesystem::remove_all(this->path); 
     if(!status.ok()) throw std::runtime_error("Could not close DataStore db : " + status.ToString());
 }
 

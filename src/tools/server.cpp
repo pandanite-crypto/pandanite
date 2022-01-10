@@ -5,7 +5,6 @@
 #include <thread>
 #include <string_view>
 #include <atomic>
-#include <experimental/filesystem>
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
