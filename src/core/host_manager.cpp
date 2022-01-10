@@ -40,7 +40,7 @@ void peer_sync(HostManager& hm) {
                 pingPeer(host, hm.address, std::time(0), hm.version);
             } catch (...) { }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+        std::this_thread::sleep_for(std::chrono::minutes(5));
     }
 }
 
