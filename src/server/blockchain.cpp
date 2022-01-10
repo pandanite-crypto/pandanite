@@ -34,7 +34,7 @@ void chain_sync(BlockChain& blockchain) {
     int connectionFailureCount = 0;
     int chainPopCount = 0;
     while(true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         blockchain.acquire();
         try {
             ExecutionStatus valid;
@@ -67,10 +67,10 @@ void chain_sync(BlockChain& blockchain) {
                 failureCount = 0;
             }
         } catch(std::exception & e) {
-            Logger::logError("chain_sync", string(e.what()));
             try {
                 connectionFailureCount++;
                 if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
+                    Logger::logError("chain_sync", string(e.what()));
                     blockchain.hosts.initTrustedHost();
                     connectionFailureCount = 0;
                 }
@@ -81,7 +81,7 @@ void chain_sync(BlockChain& blockchain) {
         blockchain.release();
         i++;
         // resync headers and find new peer ~27 hrs
-        if (i % 1000000 == 0) blockchain.hosts.initTrustedHost();
+        if (i % 10000 == 0) blockchain.hosts.initTrustedHost();
     }
 }
 
