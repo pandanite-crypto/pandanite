@@ -36,8 +36,7 @@ void peer_sync(HostManager& hm) {
     while(true) {
         for(auto host : hm.hosts) {
             try {
-                hm.address = hm.computeAddress();
-                pingPeer(host, hm.address, std::time(0), hm.version);
+                pingPeer(host, hm.computeAddress(), std::time(0), hm.version);
             } catch (...) { }
         }
         std::this_thread::sleep_for(std::chrono::minutes(5));
