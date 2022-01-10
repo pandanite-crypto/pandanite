@@ -17,6 +17,7 @@ class HostManager {
         SHA256Hash getBlockHash(uint64_t blockId);
         std::pair<string,uint64_t> getTrustedHost();
         Bigint getTrustedHostWork();
+        string getGoodHost();
         std::pair<string,uint64_t> getRandomHost();
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleHosts(int count);

@@ -105,6 +105,39 @@ uint64_t HostManager::getNetworkTimestamp() {
 }   
 
 
+
+/*
+    Asks nodes for their current POW and chooses the best
+*/
+string HostManager::getGoodHost() {
+    // pick random hosts
+    set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
+
+    if (hosts.size() == 0) {
+        Logger::logStatus("No hosts found");
+    }
+
+    Logger::logStatus("Finding new host");
+
+    vector<std::pair<string,Bigint>> chains;
+    for(auto host : hosts) {
+        Bigint work = getTotalWork(host);
+        chains.push_back(std::pair<string,Bigint>(host, work));
+    }
+    // pick the best (highest POW) header chain as host:
+    Bigint bestWork = 0;
+    string bestHost = "";
+    
+    for(auto chain : chains) {
+        if (chain.second > bestWork) {
+            bestWork = chain.second;
+            bestHost = chain.first;
+        }
+    }
+
+    return bestHost;
+}
+
 /*
     Loads header chains from peers and validates them, storing hash headers from highest POW chain
 */

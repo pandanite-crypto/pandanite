@@ -16,9 +16,9 @@
 #include <chrono>
 using namespace std;
 
-#define MAX_DISCONNECTS_BEFORE_RESET 3
-
 vector<Worker*> workers;
+
+#define MAX_CONNECTION_FAILURE_BEFORE_RESET 2
 
 struct block_status {
     std::vector<double> block_hashrates;
@@ -90,14 +90,13 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     time_t blockstart = std::time(0);
 
-    std::pair<string, uint64_t> randomHost = hosts.getTrustedHost();
-    if (randomHost.first == "") {
+    string host = hosts.getGoodHost();
+    int connectionFailureCount = 0;
+    if (host == "") {
         Logger::logStatus("no host found");
         return;
     }
 
-    string host = randomHost.first;
-    int connectionFailureCount = 0;
     while(true) {
         try {
 
@@ -187,14 +186,11 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
         } catch (const std::exception& e) {
             connectionFailureCount++;
-            if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
-                Logger::logStatus("Too many connections failures. Getting new peer.");
-                connectionFailureCount = 0;
-                hosts.initTrustedHost();
-            }
-            Logger::logError("run_mining", string(e.what()));
             try {
-                host = hosts.getRandomHost().first;
+                if (connectionFailureCount > MAX_CONNECTION_FAILURE_BEFORE_RESET) {
+                    host = hosts.getGoodHost();
+                    connectionFailureCount = 0;
+                }
             } catch(...) {}
             latest_block_id = 0;
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -209,7 +205,6 @@ int main(int argc, char **argv) {
     int thread_priority = config["thread_priority"];
 
     HostManager hosts(config);
-    hosts.initTrustedHost();
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");

@@ -5,7 +5,7 @@
 #include "common.hpp"
 using namespace std;
 
-uint64_t getTotalWork(string host_url);
+Bigint getTotalWork(string host_url);
 uint32_t getCurrentBlockCount(string host_url);
 string getName(string host_url);
 json getBlockData(string host_url, int idx);
