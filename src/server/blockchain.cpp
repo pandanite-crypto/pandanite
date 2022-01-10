@@ -42,6 +42,9 @@ void chain_sync(BlockChain& blockchain) {
             if (valid != SUCCESS) {
                 Logger::logStatus("chain_sync: failed: " + executionStatusAsString(valid));
                 failureCount++;
+            } else {
+                failureCount = 0;
+                connectionFailureCount = 0;
             }
 
             if (chainPopCount > FORK_RESET_RETRIES) {
