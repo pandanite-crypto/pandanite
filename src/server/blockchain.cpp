@@ -48,7 +48,7 @@ void chain_sync(BlockChain& blockchain) {
             }
 
             if (chainPopCount > FORK_RESET_RETRIES) {
-                blockchain.hosts.initTrustedHost();
+                blockchain.hosts.getGoodHost();
                 chainPopCount = 0;
                 failureCount = 0;
             }
@@ -71,7 +71,7 @@ void chain_sync(BlockChain& blockchain) {
             try {
                 connectionFailureCount++;
                 if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
-                    blockchain.hosts.initTrustedHost();
+                    blockchain.hosts.getGoodHost();
                     connectionFailureCount = 0;
                 }
             } catch (...) {
@@ -80,8 +80,8 @@ void chain_sync(BlockChain& blockchain) {
         }
         blockchain.release();
         i++;
-        // resync headers and find new trusted peer ~27 hrs
-        if (i % 1000000 == 0) blockchain.hosts.initTrustedHost();
+        // resync headers and find new peer ~27 hrs
+        if (i % 1000000 == 0) blockchain.hosts.getGoodHost();
     }
 }
 
