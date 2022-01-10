@@ -16,6 +16,8 @@
 #include <chrono>
 using namespace std;
 
+#define MAX_DISCONNECTS_BEFORE_RESET 3
+
 vector<Worker*> workers;
 
 struct block_status {
@@ -88,14 +90,14 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     time_t blockstart = std::time(0);
 
-    std::pair<string, uint64_t> randomHost = hosts.getRandomHost();
+    std::pair<string, uint64_t> randomHost = hosts.getTrustedHost();
     if (randomHost.first == "") {
         Logger::logStatus("no host found");
         return;
     }
 
     string host = randomHost.first;
-
+    int connectionFailureCount = 0;
     while(true) {
         try {
 
@@ -181,8 +183,15 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             for (size_t i = 0; i < workers.size(); i++) {
                 workers[i]->execute(job);
             }
+            connectionFailureCount = 0;
 
         } catch (const std::exception& e) {
+            connectionFailureCount++;
+            if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
+                Logger::logStatus("Too many connections failures. Getting new peer.");
+                connectionFailureCount = 0;
+                hosts.initTrustedHost();
+            }
             Logger::logError("run_mining", string(e.what()));
             try {
                 host = hosts.getRandomHost().first;
@@ -200,7 +209,7 @@ int main(int argc, char **argv) {
     int thread_priority = config["thread_priority"];
 
     HostManager hosts(config);
-
+    hosts.initTrustedHost();
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");
