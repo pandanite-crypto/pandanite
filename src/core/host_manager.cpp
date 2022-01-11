@@ -125,9 +125,14 @@ string HostManager::getGoodHost() {
     Logger::logStatus("Finding new host");
 
     vector<std::pair<string,Bigint>> chains;
+    // TODO: these should happen asynchronously!
     for(auto host : hosts) {
-        Bigint work = getTotalWork(host);
-        chains.push_back(std::pair<string,Bigint>(host, work));
+        try {
+            Bigint work = getTotalWork(host);
+            chains.push_back(std::pair<string,Bigint>(host, work));
+        } catch (...) {
+            // host unreachable
+        }
     }
     // pick the best (highest POW) node as host:
     Bigint bestWork = 0;
