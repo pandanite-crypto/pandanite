@@ -63,8 +63,12 @@ HostManager::HostManager(json config) {
         this->peerClockDeltas[localhost] = 0;
     } else {
         this->refreshHostList();
-        this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
     }
+}
+
+void HostManager::startPingingPeers() {
+    if (this->syncThread.size() > 0) throw std::runtime_error("Peer ping thread exists.");
+    this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
 }
 
 string HostManager::getAddress() {

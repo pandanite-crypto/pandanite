@@ -13,6 +13,7 @@ class HostManager {
         string computeAddress();
         void refreshHostList();
         void initTrustedHost();
+        void startPingingPeers();
 
         SHA256Hash getBlockHash(uint64_t blockId);
         std::pair<string,uint64_t> getTrustedHost();

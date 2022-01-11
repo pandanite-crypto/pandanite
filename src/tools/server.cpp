@@ -16,6 +16,7 @@
 using namespace std;
 
 
+
 void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=8000000) {
     if (buf.size() > maxSize) ptr->end("Buffer Overflow");
 }
@@ -27,6 +28,9 @@ int main(int argc, char **argv) {
 
     Logger::logStatus("Starting server...");
     HostManager hosts(config);
+
+    hosts.startPingingPeers();
+
     Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
     Logger::logStatus("RequestManager ready...");
