@@ -13,6 +13,7 @@ using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
 #define HEADER_VALIDATION_HOST_COUNT 3
+#define RANDOM_GOOD_HOST_COUNT 9
 #define HOST_MIN_FRESHNESS 180 * 60 // 3 hours
 
 /*
@@ -115,7 +116,7 @@ uint64_t HostManager::getNetworkTimestamp() {
 */
 string HostManager::getGoodHost() {
     // pick random hosts
-    set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
+    set<string> hosts = this->sampleHosts(RANDOM_GOOD_HOST_COUNT);
 
     if (hosts.size() == 0) {
         Logger::logStatus("No hosts found");
@@ -128,7 +129,7 @@ string HostManager::getGoodHost() {
         Bigint work = getTotalWork(host);
         chains.push_back(std::pair<string,Bigint>(host, work));
     }
-    // pick the best (highest POW) header chain as host:
+    // pick the best (highest POW) node as host:
     Bigint bestWork = 0;
     string bestHost = "";
     
