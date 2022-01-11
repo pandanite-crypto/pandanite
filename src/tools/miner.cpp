@@ -18,7 +18,7 @@ using namespace std;
 
 vector<Worker*> workers;
 
-#define MAX_CONNECTION_FAILURE_BEFORE_RESET 2
+#define MAX_CONNECTION_FAILURE_BEFORE_RESET 10
 
 struct block_status {
     std::vector<double> block_hashrates;
@@ -29,18 +29,20 @@ void get_status(block_status& status) {
     time_t start = std::time(0);
 
     while (true) {
-        std::this_thread::sleep_for(std::chrono::minutes(1));
+        std::this_thread::sleep_for(std::chrono::minutes(2));
 
         double net_hashrate = 0;
-        status._lock.lock();
-        if (status.block_hashrates.size() > 0) {
-            for (auto& hashrate : status.block_hashrates)
-            {
-                net_hashrate += hashrate;
+        
+        {
+            std::unique_lock<std::mutex> lock(status._lock);
+            if (status.block_hashrates.size() > 0) {
+                for (auto& hashrate : status.block_hashrates)
+                {
+                    net_hashrate += hashrate;
+                }
+                net_hashrate /= status.block_hashrates.size();
             }
-            net_hashrate /= status.block_hashrates.size();
         }
-        status._lock.unlock();
 
         uint32_t accepted = Worker::accepted_blocks.load();
         uint32_t rejected = Worker::rejected_blocks.load();
@@ -85,13 +87,13 @@ void get_status(block_status& status) {
 void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& status) {
     TransactionAmount allEarnings = 0;
     int failureCount = 0;
-    int latest_block_id = 0;
+    int last_block_id = 0;
     int last_difficulty = 0;
 
     time_t blockstart = std::time(0);
 
     string host = hosts.getGoodHost();
-    int connectionFailureCount = 0;
+
     if (host == "") {
         Logger::logStatus("no host found");
         return;
@@ -99,15 +101,49 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     while(true) {
         try {
+            int retries = 0;
+            uint64_t currCount;
 
-            uint64_t currCount = getCurrentBlockCount(host);
-            if (latest_block_id < currCount) {
-                status._lock.lock();
+            // try 10 times to get block count from current host
+            do {
+                try {
+                    currCount = getCurrentBlockCount(host);
+                    break;
+                }
+                catch (...) { }
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                retries++;
+            } while (retries < MAX_CONNECTION_FAILURE_BEFORE_RESET);
+
+            // if not found, select new host
+            if (retries >= MAX_CONNECTION_FAILURE_BEFORE_RESET) {
+                Logger::logStatus("Could not reach host after 10 tries. Connecting to new host...");
+                try {
+                    host = hosts.getGoodHost();
+
+                    if (host == "") {
+                        Logger::logStatus("Refreshing host list...");
+                        // refresh hosts and try to get new
+                        hosts.refreshHostList();
+                        host = hosts.getGoodHost();
+                    }
+                }
+                catch (...) { }
+
+                Logger::logStatus("Connected to host " + host);
+                continue;
+            }
+
+            if (last_block_id < currCount) {
+                std::unique_lock<std::mutex> lock(status._lock);
                 if (status.block_hashrates.size() >= 10) {
                     status.block_hashrates.erase(status.block_hashrates.begin());
                 }
-                status.block_hashrates.push_back(pow(2, last_difficulty) / (double)(std::time(0) - blockstart));
-                status._lock.unlock();
+
+                if (last_difficulty != 0) {
+                    status.block_hashrates.push_back(pow(2, last_difficulty) / (double)(std::time(0) - blockstart));
+                }
             } else {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 continue;
@@ -116,9 +152,6 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             for (size_t i = 0; i < workers.size(); i++) {
                 workers[i]->abandon();
             }
-
-            latest_block_id = currCount;
-            blockstart = std::time(0);
 
             int nextBlock = currCount + 1;
             
@@ -174,6 +207,10 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             newBlock.setDifficulty(challengeSize);
             newBlock.setLastBlockHash(lastHash);
 
+            last_difficulty = challengeSize;
+            last_block_id = currCount;
+            blockstart = std::time(0);
+
             Job job{
                 host,
                 newBlock
@@ -182,17 +219,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             for (size_t i = 0; i < workers.size(); i++) {
                 workers[i]->execute(job);
             }
-            connectionFailureCount = 0;
-
         } catch (const std::exception& e) {
-            connectionFailureCount++;
-            try {
-                if (connectionFailureCount > MAX_CONNECTION_FAILURE_BEFORE_RESET) {
-                    host = hosts.getGoodHost();
-                    connectionFailureCount = 0;
-                }
-            } catch(...) {}
-            latest_block_id = 0;
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
