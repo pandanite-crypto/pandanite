@@ -69,10 +69,13 @@ make server
 ```
 
 ### Usage
-Start by generating `keys.json`. Keep a copy of this file -- it contains pub/private keys to the wallet that the miner will mint coins to.
+Start by generating `keys.json`.
+
 ```
 ./bin/keygen
 ```
+ ***Keep a copy of this file in a safe location*** -- it contains pub/private keys to the wallet that the miner will mint coins to. If you lose this file you lose your coins. We recommend keeping an extra copy on a unique thumbdrive (that you don't re-use) the moment you generate it.
+
 
 To start mining:
 ```
