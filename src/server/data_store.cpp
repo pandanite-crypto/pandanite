@@ -1,6 +1,12 @@
 #include "data_store.hpp"
 #include <thread>
+
+#ifdef _WIN32
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+using namespace experimental;
+#endif
 
 DataStore::DataStore() {
     this->db = NULL;
