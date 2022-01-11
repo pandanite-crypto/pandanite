@@ -41,7 +41,7 @@ void chain_sync(BlockChain& blockchain) {
             valid = blockchain.startChainSync();
             connectionFailureCount = 0;
             if (valid != SUCCESS) {
-                Logger::logStatus("chain_sync: failed: " + executionStatusAsString(valid));
+                Logger::logStatus("chain_sync: peer chain diverges: " + executionStatusAsString(valid));
                 failureCount++;
             } else {
                 failureCount = 0;
@@ -55,10 +55,9 @@ void chain_sync(BlockChain& blockchain) {
             if (failureCount > FAILURES_BEFORE_POP_ATTEMPT) {
                 int toPop = FORK_CHAIN_POP_COUNT;
                 if (blockchain.getBlockCount() < FORK_CHAIN_POP_COUNT + 1) {
-                    Logger::logStatus("chain_sync: 3 failures,resetting chain.");
                     blockchain.resetChain();
                 } else {
-                    Logger::logStatus("chain_sync: 3 failures, removing " + to_string(toPop) + " blocks and re-trying.");
+                    Logger::logStatus("chain_sync: removing " + to_string(toPop) + " blocks and re-trying.");
                     for(int j = 0; j < toPop; j++) {
                         blockchain.popBlock();
                     }
