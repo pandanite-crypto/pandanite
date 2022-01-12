@@ -5,7 +5,6 @@
 #include <filesystem>
 #else
 #include <experimental/filesystem>
-using namespace experimental;
 #endif
 
 DataStore::DataStore() {

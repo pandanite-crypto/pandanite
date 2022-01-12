@@ -127,6 +127,33 @@ TEST(check_low_balance) {
     ASSERT_EQUAL(status, BALANCE_TOO_LOW);   
 }
 
+TEST(check_overflow) {
+    Block b;
+
+    Ledger ledger;
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
+    LedgerState deltas;
+    ExecutionStatus status;
+    
+    User miner;
+    User receiver;
+    b.setId(2);
+    Transaction t = miner.mine();
+    b.addTransaction(t);
+
+    Transaction t2 = miner.send(receiver, 18446744073709551615);
+    b.addTransaction(t2);
+
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    ledger.closeDB();
+    ledger.deleteDB();  
+    txdb.closeDB();
+    txdb.deleteDB();
+    ASSERT_EQUAL(status, BALANCE_TOO_LOW);   
+}
+
 
 TEST(check_miner_fee) {
     Block b;
