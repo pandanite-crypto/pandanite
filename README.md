@@ -8,7 +8,7 @@ Bamboo is minted by miners who earn rewards. Mining payments occur using the fol
 - 50 BMB per block until block 1M
 - 25 BMB per block for blocks 1M to 2M
 - 12.5 BMB per block for blocks 2M to 4M
-- ~6.6mm BMB in genesis, preserving accounts values due to forks at blocks 7750 and 125,180
+- ~6.6mm BMB in genesis, preserving accounts values due to forks at blocks 7750 and 125,180 in previous chains.
 
 ### Technical Implementation
 Bamboo is written from the ground up in C++. We want the Bamboo source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built Bamboo from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
