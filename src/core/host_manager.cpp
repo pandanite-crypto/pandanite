@@ -116,7 +116,7 @@ uint64_t HostManager::getNetworkTimestamp() {
 */
 string HostManager::getGoodHost() {
     // pick random hosts
-    set<string> hosts = this->sampleHosts(RANDOM_GOOD_HOST_COUNT);
+    set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
 
     if (hosts.size() == 0) {
         Logger::logStatus("No hosts found");
@@ -153,7 +153,7 @@ string HostManager::getGoodHost() {
 */
 void HostManager::initTrustedHost() {
     // pick random hosts
-    set<string> hosts = this->sampleHosts(HEADER_VALIDATION_HOST_COUNT);
+    set<string> hosts = this->sampleFreshHosts(HEADER_VALIDATION_HOST_COUNT);
 
     if (hosts.size() == 0) {
         Logger::logStatus("No hosts found");
@@ -215,13 +215,13 @@ Bigint HostManager::getTrustedHostWork() {
 }
 
 /*
-    Returns N unique random hosts
+    Returns N unique random hosts that have pinged us
 */
-set<string> HostManager::sampleHosts(int count) {
+set<string> HostManager::sampleFreshHosts(int count) {
     vector<string> freshHosts;
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;
-        // only return peers that have pinged in the last hour
+        // only return peers that have pinged
         if (lastPingAge < HOST_MIN_FRESHNESS) { 
             freshHosts.push_back(pair.first);
         }
@@ -231,6 +231,21 @@ set<string> HostManager::sampleHosts(int count) {
     set<string> sampledHosts;
     while(sampledHosts.size() < numToPick) {
         string host = freshHosts[rand()%freshHosts.size()];
+        sampledHosts.insert(host);
+    }
+    return sampledHosts;
+}
+
+
+/*
+    Returns any N unique random hosts. 
+    Used when hosts don't ping us (Miner)
+*/
+set<string> HostManager::sampleAllHosts(int count) {
+    int numToPick = min(count, (int)this->hosts.size());
+    set<string> sampledHosts;
+    while(sampledHosts.size() < numToPick) {
+        string host = this->hosts[rand()%this->hosts.size()];
         sampledHosts.insert(host);
     }
     return sampledHosts;
@@ -262,7 +277,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
     // add to our host list
     this->hosts.push_back(addr);
     // pick random neighbor hosts and forward the addPeer request to them:
-    set<string> neighbors = this->sampleHosts(ADD_PEER_BRANCH_FACTOR);
+    set<string> neighbors = this->sampleFreshHosts(ADD_PEER_BRANCH_FACTOR);
     vector<future<void>> reqs;
     string _version = this->version;
     for(auto neighbor : neighbors) {
@@ -388,7 +403,7 @@ std::pair<string, uint64_t> HostManager::getTrustedHost() {
     Returns a random host
 */
 std::pair<string,uint64_t> HostManager::getRandomHost() {
-    set<string> hosts = this->sampleHosts(1);
+    set<string> hosts = this->sampleAllHosts(1);
     if (hosts.size() == 0) {
         return std::pair<string, uint64_t>("", 0);
     }

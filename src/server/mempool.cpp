@@ -26,7 +26,7 @@ void mempool_sync(MemPool& mempool) {
         }
         mempool.sendLock.unlock();
         vector<future<void>> reqs;
-        set<string> neighbors = mempool.hosts.sampleHosts(TX_BRANCH_FACTOR);
+        set<string> neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
         for(auto neighbor : neighbors) {
             Transaction newT = t;
             reqs.push_back(std::async([neighbor, &newT](){

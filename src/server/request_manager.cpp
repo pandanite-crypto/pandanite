@@ -16,7 +16,7 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
         this->blockchain->sync();
      
         // initialize the mempool with a random peers transactions:
-        auto randomHost = hosts.sampleHosts(1);
+        auto randomHost = hosts.sampleAllHosts(1);
         if (randomHost.size() > 0) {
             try {
                 string host = *randomHost.begin();
@@ -58,7 +58,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     
     if (status == SUCCESS) {
         //pick random neighbor hosts and forward the new block to:
-        set<string> neighbors = this->hosts.sampleHosts(NEW_BLOCK_PEER_FANOUT);
+        set<string> neighbors = this->hosts.sampleFreshHosts(NEW_BLOCK_PEER_FANOUT);
         vector<future<void>> reqs;
         for(auto neighbor : neighbors) {
             std::thread{[neighbor, newBlock](){
