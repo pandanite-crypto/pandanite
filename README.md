@@ -1,6 +1,5 @@
 Bamboo 
 ====================
-<image src="https://github.com/mr-pandabear/panda-website/blob/master/site/static/logo.png" width="350"/>
 Bamboo is a minimalist implementation of a layer 1 cryptocurrency similar to Bitcoin. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ — it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
 
 ### Circulation
