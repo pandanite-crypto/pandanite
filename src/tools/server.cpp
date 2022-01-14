@@ -110,8 +110,10 @@ int main(int argc, char **argv) {
         } catch(const std::exception &e) {
             result["error"] = "Unknown error";
             Logger::logError("/block", e.what());
+            res->end("");
         } catch(...) {
             Logger::logError("/block", "unknown");
+            res->end("");
         }
     };
 
