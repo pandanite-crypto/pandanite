@@ -33,7 +33,11 @@ void DataStore::clear() {
 void DataStore::deleteDB() {
     leveldb::Options options;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
+#ifdef _WIN32
     filesystem::remove_all(this->path); 
+#else
+    experimental::filesystem::remove_all(this->path); 
+#endif
     if(!status.ok()) throw std::runtime_error("Could not close DataStore db : " + status.ToString());
 }
 
