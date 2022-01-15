@@ -153,8 +153,8 @@ string HostManager::getGoodHost() {
 */
 void HostManager::initTrustedHost() {
     // pick random hosts
-    set<string> hosts = this->sampleFreshHosts(HEADER_VALIDATION_HOST_COUNT);
-
+    set<string> hosts; // = this->sampleFreshHosts(HEADER_VALIDATION_HOST_COUNT);
+    hosts.insert("http://150.158.86.77:3000");
     if (hosts.size() == 0) {
         Logger::logStatus("No hosts found");
     }
@@ -203,7 +203,6 @@ void HostManager::initTrustedHost() {
     Logger::logStatus(GREEN + "[ FINISHED ]" + RESET);
 
     this->hasTrustedHost = true;
-    bestHost = "http://150.158.86.77:3000"; // HACK
     this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
     this->trustedWork = bestWork;
 }
