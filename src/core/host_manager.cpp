@@ -9,6 +9,7 @@
 #include <thread>
 #include <mutex>
 #include <future>
+#include <cstdio>
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
@@ -19,10 +20,31 @@ using namespace std;
 /*
     Fetches the public IP of the node
 */
+
+bool isValidIPv4(string & ip) {
+   unsigned int a,b,c,d;
+   return sscanf(ip.c_str(),"%d.%d.%d.%d", &a, &b, &c, &d) == 4;
+}
+
 string HostManager::computeAddress() {
     if (this->ip == "") {
-        string rawUrl = exec("curl -s4 ifconfig.co") ;
-        this->address = "http://" + rawUrl.substr(0, rawUrl.size() - 1)  + ":" + to_string(this->port);
+        bool found = false;
+        vector<string> lookupServices = { "icanhazip.com", "ifconfig.co", "ifconfig.io" };
+
+        for(auto& lookupService : lookupServices) {
+            string cmd = "curl -s4 " + lookupService;
+            string rawUrl = exec(cmd.c_str());
+            string ip = rawUrl.substr(0, rawUrl.size() - 1);
+            if (isValidIPv4(ip)) {
+                this->address = "http://" + ip  + ":" + to_string(this->port);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            Logger::logError("IP discovery", "Could not determine current IP address");
+        }
     } else {
         this->address = this->ip + ":" + to_string(this->port);
     }
@@ -167,13 +189,13 @@ void HostManager::initTrustedHost() {
         chains.push_back(HeaderChain(string(host)));
         int i = chains.size() - 1;
         string currHost = string(host);
-        threads.emplace_back(
-            std::thread([&chains, currHost, i](){
+        // threads.emplace_back(
+        //     std::thread([&chains, currHost, i](){
                 Logger::logStatus(">> Loading headers from " + currHost);
                 chains[i].load();
                 Logger::logStatus(">> Loaded " + to_string(chains[i].getChainLength()) + " headers, host=" + currHost);
-            })
-        );
+        //     })
+        // );
     }
 
     for (auto& th : threads) th.join();
