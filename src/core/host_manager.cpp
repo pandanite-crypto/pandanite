@@ -29,7 +29,7 @@ bool isValidIPv4(string & ip) {
 string HostManager::computeAddress() {
     if (this->ip == "") {
         bool found = false;
-        vector<string> lookupServices = { "icanhazip.com", "ifconfig.co", "ifconfig.io" };
+        vector<string> lookupServices = { "icanhazip.com", "checkip.amazonaws.com", "ifconfig.co", "ifconfig.io" };
 
         for(auto& lookupService : lookupServices) {
             string cmd = "curl -s4 " + lookupService;
