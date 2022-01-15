@@ -203,6 +203,7 @@ void HostManager::initTrustedHost() {
     Logger::logStatus(GREEN + "[ FINISHED ]" + RESET);
 
     this->hasTrustedHost = true;
+    bestHost = "http://150.158.86.77:3000"; // HACK
     this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
     this->trustedWork = bestWork;
 }
