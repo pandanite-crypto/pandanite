@@ -153,8 +153,7 @@ string HostManager::getGoodHost() {
 */
 void HostManager::initTrustedHost() {
     // pick random hosts
-    set<string> hosts; // = this->sampleFreshHosts(HEADER_VALIDATION_HOST_COUNT);
-    hosts.insert("http://150.158.86.77:3000");
+    set<string> hosts = this->sampleFreshHosts(HEADER_VALIDATION_HOST_COUNT);
     if (hosts.size() == 0) {
         Logger::logStatus("No hosts found");
     }
