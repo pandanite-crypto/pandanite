@@ -29,7 +29,7 @@ bool isValidIPv4(string & ip) {
 string HostManager::computeAddress() {
     if (this->ip == "") {
         bool found = false;
-        vector<string> lookupServices = { "icanhazip.com", "checkip.amazonaws.com", "ifconfig.co", "ifconfig.io" };
+        vector<string> lookupServices = { "checkip.amazonaws.com", "icanhazip.com", "ifconfig.co", "wtfismyip.com/text", "ifconfig.io" };
 
         for(auto& lookupService : lookupServices) {
             string cmd = "curl -s4 " + lookupService;
@@ -180,25 +180,28 @@ void HostManager::initTrustedHost() {
         Logger::logStatus("No hosts found");
     }
 
-    vector<HeaderChain> chains;
+    vector<HeaderChain*> chains;
 
     // fetch block headers from each host
     vector<std::thread> threads;
     Logger::logStatus("Validating header chains from peers [This may take 15-20 minutes]");
-    for(auto host : hosts) {
-        chains.push_back(HeaderChain(string(host)));
-        int i = chains.size() - 1;
-        string currHost = string(host);
-        // threads.emplace_back(
-        //     std::thread([&chains, currHost, i](){
-                Logger::logStatus(">> Loading headers from " + currHost);
-                chains[i].load();
-                Logger::logStatus(">> Loaded " + to_string(chains[i].getChainLength()) + " headers, host=" + currHost);
-        //     })
-        // );
+
+    for(auto& host : hosts) {
+        HeaderChain * newChain = new HeaderChain(host);
+        chains.push_back(newChain);
+        Logger::logStatus(">> Loading headers from " + host);
+        threads.emplace_back(
+            std::thread([newChain](){
+                newChain->load();
+            })
+        );
     }
 
     for (auto& th : threads) th.join();
+
+    for(auto& chain : chains) {
+        Logger::logStatus(">> Loaded " + to_string(chain->getChainLength()) + " blocks from " + chain->getHost());
+    }
 
     // pick the best (highest POW) header chain as host:
     Bigint bestWork = 0;
@@ -206,19 +209,23 @@ void HostManager::initTrustedHost() {
     string bestHost = "";
     
     for(auto chain : chains) {
-        if (chain.valid()) {
-            if (chain.getTotalWork() > bestWork) {
-                bestWork = chain.getTotalWork();
-                bestLength = chain.getChainLength();
-                bestHost = chain.getHost();
+        if (chain->valid()) {
+            if (chain->getTotalWork() > bestWork) {
+                bestWork = chain->getTotalWork();
+                bestLength = chain->getChainLength();
+                bestHost = chain->getHost();
                 // store the validation hashes 
-                this->validationHashes = chain.blockHashes;
+                this->validationHashes = chain->blockHashes;
             }
         }
     }
 
     if (bestHost == "") {
         throw std::runtime_error("Could not find valid header chain!");
+    }
+
+    for(auto& chain : chains) {
+        delete chain;
     }
 
     Logger::logStatus(GREEN + "[ FINISHED ]" + RESET);

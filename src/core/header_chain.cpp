@@ -71,11 +71,9 @@ void HeaderChain::load() {
                 return;
             }
         } catch (std::exception& e) {
-            Logger::logError("Unknown error",  e.what());
             this->failed = true;
             return;
         } catch (...) {
-            Logger::logStatus("Unknown error");
             this->failed = true;
             return;
         }
