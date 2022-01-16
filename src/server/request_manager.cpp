@@ -75,33 +75,14 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     return result;
 }
 
-json hashTreeToJson(shared_ptr<HashTree> root) {
-    json ret;
-    ret["hash"] = SHA256toString(root->hash);
-    if (root->left) {
-        ret["left"] = hashTreeToJson(root->left);
-    }
-    if (root->right) {
-        ret["right"] = hashTreeToJson(root->right);
-    }
-    return ret;
-}
 
 json RequestManager::verifyTransaction(Transaction& t) {
     json response;
     Block b;
     try {
         uint32_t blockId = this->blockchain->findBlockForTransaction(t);
-        b = this->blockchain->getBlock(blockId);
-        MerkleTree m;
-        m.setItems(b.getTransactions());
-        shared_ptr<HashTree> root = m.getMerkleProof(t);
-        if (root == NULL) {
-            response["error"] = "Could not find transaction in block";
-        } else {
-            response["status"] = "SUCCESS";
-            response["proof"] = hashTreeToJson(root);
-        }
+        response["status"] = "SUCCESS";
+        response["blockId"] = blockId;
     } catch(...) {
         response["error"] = "Could not find block";
     }
