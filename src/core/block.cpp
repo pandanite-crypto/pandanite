@@ -172,7 +172,7 @@ SHA256Hash Block::getHash() {
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, (unsigned char*)this->merkleRoot.data(), this->merkleRoot.size());
     SHA256_Update(&sha256, (unsigned char*)this->lastBlockHash.data(), this->lastBlockHash.size());
-    SHA256_Update(&sha256, (unsigned char*)&this->difficulty, sizeof(int));
+    SHA256_Update(&sha256, (unsigned char*)&this->difficulty, sizeof(uint32_t));
     SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(uint64_t));
     SHA256_Final(ret.data(), &sha256);
     return ret;

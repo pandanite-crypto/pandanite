@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     PublicWalletAddress toWallet = stringToWalletAddress(to);
     PublicWalletAddress fromWallet = walletAddressFromPublicKey(publicKey);
 
-    cout<<"Enter the amount in leaves (NOTE: 1 leaf = 1/10,000 BMB ):"<<endl;
+    cout<<"Enter the amount in leaves (NOTE: 1 leaf = 1/10,000 BMB):"<<endl;
     TransactionAmount amount;
     cin>>amount;
 
@@ -44,6 +44,11 @@ int main(int argc, char** argv) {
     Transaction t(fromWallet, toWallet, amount,publicKey, fee);
     t.sign(publicKey, privateKey);
     cout<<"Creating transaction..."<<endl;
+    cout<<"================================================="<<endl;
+    cout<<"TRANSACTION JSON (keep this for your records)"<<endl;
+    cout<<"================================================="<<endl;
+    cout<<t.toJson().dump()<<endl;
+    cout<<"=============================="<<endl;
     json result = sendTransaction(host, t);
     cout<<result<<endl;
     if(result["status"] != "SUCCESS") {
