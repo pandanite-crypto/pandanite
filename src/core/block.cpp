@@ -39,7 +39,6 @@ void blockHeaderToBuffer(BlockHeader& b, char* buffer) {
     memcpy(buffer, b.merkleRoot.data(), 32);
     buffer += 32;
     memcpy(buffer, b.nonce.data(), 32);
-
 }
 
 

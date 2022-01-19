@@ -172,12 +172,12 @@ int main(int argc, char **argv) {
                         char * ptr = (char*)buffer.c_str();
                         BlockHeader blockH = blockHeaderFromBuffer(ptr);
                         ptr += BLOCKHEADER_BUFFER_SIZE;
-                        
-                        if (buffer.size() < BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
+                        if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
                             json response;
                             response["error"] = "Malformed block";
                             Logger::logError("/submit","Malformed block");
                             res->end(response.dump());
+                            return;
                         }
 
                         vector<Transaction> transactions;

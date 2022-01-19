@@ -47,19 +47,16 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
 
 json submitBlock(string host_url, Block& block) {
     BlockHeader b = block.serialize();
-    vector<uint8_t> bytes;
-    char * ptr = (char*)&b;
-    for(int i = 0; i < sizeof(BlockHeader); i++) {
-        bytes.push_back(*ptr);
-        ptr++;
-    }
+    vector<uint8_t> bytes(BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE * b.numTransactions);
+
+    char* ptr = (char*) bytes.data();
+    blockHeaderToBuffer(b, ptr);
+    ptr += BLOCKHEADER_BUFFER_SIZE;
+
     for(auto t : block.getTransactions()) {
         TransactionInfo tx = t.serialize();
-        char* ptr = (char*)&tx;
-        for(int j = 0; j < sizeof(TransactionInfo); j++) {
-            bytes.push_back(*ptr);
-            ptr++;
-        }
+        transactionInfoToBuffer(tx, ptr);
+        ptr += TRANSACTIONINFO_BUFFER_SIZE;
     }
     http::Request request(host_url + "/submit");
     const auto response = request.send("POST", bytes, {
