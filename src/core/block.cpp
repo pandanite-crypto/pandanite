@@ -10,11 +10,46 @@
 using namespace std;
 
 BlockHeader blockHeaderFromBuffer(const char* buffer) {
-
+    BlockHeader b;
+    memcpy(&b.id, buffer, 4);
+    b.id = ntohl(b.id);
+    buffer += 4;
+    memcpy(&b.timestamp, buffer, 8);
+    b.timestamp = ntohll(b.timestamp);
+    buffer += 8;
+    memcpy(&b.difficulty, buffer, 4);
+    b.difficulty = ntohl(b.difficulty);
+    buffer += 4;
+    memcpy(&b.numTransactions, buffer, 4);
+    b.numTransactions = ntohl(b.numTransactions);
+    buffer += 4;
+    memcpy(b.lastBlockHash.data(), buffer, 32);
+    buffer += 32;
+    memcpy(b.merkleRoot.data(), buffer, 32);
+    buffer += 32;
+    memcpy(b.nonce.data(), buffer, 32);
+    return b;
 }
 
-void blockHeaderToBuffer(BlockHeader& t, char* buffer) {
-    
+void blockHeaderToBuffer(BlockHeader& b, char* buffer) {
+    uint32_t id = htonl(b.id);
+    uint64_t timestamp = htonll(b.timestamp);
+    uint32_t difficulty = htonl(b.difficulty);
+    uint32_t numTransactions = htonl(b.numTransactions);
+    memcpy(buffer, &id, 4);
+    buffer += 4;
+    memcpy(buffer, &timestamp, 8);
+    buffer += 8;
+    memcpy(buffer, &difficulty, 4);
+    buffer += 4;
+    memcpy(buffer, &numTransactions, 4);
+    buffer += 4;
+    memcpy(buffer, b.lastBlockHash.data(), 32);
+    buffer += 32;
+    memcpy(buffer, b.merkleRoot.data(), 32);
+    buffer += 32;
+    memcpy(buffer, b.nonce.data(), 32);
+
 }
 
 
