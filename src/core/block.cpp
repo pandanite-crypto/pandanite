@@ -9,6 +9,15 @@
 #include <cstring>
 using namespace std;
 
+BlockHeader blockHeaderFromBuffer(const char* buffer) {
+
+}
+
+void blockHeaderToBuffer(BlockHeader& t, char* buffer) {
+    
+}
+
+
 Block::Block() {
     this->nonce = NULL_SHA256_HASH;
     this->id = 1;
@@ -41,24 +50,6 @@ Block::Block(json block) {
     for(auto t : block["transactions"]) {
         Transaction curr = Transaction(t);
         this->transactions.push_back(curr);
-    }
-}
-
-Block::Block(std::pair<uint8_t*,size_t> buffer) {
-    BlockHeader b = *((BlockHeader*)buffer.first);
-    uint8_t * transactionPtr = buffer.first + sizeof(BlockHeader);
-
-    this->id = b.id;
-    this->timestamp = b.timestamp;
-    this->difficulty = b.difficulty;
-    this->nonce= b.nonce;
-    this->merkleRoot = b.merkleRoot;
-    this->lastBlockHash = b.lastBlockHash;
-
-    for(int i = 0; i < b.numTransactions; i++) {
-        TransactionInfo t = *((TransactionInfo*)transactionPtr);
-        this->addTransaction(Transaction(t));
-        transactionPtr += sizeof(TransactionInfo);
     }
 }
 

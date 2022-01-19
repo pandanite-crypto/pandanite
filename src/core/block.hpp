@@ -10,7 +10,7 @@ using namespace std;
 
 struct BlockHeader {
     uint32_t id;
-    uint64_t timestamp;
+    uint64_t timestamp; 
     uint32_t difficulty;
     uint32_t numTransactions;
     SHA256Hash lastBlockHash;
@@ -18,13 +18,17 @@ struct BlockHeader {
     SHA256Hash nonce;
 };
 
+#define BLOCKHEADER_BUFFER_SIZE 116
+
+BlockHeader blockHeaderFromBuffer(const char* buffer);
+void blockHeaderToBuffer(BlockHeader& t, char* buffer);
+
 class Block {
     public:
         Block();
         Block(json data);
         Block(const Block& b);
         Block(const BlockHeader&b, vector<Transaction>& transactions);
-        Block(std::pair<uint8_t*,size_t> buffer);
         BlockHeader serialize();
         json toJson();
         void addTransaction(Transaction t);
