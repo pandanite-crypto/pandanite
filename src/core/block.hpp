@@ -5,6 +5,7 @@
 #include "constants.hpp"
 #include "common.hpp"
 #include "crypto.hpp"
+#include "helpers.hpp"
 #include "merkle_tree.hpp"
 using namespace std;
 

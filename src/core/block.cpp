@@ -11,23 +11,13 @@ using namespace std;
 
 BlockHeader blockHeaderFromBuffer(const char* buffer) {
     BlockHeader b;
-    memcpy(&b.id, buffer, 4);
-    b.id = ntohl(b.id);
-    buffer += 4;
-    memcpy(&b.timestamp, buffer, 8);
-    b.timestamp = ntohll(b.timestamp);
-    buffer += 8;
-    memcpy(&b.difficulty, buffer, 4);
-    b.difficulty = ntohl(b.difficulty);
-    buffer += 4;
-    memcpy(&b.numTransactions, buffer, 4);
-    b.numTransactions = ntohl(b.numTransactions);
-    buffer += 4;
-    memcpy(b.lastBlockHash.data(), buffer, 32);
-    buffer += 32;
-    memcpy(b.merkleRoot.data(), buffer, 32);
-    buffer += 32;
-    memcpy(b.nonce.data(), buffer, 32);
+    b.id = readNetworkUint32(buffer);
+    b.timestamp = readNetworkUint64(buffer);
+    b.difficulty = readNetworkUint32(buffer);
+    b.numTransactions = readNetworkUint32(buffer);
+    b.lastBlockHash = readNetworkSHA256(buffer);
+    b.merkleRoot = readNetworkSHA256(buffer);
+    b.nonce = readNetworkSHA256(buffer);
     return b;
 }
 

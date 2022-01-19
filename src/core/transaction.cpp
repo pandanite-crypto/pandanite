@@ -11,51 +11,28 @@ using namespace std;
 
 TransactionInfo transactionInfoFromBuffer(const char* buffer) {
     TransactionInfo t;
-    memcpy(t.signature, buffer, 64);
-    buffer += 64;
-    memcpy(t.signingKey, buffer, 32);
-    buffer += 32;
-    memcpy(&t.timestamp, buffer, 8);
-    t.timestamp = ntohll(t.timestamp);
-    buffer += 8;
-    memcpy(t.to.data(), buffer, 25);
-    buffer += 25;
-    memcpy(t.from.data(),buffer, 25);
-    buffer += 25;
-    memcpy(&t.amount, buffer, 8);
-    t.amount = ntohll(t.amount);
-    buffer+= 8;
-    memcpy(&t.fee, buffer, 8);
-    t.fee = ntohll(t.fee);
-    buffer+=8;
-    uint32_t flag;
-    memcpy(&flag, buffer, 4);
-    t.isTransactionFee = flag > 0;
+    readNetworkNBytes(buffer, t.signature, 64);
+    readNetworkNBytes(buffer, t.signingKey, 32);
+    t.timestamp = readNetworkUint64(buffer);
+    t.to = readNetworkPublicWalletAddress(buffer);
+    t.from = readNetworkPublicWalletAddress(buffer);
+    t.amount = readNetworkUint64(buffer);
+    t.fee = readNetworkUint64(buffer);
+    t.isTransactionFee = readNetworkUint32(buffer) > 0;
     return t;
 }
 
 void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
-    memcpy(buffer, t.signature, 64);
-    buffer+=64;
-    memcpy(buffer, t.signingKey, 32);
-    buffer += 32;
-    uint64_t ts = htonll(t.timestamp);
-    memcpy(buffer, &ts, 8);
-    buffer += 8;
-    memcpy(buffer, t.to.data(), 25);
-    buffer += 25;
-    memcpy(buffer, t.from.data(), 25);
-    buffer += 25;
-    uint64_t amt =  htonll(t.amount);
-    memcpy(buffer, &amt, 8);
-    buffer += 8;
-    uint64_t fee = htonll(t.fee);
-    memcpy(buffer, &fee, 8);
-    buffer += 8;
+    writeNetworkNBytes(buffer, t.signature, 64);
+    writeNetworkNBytes(buffer, t.signingKey, 32);
+    writeNetworkUint64(buffer, t.timestamp);
+    writeNetworkPublicWalletAddress(buffer, t.to);
+    writeNetworkPublicWalletAddress(buffer, t.from);
+    writeNetworkUint64(buffer, t.amount);
+    writeNetworkUint64(buffer, t.fee);
     uint32_t flag = 0;
     if (t.isTransactionFee) flag = 1;
-    flag = htonl(flag);
-    memcpy(buffer, &flag, 4);
+    writeNetworkUint32(buffer, flag);
 }
 
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee) {
