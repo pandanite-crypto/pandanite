@@ -12,25 +12,50 @@ using namespace std;
 TransactionInfo transactionInfoFromBuffer(const char* buffer) {
     TransactionInfo t;
     memcpy(t.signature, buffer, 64);
-    memcpy(t.signingKey, buffer + 64, 32);
-    memcpy(t.timestamp, buffer + 64 + 32, 8);
-    memcpy(t.to.data(), buffer + 64 + 32 + 8, 25);
-    memcpy(t.from.data(),buffer + 64 + 32 + 8 + 25, 25);
-    memcpy(t.amount, buffer + 64 + 32 + 8 + 25 + 25, 8);
-    memcpy(t.fee, buffer + 64 + 32 + 8 + 25 + 25 + 8, 8);
-    memcpy(t.isTransactionFee, buffer + 64 + 32 + 8 + 25 + 25 + 8 + 8, 4);
+    buffer += 64;
+    memcpy(t.signingKey, buffer, 32);
+    buffer += 32;
+    memcpy(&t.timestamp, buffer, 8);
+    t.timestamp = ntohll(t.timestamp);
+    buffer += 8;
+    memcpy(t.to.data(), buffer, 25);
+    buffer += 25;
+    memcpy(t.from.data(),buffer, 25);
+    buffer += 25;
+    memcpy(&t.amount, buffer, 8);
+    t.amount = ntohll(t.amount);
+    buffer+= 8;
+    memcpy(&t.fee, buffer, 8);
+    t.fee = ntohll(t.fee);
+    buffer+=8;
+    uint32_t flag;
+    memcpy(&flag, buffer, 4);
+    t.isTransactionFee = flag > 0;
     return t;
 }
 
 void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
     memcpy(buffer, t.signature, 64);
-    memcpy(buffer + 64, t.signingKey, 32);
-    memcpy(buffer + 64 + 32, t.timestamp, 8);
-    memcpy(buffer + 64 + 32 + 8, t.to.data(), 25);
-    memcpy(buffer + 64 + 32 + 8 + 25, t.from.data(), 25);
-    memcpy(buffer + 64 + 32 + 8 + 25 + 25, t.amount, 8);
-    memcpy(buffer + 64 + 32 + 8 + 25 + 25 + 8, t.fee, 8);
-    memcpy(buffer + 64 + 32 + 8 + 25 + 25 + 8 + 8, t.isTransactionFee, 4);
+    buffer+=64;
+    memcpy(buffer, t.signingKey, 32);
+    buffer += 32;
+    uint64_t ts = htonll(t.timestamp);
+    memcpy(buffer, &ts, 8);
+    buffer += 8;
+    memcpy(buffer, t.to.data(), 25);
+    buffer += 25;
+    memcpy(buffer, t.from.data(), 25);
+    buffer += 25;
+    uint64_t amt =  htonll(t.amount);
+    memcpy(buffer, &amt, 8);
+    buffer += 8;
+    uint64_t fee = htonll(t.fee);
+    memcpy(buffer, &fee, 8);
+    buffer += 8;
+    uint32_t flag = 0;
+    if (t.isTransactionFee) flag = 1;
+    flag = htonl(flag);
+    memcpy(buffer, &flag, 4);
 }
 
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee) {
