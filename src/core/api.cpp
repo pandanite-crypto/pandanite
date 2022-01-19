@@ -108,7 +108,7 @@ json verifyTransaction(string host_url, Transaction& t) {
     return json::parse(responseStr);
 }
 
-void readRawHeaders(string host_url, int startId, int endId, function<void(BlockHeader&)> handler) {
+void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>& blockHeaders) {
     http::Request request(host_url + "/block_headers/" + std::to_string(startId) + "/" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
@@ -118,12 +118,11 @@ void readRawHeaders(string host_url, int startId, int endId, function<void(Block
     BlockHeader* curr = (BlockHeader*)bytes.data();
     int numBlocks = bytes.size() / sizeof(BlockHeader);
     for(int i =0; i < numBlocks; i++){
-        BlockHeader t = curr[i];
-        handler(t);
+        blockHeaders.push_back(curr[i]);
     }
 }
 
-void readRawBlocks(string host_url, int startId, int endId, function<void(Block&)> handler) {
+void readRawBlocks(string host_url, int startId, int endId, vector<Block>& blocks) {
     http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
@@ -148,13 +147,12 @@ void readRawBlocks(string host_url, int startId, int endId, function<void(Block&
             bytesRead += sizeof(TransactionInfo);
         }
         numBlocks++;
-        Block block(b, transactions);
-        handler(block);
+        blocks.push_back(Block(b, transactions));
         if (bytesRead >= bytes.size()) break;
     }
 }
 
-void readRawTransactions(string host_url, function<void(Transaction)> handler) {
+void readRawTransactions(string host_url, vector<Transaction>& transactions) {
     http::Request request(host_url + "/gettx");
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
@@ -165,6 +163,6 @@ void readRawTransactions(string host_url, function<void(Transaction)> handler) {
     int numTx = bytes.size() / sizeof(TransactionInfo);
     for(int i =0; i < numTx; i++){
         TransactionInfo t = curr[i];
-        handler(Transaction(t));
+        transactions.push_back(Transaction(t));
     }
 }

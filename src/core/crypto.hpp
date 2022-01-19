@@ -14,8 +14,8 @@ std::vector<uint8_t> hexDecode(const string& hex);
 string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b);
 bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize);
+Bigint addWork(Bigint previousWork, uint32_t challengeSize);
 
-bool isFounderWalletPossible(PublicWalletAddress w);
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);
 string walletAddressToString(PublicWalletAddress p);
 PublicWalletAddress stringToWalletAddress(string s);

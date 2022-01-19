@@ -158,12 +158,8 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             json problem = getMiningProblem(host);
 
             // download transactions
-            int count = 0;
             vector<Transaction> transactions;
-            readRawTransactions(host, [&nextBlock, &count, &transactions](Transaction t) {
-                transactions.push_back(t);
-                count++;
-            });
+            readRawTransactions(host, transactions);
 
             Logger::logStatus("[ NEW ] block = " + std::to_string(nextBlock) + ", difficulty = " + to_string(problem["challengeSize"]) + ", transactions = " + to_string(transactions.size()) + " - " + host);
 

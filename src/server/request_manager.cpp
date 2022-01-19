@@ -20,9 +20,11 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
         if (randomHost.size() > 0) {
             try {
                 string host = *randomHost.begin();
-                readRawTransactions(host, [&](Transaction t) {
+                vector<Transaction> transactions;
+                readRawTransactions(host, transactions);
+                for(auto& t : transactions) {
                     mempool->addTransaction(t);
-                });
+                }
             } catch(...) {}
         }
     }

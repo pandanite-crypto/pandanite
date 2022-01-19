@@ -30,8 +30,6 @@ std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
     return ret;
 }
 
-
-
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
     RIPEMD160Hash ret;
     RIPEMD160_CTX ripemd;
@@ -200,6 +198,11 @@ bool checkLeadingZeroBits(SHA256Hash& hash, uint8_t challengeSize) {
     else return true;
 }
 
+Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
+    Bigint base = 2;
+    previousWork+= base.pow((int) challengeSize);
+    return previousWork;
+}
 
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize) {
     SHA256Hash fullHash  = concatHashes(target, nonce);

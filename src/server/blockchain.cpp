@@ -380,8 +380,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         }
         this->blockStore.setBlock(block);
         this->numBlocks++;
-        Bigint base = 2;
-        this->totalWork += base.pow((int)block.getDifficulty());
+        this->totalWork = addWork(this->totalWork, block.getDifficulty());
         this->blockStore.setTotalWork(this->totalWork);
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
@@ -436,23 +435,27 @@ ExecutionStatus BlockChain::startChainSync() {
             ExecutionStatus status;
             BlockChain &bc = *this;
             int count = 0;
-            readRawBlocks(bestHost, i, end, [&](Block& b) {
+            vector<Block> blocks;
+            readRawBlocks(bestHost, i, end, blocks);
+            for(auto & b : blocks) {
                 if (!failure) {
                     //check that the host sent same block as trusted chain headers:
                     if (b.getId() < checkHashesUntilBlock && b.getHash() != bc.hosts.getBlockHash(b.getId())) {                        
                         status = INVALID_LASTBLOCK_HASH;
                         failure = true;
                         Logger::logError("Header Chain does not match block. Chain failed at blockID", std::to_string(b.getId()));
+                        break;
                     } else {
                         ExecutionStatus addResult = bc.addBlock(b);
                         if (addResult != SUCCESS) {
                             failure = true;
                             status = addResult;
                             Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
+                            break;
                         }
                     }
                 } 
-            });
+            }
             if (failure) {
                 Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
                 return status;
