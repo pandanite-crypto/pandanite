@@ -100,6 +100,53 @@ TEST(check_valid_send) {
     txdb.deleteDB();
 }
 
+TEST(check_wallet_tampering) {
+    Block b;
+
+    Ledger ledger;
+    ledger.init("./test-data/tmpdb");
+    TransactionStore txdb;
+    txdb.init("./test-data/tmpdb2");
+    LedgerState deltas;
+    ExecutionStatus status;
+
+    User miner;
+    User receiver;
+    b.setId(2);
+    Transaction t = miner.mine();
+    b.addTransaction(t);
+    Transaction t2 = miner.send(receiver, BMB(30));
+    b.addTransaction(t2);
+
+    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    PublicWalletAddress minerWallet = miner.getAddress(); 
+    PublicWalletAddress receiverWallet = receiver.getAddress();
+
+    ASSERT_EQUAL(status, SUCCESS);
+    ASSERT_EQUAL(ledger.getWalletValue(minerWallet), BMB(20.0)) // MINER only has 20BMB
+
+    Block c;
+    c.setId(3);
+    Transaction t21 = receiver.mine();
+    c.addTransaction(t21);
+    Transaction t22x = miner.send(miner, BMB(30)); // try to send 30 BMB from miner to itself
+    
+    // tamper t22 so that the from wallet is the receiver wallet
+    json tmp = t22x.toJson();
+    tmp["from"] = walletAddressToString(receiverWallet);
+    Transaction t22 (tmp);
+    t22.sign(miner.getPublicKey(), miner.getPrivateKey());
+    c.addTransaction(t22);
+    LedgerState deltas2;
+    status = Executor::ExecuteBlock(c, ledger, txdb, deltas2, BMB(50));
+    ASSERT_EQUAL(status, WALLET_SIGNATURE_MISMATCH);
+    ledger.closeDB();
+    ledger.deleteDB();
+    txdb.closeDB();
+    txdb.deleteDB();
+}
+
+
 TEST(check_low_balance) {
     Block b;
 

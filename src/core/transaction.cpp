@@ -145,6 +145,11 @@ bool Transaction::signatureValid() const {
 
 }
 
+PublicKey Transaction::getSigningKey() {
+    return this->signingKey;
+}
+
+
 SHA256Hash Transaction::getHash() const {
     SHA256Hash ret;
     SHA256_CTX sha256;

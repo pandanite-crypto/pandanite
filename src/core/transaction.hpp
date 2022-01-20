@@ -31,6 +31,7 @@ class Transaction {
         void setTransactionFee(TransactionAmount amount);
         TransactionAmount getTransactionFee() const;
         void setAmount(TransactionAmount amt);
+        PublicKey getSigningKey();
         PublicWalletAddress fromWallet() const;
         PublicWalletAddress toWallet() const;
         TransactionAmount getAmount() const;

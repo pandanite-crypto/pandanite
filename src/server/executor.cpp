@@ -79,6 +79,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case BLOCK_TIMESTAMP_IN_FUTURE:
             return "BLOCK_TIMESTAMP_IN_FUTURE";
         break;
+        case WALLET_SIGNATURE_MISMATCH:
+            return "WALLET_SIGNATURE_MISMATCH";
+        break;
     }
 }
 
@@ -115,6 +118,10 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
+
+    if (!t.isFee() && blockId != 1 && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+        return WALLET_SIGNATURE_MISMATCH;
+    }
     
     if (t.isFee()) {
         if (amt ==  blockMiningFee) {
