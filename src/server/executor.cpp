@@ -119,7 +119,16 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
 
-    if (!t.isFee() && blockId != 1 && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+    vector<int> excludes = {1, 8383, 8389, 9566};
+
+    bool excludedBlock = false;
+    for (auto e : excludes) {
+        if(blockId == e) {
+            excludedBlock = true;
+        }
+    }
+
+    if (!t.isFee() && !excludedBlock && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
         return WALLET_SIGNATURE_MISMATCH;
     }
     
