@@ -17,6 +17,13 @@ int main(int argc, char** argv) {
     json keys;
     try {
         keys = readJsonFromFile("./keys.json");
+        
+        PublicWalletAddress keyFromAddress = walletAddressFromPublicKey(stringToPublicKey(keys["publicKey"]));
+        PublicWalletAddress statedFromAddress = stringToWalletAddress(keys["wallet"]);
+        if (keyFromAddress != statedFromAddress) {
+            cout<<"Wallet address does not match public key. Keyfile is likely corrupted."<<endl;
+            return 0;
+        }
     } catch(...) {
         cout<<"Could not read ./keys.json"<<endl;
         return 0;
@@ -38,8 +45,8 @@ int main(int argc, char** argv) {
     cout<<"Enter the mining fee (or 0):"<<endl;
     TransactionAmount fee;
     cin>>fee;
-    std::pair<string,int> best = hosts.getTrustedHost();
-    string host = best.first;
+
+    string host = hosts.getGoodHost();
     
     Transaction t(fromWallet, toWallet, amount,publicKey, fee);
     t.sign(publicKey, privateKey);
