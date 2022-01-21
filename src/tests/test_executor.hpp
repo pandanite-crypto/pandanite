@@ -126,7 +126,7 @@ TEST(check_wallet_tampering) {
     ASSERT_EQUAL(ledger.getWalletValue(minerWallet), BMB(20.0)) // MINER only has 20BMB
 
     Block c;
-    c.setId(3);
+    c.setId(12000);
     Transaction t21 = receiver.mine();
     c.addTransaction(t21);
     Transaction t22x = miner.send(miner, BMB(30)); // try to send 30 BMB from miner to itself

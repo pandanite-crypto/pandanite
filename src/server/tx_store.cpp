@@ -6,7 +6,7 @@ TransactionStore::TransactionStore() {
 }
 
 bool TransactionStore::hasTransaction(const Transaction &t) {
-    SHA256Hash txHash = t.getHash();
+    SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
@@ -14,7 +14,7 @@ bool TransactionStore::hasTransaction(const Transaction &t) {
 }
 
 uint32_t TransactionStore::blockForTransaction(Transaction &t) {
-    SHA256Hash txHash = t.getHash();
+    SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
@@ -24,7 +24,7 @@ uint32_t TransactionStore::blockForTransaction(Transaction &t) {
 }
 
 void TransactionStore::insertTransaction(Transaction& t, uint32_t blockId) {
-    SHA256Hash txHash = t.getHash();
+    SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     uint32_t dummy = blockId;
     leveldb::Slice slice = leveldb::Slice((const char*)&dummy, sizeof(uint32_t));
@@ -33,7 +33,7 @@ void TransactionStore::insertTransaction(Transaction& t, uint32_t blockId) {
 }
 
 void TransactionStore::removeTransaction(Transaction& t) {
-    SHA256Hash txHash = t.getHash();
+    SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     leveldb::Status status = db->Delete(leveldb::WriteOptions(), key);
     if(!status.ok()) throw std::runtime_error("Could not remove transaction hash from tx db : " + status.ToString());
