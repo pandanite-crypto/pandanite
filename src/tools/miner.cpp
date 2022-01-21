@@ -226,20 +226,26 @@ int main(int argc, char **argv) {
     json config = getConfig(argc, argv);
     int threads = config["threads"];
     int thread_priority = config["thread_priority"];
+    string customWallet = config["wallet"];
+    PublicWalletAddress wallet;
 
     HostManager hosts(config);
     json keys;
-    try {
-        keys = readJsonFromFile("./keys.json");
-    } catch(...) {
-        Logger::logStatus("Could not read ./keys.json");
-        return 0;
+    if (customWallet == "") {
+        try {
+            keys = readJsonFromFile("./keys.json");
+        } catch(...) {
+            Logger::logStatus("Could not read ./keys.json");
+            return 0;
+        }
+        wallet = stringToWalletAddress(keys["wallet"]);
+        Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
+    } else {
+        wallet = stringToWalletAddress(customWallet);
+        Logger::logStatus("Running miner. Coins stored in : " + customWallet);
     }
         
     Logger::logStatus("Starting miner with " + to_string(threads) + " threads. Use -t X to change (for example: miner -t 6)");
-    
-    PublicWalletAddress wallet = stringToWalletAddress(keys["wallet"]);
-    Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
 
     block_status status;
 
