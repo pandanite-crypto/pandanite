@@ -199,6 +199,11 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
     if (!t.isFee() && !t.signatureValid()) {
         return INVALID_SIGNATURE;
     }
+
+    if (!t.isFee() && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+        return WALLET_SIGNATURE_MISMATCH;
+    }
+
     PublicWalletAddress miner = NULL_ADDRESS;
     return updateLedger(t, miner, ledger, deltas, BMB(0), 0); // ExecuteTransaction is only used on non-fee transactions
 }
@@ -206,7 +211,6 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
 ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee) {
     // try executing each transaction
     bool foundFee = false;
-    set<string> nonces;
     PublicWalletAddress miner;
     TransactionAmount miningFee;
     for(auto t : curr.getTransactions()) {
