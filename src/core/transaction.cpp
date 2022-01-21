@@ -8,6 +8,33 @@
 #include <ctime>
 using namespace std;
 
+
+TransactionInfo transactionInfoFromBuffer(const char* buffer) {
+    TransactionInfo t;
+    readNetworkNBytes(buffer, t.signature, 64);
+    readNetworkNBytes(buffer, t.signingKey, 32);
+    t.timestamp = readNetworkUint64(buffer);
+    t.to = readNetworkPublicWalletAddress(buffer);
+    t.from = readNetworkPublicWalletAddress(buffer);
+    t.amount = readNetworkUint64(buffer);
+    t.fee = readNetworkUint64(buffer);
+    t.isTransactionFee = readNetworkUint32(buffer) > 0;
+    return t;
+}
+
+void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
+    writeNetworkNBytes(buffer, t.signature, 64);
+    writeNetworkNBytes(buffer, t.signingKey, 32);
+    writeNetworkUint64(buffer, t.timestamp);
+    writeNetworkPublicWalletAddress(buffer, t.to);
+    writeNetworkPublicWalletAddress(buffer, t.from);
+    writeNetworkUint64(buffer, t.amount);
+    writeNetworkUint64(buffer, t.fee);
+    uint32_t flag = 0;
+    if (t.isTransactionFee) flag = 1;
+    writeNetworkUint32(buffer, flag);
+}
+
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee) {
     this->from = from;
     this->to = to;

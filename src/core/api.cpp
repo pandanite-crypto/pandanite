@@ -47,19 +47,16 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
 
 json submitBlock(string host_url, Block& block) {
     BlockHeader b = block.serialize();
-    vector<uint8_t> bytes;
-    char * ptr = (char*)&b;
-    for(int i = 0; i < sizeof(BlockHeader); i++) {
-        bytes.push_back(*ptr);
-        ptr++;
-    }
+    vector<uint8_t> bytes(BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE * b.numTransactions);
+
+    char* ptr = (char*) bytes.data();
+    blockHeaderToBuffer(b, ptr);
+    ptr += BLOCKHEADER_BUFFER_SIZE;
+
     for(auto t : block.getTransactions()) {
         TransactionInfo tx = t.serialize();
-        char* ptr = (char*)&tx;
-        for(int j = 0; j < sizeof(TransactionInfo); j++) {
-            bytes.push_back(*ptr);
-            ptr++;
-        }
+        transactionInfoToBuffer(tx, ptr);
+        ptr += TRANSACTIONINFO_BUFFER_SIZE;
     }
     http::Request request(host_url + "/submit");
     const auto response = request.send("POST", bytes, {
@@ -115,10 +112,11 @@ void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>
     },std::chrono::milliseconds{TIMEOUT_BLOCKHEADERS_MS});
 
     std::vector<char> bytes(response.body.begin(), response.body.end());
-    BlockHeader* curr = (BlockHeader*)bytes.data();
-    int numBlocks = bytes.size() / sizeof(BlockHeader);
+    uint8_t* curr = (uint8_t*)bytes.data();
+    int numBlocks = bytes.size() / BLOCKHEADER_BUFFER_SIZE;
     for(int i =0; i < numBlocks; i++){
-        blockHeaders.push_back(curr[i]);
+        blockHeaders.push_back(blockHeaderFromBuffer((char*)curr));
+        curr += BLOCKHEADER_BUFFER_SIZE;
     }
 }
 
@@ -128,23 +126,21 @@ void readRawBlocks(string host_url, int startId, int endId, vector<Block>& block
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_BLOCK_MS});
     std::vector<char> bytes(response.body.begin(), response.body.end());
-    char* buffer = (char*)bytes.data();
-    char* currPtr = buffer;
+    uint8_t* buffer = (uint8_t*)bytes.data();
+    uint8_t* currPtr = buffer;
     int bytesRead = 0;
     int i = 0;
     int numBlocks = 0;
     while(true) {
-        BlockHeader b;
+        BlockHeader b = blockHeaderFromBuffer((char*)currPtr);
         vector<Transaction> transactions;
-        memcpy(&b, currPtr, sizeof(BlockHeader));
-        currPtr += sizeof(BlockHeader);
-        bytesRead += sizeof(BlockHeader);
+        currPtr += BLOCKHEADER_BUFFER_SIZE;
+        bytesRead += BLOCKHEADER_BUFFER_SIZE;
         for(int i = 0; i < b.numTransactions; i++) {
-            TransactionInfo tmp;
-            memcpy(&tmp, currPtr, sizeof(TransactionInfo));
-            transactions.push_back(Transaction(*((TransactionInfo*)currPtr)));
-            currPtr += sizeof(TransactionInfo);
-            bytesRead += sizeof(TransactionInfo);
+            TransactionInfo tmp = transactionInfoFromBuffer((char*)currPtr);
+            transactions.push_back(Transaction(tmp));
+            currPtr += TRANSACTIONINFO_BUFFER_SIZE;
+            bytesRead += TRANSACTIONINFO_BUFFER_SIZE;
         }
         numBlocks++;
         blocks.push_back(Block(b, transactions));
@@ -159,10 +155,11 @@ void readRawTransactions(string host_url, vector<Transaction>& transactions) {
     },std::chrono::milliseconds{TIMEOUT_MS});
     
     std::vector<char> bytes(response.body.begin(), response.body.end());
-    TransactionInfo* curr = (TransactionInfo*)bytes.data();
-    int numTx = bytes.size() / sizeof(TransactionInfo);
+    uint8_t* curr = (uint8_t*)bytes.data();
+    int numTx = bytes.size() / TRANSACTIONINFO_BUFFER_SIZE;
     for(int i =0; i < numTx; i++){
-        TransactionInfo t = curr[i];
+        TransactionInfo t = transactionInfoFromBuffer((char*)curr);
         transactions.push_back(Transaction(t));
+        curr+= TRANSACTIONINFO_BUFFER_SIZE;
     }
 }

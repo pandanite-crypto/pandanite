@@ -9,6 +9,39 @@
 #include <cstring>
 using namespace std;
 
+BlockHeader blockHeaderFromBuffer(const char* buffer) {
+    BlockHeader b;
+    b.id = readNetworkUint32(buffer);
+    b.timestamp = readNetworkUint64(buffer);
+    b.difficulty = readNetworkUint32(buffer);
+    b.numTransactions = readNetworkUint32(buffer);
+    b.lastBlockHash = readNetworkSHA256(buffer);
+    b.merkleRoot = readNetworkSHA256(buffer);
+    b.nonce = readNetworkSHA256(buffer);
+    return b;
+}
+
+void blockHeaderToBuffer(BlockHeader& b, char* buffer) {
+    uint32_t id = htonl(b.id);
+    uint64_t timestamp = htonll(b.timestamp);
+    uint32_t difficulty = htonl(b.difficulty);
+    uint32_t numTransactions = htonl(b.numTransactions);
+    memcpy(buffer, &id, 4);
+    buffer += 4;
+    memcpy(buffer, &timestamp, 8);
+    buffer += 8;
+    memcpy(buffer, &difficulty, 4);
+    buffer += 4;
+    memcpy(buffer, &numTransactions, 4);
+    buffer += 4;
+    memcpy(buffer, b.lastBlockHash.data(), 32);
+    buffer += 32;
+    memcpy(buffer, b.merkleRoot.data(), 32);
+    buffer += 32;
+    memcpy(buffer, b.nonce.data(), 32);
+}
+
+
 Block::Block() {
     this->nonce = NULL_SHA256_HASH;
     this->id = 1;
@@ -41,24 +74,6 @@ Block::Block(json block) {
     for(auto t : block["transactions"]) {
         Transaction curr = Transaction(t);
         this->transactions.push_back(curr);
-    }
-}
-
-Block::Block(std::pair<uint8_t*,size_t> buffer) {
-    BlockHeader b = *((BlockHeader*)buffer.first);
-    uint8_t * transactionPtr = buffer.first + sizeof(BlockHeader);
-
-    this->id = b.id;
-    this->timestamp = b.timestamp;
-    this->difficulty = b.difficulty;
-    this->nonce= b.nonce;
-    this->merkleRoot = b.merkleRoot;
-    this->lastBlockHash = b.lastBlockHash;
-
-    for(int i = 0; i < b.numTransactions; i++) {
-        TransactionInfo t = *((TransactionInfo*)transactionPtr);
-        this->addTransaction(Transaction(t));
-        transactionPtr += sizeof(TransactionInfo);
     }
 }
 

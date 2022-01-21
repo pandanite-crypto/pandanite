@@ -101,10 +101,10 @@ vector<TransactionInfo> BlockStore::getBlockTransactions(BlockHeader& block) {
 
 std::pair<uint8_t*, size_t> BlockStore::getRawData(uint32_t blockId) {
     BlockHeader block = this->getBlockHeader(blockId);
-    size_t numBytes = sizeof(BlockHeader) + (sizeof(TransactionInfo) * block.numTransactions);
+    size_t numBytes = BLOCKHEADER_BUFFER_SIZE + (TRANSACTIONINFO_BUFFER_SIZE * block.numTransactions);
     char* buffer = (char*)malloc(numBytes);
-    memcpy(buffer,&block, sizeof(BlockHeader));
-    char* transactionBuffer = buffer + sizeof(BlockHeader);
+    blockHeaderToBuffer(block, buffer);
+    char* transactionBuffer = buffer + BLOCKHEADER_BUFFER_SIZE;
     char* currTransactionPtr = transactionBuffer;
     for(int i = 0; i < block.numTransactions; i++) {
         int idx = i;
@@ -114,9 +114,10 @@ std::pair<uint8_t*, size_t> BlockStore::getRawData(uint32_t blockId) {
         leveldb::Slice key = leveldb::Slice((const char*) transactionId, 2*sizeof(uint32_t));
         string value;
         leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
-        memcpy(currTransactionPtr, value.c_str(), sizeof(TransactionInfo));
+        TransactionInfo txinfo = *(TransactionInfo*)(value.c_str());
+        transactionInfoToBuffer(txinfo, currTransactionPtr);
         if (!status.ok()) throw std::runtime_error("Could not read transaction from BlockStore db : " + status.ToString());
-        currTransactionPtr += sizeof(TransactionInfo);
+        currTransactionPtr += TRANSACTIONINFO_BUFFER_SIZE;
     }
     return std::pair<uint8_t*, size_t>((uint8_t*)buffer, numBytes);
 }
