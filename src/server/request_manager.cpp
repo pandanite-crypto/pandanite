@@ -182,6 +182,7 @@ json RequestManager::getStats() {
         return info;
     }
     int coins = this->blockchain->getBlockCount()*50;
+    info["node_version"] = BUILD_VERSION;
     info["num_coins"] = coins;
     info["num_wallets"] = 0;
     int blockId = this->blockchain->getBlockCount();

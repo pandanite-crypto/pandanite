@@ -8,7 +8,7 @@
 #define TIMEOUT_SUBMIT_MS 30000
 #define BLOCKS_PER_FETCH 200
 #define BLOCK_HEADERS_PER_FETCH 2000
-#define BUILD_VERSION "0.1.2-alpha-live"
+#define BUILD_VERSION "0.1.2-alpha"
 
 // Files
 #define LEDGER_FILE_PATH "./data/ledger"
