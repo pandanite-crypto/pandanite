@@ -26,6 +26,7 @@ json getConfig(int argc, char**argv) {
     std::vector<string>::iterator it;
     bool testnet = false;
     bool local = false;
+    string customWallet = "";
     string customIp = "";
     string customName = randomString(25);
     int customPort = 3000;
@@ -39,6 +40,11 @@ json getConfig(int argc, char**argv) {
     it = std::find(args.begin(), args.end(), "-t");
     if (it != args.end()) {
         threads = std::stoi(*++it);
+    }
+
+    it = std::find(args.begin(), args.end(), "--wallet");
+    if (it++ != args.end()) {
+        customWallet = string(*it);
     }
 
     it = std::find(args.begin(), args.end(), "--priority");
@@ -74,6 +80,7 @@ json getConfig(int argc, char**argv) {
 
     json config;
     config["threads"] = threads;
+    config["wallet"] = customWallet;
     config["port"] = customPort;
     config["name"] = customName;
     config["ip"] = customIp;
