@@ -392,34 +392,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-    // get chain w/ highest POW amongst random peers
-    std::pair<string,uint64_t> bestHostInfo = this->hosts.getTrustedHost();
-
-    uint64_t checkHashesUntilBlock = bestHostInfo.second; // NOTE: bestHostInfo.second = length of trusted chain
-
-    // If our current chain is lower POW than the trusted host
-    // remove anything that does not align with the hashes of the trusted chain
-    if (this->hosts.getTrustedHostWork() > this->getTotalWork()) {
-        // iterate through our current chain until a hash diverges from trusted chain
-        Logger::logStatus("Finding chain divergance");
-        uint64_t toPop = 0;
-        for(uint64_t i = 1; i <= this->numBlocks; i++) {
-            SHA256Hash trustedHash = this->hosts.getBlockHash(i);
-            SHA256Hash myHash = this->getBlock(i).getHash();
-            if (trustedHash != myHash) {
-                toPop = this->numBlocks - i + 1;
-                Logger::logStatus("toPop = " + to_string(toPop));
-                break;
-            }
-        }
-        // pop all subsequent blocks
-        for (uint64_t i = 0; i < toPop; i++) {
-            if (this->numBlocks == 1) break;
-            this->popBlock();
-        }
-    }
-
-    string bestHost = bestHostInfo.first;
+    string bestHost = this->hosts.getGoodHost();
     this->targetBlockCount = getCurrentBlockCount(bestHost);
 
     int startCount = this->numBlocks;
@@ -437,24 +410,14 @@ ExecutionStatus BlockChain::startChainSync() {
             int count = 0;
             vector<Block> blocks;
             readRawBlocks(bestHost, i, end, blocks);
-            for(auto & b : blocks) {
-                if (!failure) {
-                    //check that the host sent same block as trusted chain headers:
-                    if (b.getId() < checkHashesUntilBlock && b.getHash() != bc.hosts.getBlockHash(b.getId())) {                        
-                        status = INVALID_LASTBLOCK_HASH;
-                        failure = true;
-                        Logger::logError("Header Chain does not match block. Chain failed at blockID", std::to_string(b.getId()));
-                        break;
-                    } else {
-                        ExecutionStatus addResult = bc.addBlock(b);
-                        if (addResult != SUCCESS) {
-                            failure = true;
-                            status = addResult;
-                            Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
-                            break;
-                        }
-                    }
-                } 
+            for(auto & b : blocks) {    
+                ExecutionStatus addResult = bc.addBlock(b);
+                if (addResult != SUCCESS) {
+                    failure = true;
+                    status = addResult;
+                    Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
+                    break;
+                }
             }
             if (failure) {
                 Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));

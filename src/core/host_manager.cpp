@@ -144,7 +144,7 @@ string HostManager::getGoodHost() {
         Logger::logStatus("No hosts found");
     }
 
-    Logger::logStatus("Finding new host");
+    Logger::logStatus("Getting chain lengths from peers (finding current best host).");
 
     vector<std::pair<string,Bigint>> chains;
     // TODO: these should happen asynchronously!
