@@ -73,6 +73,18 @@ HostManager::HostManager(json config) {
     this->version = BUILD_VERSION;
     this->computeAddress();
 
+    // check if a blacklist file exists
+    std::ifstream blacklist("blacklist.txt");
+    if (blacklist.good()) {
+        std::string line;
+        while (std::getline(blacklist, line)) {
+            if (line[0] != '#') {
+                this->blacklist.insert(line);
+                Logger::logStatus("Ignoring host " + line);
+            }
+        }
+    }
+
     this->disabled = false;
     this->hasTrustedHost = false;
     this->trustedWork = 0;
@@ -87,6 +99,7 @@ HostManager::HostManager(json config) {
     } else {
         this->refreshHostList();
     }
+    
 }
 
 void HostManager::startPingingPeers() {
@@ -285,6 +298,7 @@ set<string> HostManager::sampleAllHosts(int count) {
 */
 void HostManager::addPeer(string addr, uint64_t time, string version) {
     if (version != this->version) return;
+    // check if peer is on our local blacklist
     // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
@@ -377,6 +391,9 @@ void HostManager::refreshHostList() {
         string hostUrl = string(hostJson);
         auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
         if (existing != this->hosts.end()) continue;
+
+        // if host is in blacklist skip:
+        if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
 
         // otherwise try connecting to the host to confirm it's up
         HostManager & hm = *this;

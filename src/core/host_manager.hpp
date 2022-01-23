@@ -48,6 +48,7 @@ class HostManager {
         map<string,int32_t> peerClockDeltas;
         vector<string> hostSources;
         vector<string> hosts;
+        set<string> blacklist;
         vector<SHA256Hash> validationHashes;
 
         vector<std::thread> syncThread;
