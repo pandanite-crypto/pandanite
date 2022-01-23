@@ -99,12 +99,33 @@ int main(int argc, char **argv) {
     auto blockHandler = [&manager](auto *res, auto *req) {
         json result;
         try {
-            int idx = std::stoi(string(req->getParameter(0)));
+            int blockId= std::stoi(string(req->getParameter(0)));
             int count = std::stoi(manager.getBlockCount());
-            if (idx < 0 || idx > count) {
+            if (blockId<= 0 || blockId > count) {
                 result["error"] = "Invalid Block";
             } else {
-                result = manager.getBlock(idx);
+                result = manager.getBlock(blockId);
+            }
+            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+        } catch(const std::exception &e) {
+            result["error"] = "Unknown error";
+            Logger::logError("/block", e.what());
+            res->end("");
+        } catch(...) {
+            Logger::logError("/block", "unknown");
+            res->end("");
+        }
+    };
+
+    auto mineStatusHandler = [&manager](auto *res, auto *req) {
+        json result;
+        try {
+            int blockId = std::stoi(string(req->getParameter(0)));
+            int count = std::stoi(manager.getBlockCount());
+            if (blockId <= 0 || blockId > count) {
+                result["error"] = "Invalid Block";
+            } else {
+                result = manager.getMineStatus(blockId);
             }
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
@@ -358,6 +379,7 @@ int main(int argc, char **argv) {
         .get("/logs", logsHandler)
         .get("/stats", statsHandler)
         .get("/block/:b", blockHandler)
+        .get("/mine_status/:b", mineStatusHandler)
         .get("/ledger/:user", ledgerHandler)
         .get("/mine", mineHandler)
         .post("/add_peer", addPeerHandler)

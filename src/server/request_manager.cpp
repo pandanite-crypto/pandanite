@@ -110,16 +110,36 @@ json RequestManager::verifyTransaction(Transaction& t) {
     return response;
 }
 
+json RequestManager::getMineStatus(uint32_t blockId) {
+    json result;
+    Block b = this->blockchain->getBlock(blockId).toJson();
+    PublicWalletAddress minerAddress;
+    TransactionAmount txFees = 0;
+    TransactionAmount mintFee = 0;
+    for(auto & t : b.getTransactions()) {
+        if (t.isFee()) {
+            minerAddress = t.toWallet();
+            mintFee = t.getAmount();
+        } else {
+            txFees += t.getTransactionFee();
+        }
+    }
+    result["minerWallet"] = walletAddressToString(minerAddress);
+    result["mintFee"] = mintFee;
+    result["txFees"] = txFees;
+    result["timestamp"] = timeToString(b.getTimestamp());
+    return result;
+}
+
+
 json RequestManager::getProofOfWork() {
     json result;
-    vector<Transaction> transactions;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
     result["miningFee"] = this->blockchain->getCurrentMiningFee();
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
     result["lastTimestamp"] = timeToString(last.timestamp);
     return result;
-
 }
 
 std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
