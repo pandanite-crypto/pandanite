@@ -84,7 +84,7 @@ void get_status(block_status& status) {
     }
 }
 
-void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& status) {
+void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& status, string& customHostIp) {
     TransactionAmount allEarnings = 0;
     int failureCount = 0;
     int last_block_id = 0;
@@ -92,7 +92,15 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     time_t blockstart = std::time(0);
 
-    string host = hosts.getGoodHost();
+    string host;
+    
+    if (customHostIp != "") {
+        // mine against a specific IP
+        host = customHostIp;
+    } else {
+        // find a random "good" host
+        host = hosts.getGoodHost();
+    }
 
     if (host == "") {
         Logger::logStatus("no host found");
@@ -226,6 +234,7 @@ int main(int argc, char **argv) {
     json config = getConfig(argc, argv);
     int threads = config["threads"];
     int thread_priority = config["thread_priority"];
+    string customIp = config["ip"];
     string customWallet = config["wallet"];
     PublicWalletAddress wallet;
 
@@ -255,6 +264,6 @@ int main(int argc, char **argv) {
     }
 
     std::thread status_thread(get_status, ref(status));
-    std::thread mining_thread(get_work, wallet, ref(hosts), ref(status));
+    std::thread mining_thread(get_work, wallet, ref(hosts), ref(status), ref(customIp));
     mining_thread.join();
 }

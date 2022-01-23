@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         PublicWalletAddress statedFromAddress = stringToWalletAddress(keys["wallet"]);
         if (keyFromAddress != statedFromAddress) {
             cout<<"Wallet address does not match public key. Keyfile is likely corrupted."<<endl;
-            return 0;
+            //return 0;
         }
     } catch(...) {
         cout<<"Could not read ./keys.json"<<endl;
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     string to;
     cin>> to;
     PublicWalletAddress toWallet = stringToWalletAddress(to);
-    PublicWalletAddress fromWallet = walletAddressFromPublicKey(publicKey);
+    PublicWalletAddress fromWallet = stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"); // walletAddressFromPublicKey(publicKey);
 
     cout<<"Enter the amount in leaves (NOTE: 1 leaf = 1/10,000 BMB):"<<endl;
     TransactionAmount amount;
@@ -46,10 +46,11 @@ int main(int argc, char** argv) {
     TransactionAmount fee;
     cin>>fee;
 
-    string host = hosts.getGoodHost();
+    string host = "http://52.10.123.71:3000"; // hosts.getGoodHost();
     
     Transaction t(fromWallet, toWallet, amount,publicKey, fee);
     t.sign(publicKey, privateKey);
+
     cout<<"Creating transaction..."<<endl;
     cout<<"================================================="<<endl;
     cout<<"TRANSACTION JSON (keep this for your records)"<<endl;
