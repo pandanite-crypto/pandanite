@@ -181,7 +181,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
             uint64_t lastTimestamp = std::time(0);
             try { // TODO: remove try catch when all servers are patched with timestamp 
-                lastTimestamp = (uint64_t) stringToTime(problem["lastTimestamp"]);
+                lastTimestamp = (uint64_t) stringToUint64(problem["lastTimestamp"]);
 
                 // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
                 // if it's not then your system clock is wonky, so we just make up a date:

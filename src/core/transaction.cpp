@@ -77,7 +77,7 @@ Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
 
 Transaction::Transaction(json data) {
     PublicWalletAddress to;
-    this->timestamp = stringToTime(data["timestamp"]);
+    this->timestamp = stringToUint64(data["timestamp"]);
     this->to = stringToWalletAddress(data["to"]);
     this->fee = data["fee"];
     if(data["from"] == "") {        
@@ -104,7 +104,7 @@ json Transaction::toJson() {
     json result;
     result["to"] = walletAddressToString(this->toWallet());
     result["amount"] = this->amount;
-    result["timestamp"] = timeToString(this->timestamp);
+    result["timestamp"] = uint64ToString(this->timestamp);
     result["fee"] = this->fee;
     if (!this->isTransactionFee) {
         result["from"] = walletAddressToString(this->fromWallet());

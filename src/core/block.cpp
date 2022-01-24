@@ -37,7 +37,7 @@ Block::Block(json block) {
     this->lastBlockHash = stringToSHA256(block["lastBlockHash"]);
     this->id = block["id"];
     this->difficulty = block["difficulty"];
-    this->timestamp = stringToTime(block["timestamp"]);
+    this->timestamp = stringToUint64(block["timestamp"]);
     for(auto t : block["transactions"]) {
         Transaction curr = Transaction(t);
         this->transactions.push_back(curr);
@@ -91,7 +91,7 @@ json Block::toJson() {
     result["id"] = this->id;
     result["difficulty"] = this->difficulty;
     result["nonce"] = SHA256toString(this->nonce);
-    result["timestamp"] = timeToString(this->timestamp);
+    result["timestamp"] = uint64ToString(this->timestamp);
     result["transactions"] = json::array();
     result["merkleRoot"] = SHA256toString(this->merkleRoot);
     result["lastBlockHash"] = SHA256toString(this->lastBlockHash);

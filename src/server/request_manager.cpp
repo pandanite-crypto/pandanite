@@ -127,7 +127,7 @@ json RequestManager::getMineStatus(uint32_t blockId) {
     result["minerWallet"] = walletAddressToString(minerAddress);
     result["mintFee"] = mintFee;
     result["txFees"] = txFees;
-    result["timestamp"] = timeToString(b.getTimestamp());
+    result["timestamp"] = uint64ToString(b.getTimestamp());
     return result;
 }
 
@@ -138,7 +138,7 @@ json RequestManager::getProofOfWork() {
     result["challengeSize"] = this->blockchain->getDifficulty();
     result["miningFee"] = this->blockchain->getCurrentMiningFee();
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
-    result["lastTimestamp"] = timeToString(last.timestamp);
+    result["lastTimestamp"] = uint64ToString(last.timestamp);
     return result;
 }
 

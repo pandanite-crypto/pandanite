@@ -59,13 +59,13 @@ std::uint64_t getCurrentTime() {
     return std::time(0);
 }
 
-std::string timeToString(const std::uint64_t& t) {
+std::string uint64ToString(const std::uint64_t& t) {
     std::ostringstream oss;
     oss << t;
     return oss.str();
 }
 
-std::uint64_t stringToTime(const std::string& input)
+std::uint64_t stringToUint64(const std::string& input)
 {
     std::istringstream stream(input);
     uint64_t t;
