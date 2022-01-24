@@ -344,6 +344,28 @@ int main(int argc, char **argv) {
         });
     };
 
+    auto addTransactionJSONHandler = [&manager](auto *res, auto *req) {
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+        std::string buffer;
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
+            if (last) {
+                try {
+                    Transaction tx(json::parse(string(buffer)));
+                    json response = manager.addTransaction(tx);
+                    res->end(response.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/add_transaction", e.what());
+                } catch(...) {
+                    Logger::logError("/add_transaction", "unknown");
+                }
+            }
+        });
+    };
+
     auto verifyTransactionHandler = [&manager](auto *res, auto *req) {
         /* Allocate automatic, stack, variable as usual */
         std::string buffer;
@@ -390,6 +412,7 @@ int main(int argc, char **argv) {
         .get("/block_headers/:start/:end", blockHeaderHandler)
         .get("/synctx", getTxHandler)
         .post("/add_transaction", addTransactionHandler)
+        .post("/add_transaction_json", addTransactionJSONHandler)
         .post("/verify_transaction", verifyTransactionHandler)
         .listen((int)config["port"], [&hosts](auto *token) {
             Logger::logStatus("==========================================");
