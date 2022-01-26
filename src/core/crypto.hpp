@@ -33,4 +33,7 @@ TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey
 bool checkSignature(string content, TransactionSignature signature, PublicKey signingKey);
 bool checkSignature(const char* bytes, size_t len, TransactionSignature signature, PublicKey signingKey);
 SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)> incrementHashCount = [](int) {}, std::function<bool()> stop = []() { return false; });
+#ifdef GPU_ENABLED
+SHA256Hash mineHashGPU(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop);
+#endif
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize);

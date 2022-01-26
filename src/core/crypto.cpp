@@ -5,8 +5,8 @@
 #include <thread>
 #include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
-#include "../external/sha256/sha2.hpp" 
 #include "../core/logger.hpp"
+#include "../core/gpu_pow.hpp"
 using namespace std;
 
 #define SLOPPY_TASK_CYCLE 1000
@@ -20,15 +20,6 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
     return ret;
 }
 
-
-std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
-    std::array<uint8_t, 32> ret;
-    sha256_ctx sha256;
-    sha256_init(&sha256);
-    sha256_update(&sha256, (const unsigned char*) buffer, len);
-    sha256_final(&sha256, ret.data());
-    return ret;
-}
 
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
     RIPEMD160Hash ret;
@@ -209,6 +200,32 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize) {
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
+#ifdef GPU_ENABLED
+SHA256Hash mineHashGPU(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
+    initKernel();
+    
+    SHA256Hash start;
+    std::random_device t_rand;
+    for (size_t i = 0; i < 32; i++) start[i] = t_rand() % 256;
+    int N = 1;
+    while (true) {    
+        SHA256Hash solution;
+        int isFound = 0;
+        int numAttempts = 100000000;
+        uint32_t digest[SHA256_DIGEST_SIZE / sizeof(uint32_t)];
+        runKernel((const char*) target.data(), (int) challengeSize, (const char*) start.data(), &isFound, (char*) solution.data(), &numAttempts, digest);
+        incrementHashCount(numAttempts);
+        *reinterpret_cast<uint64_t*>(start.data()) += numAttempts;
+        cout<<"Did " << N * numAttempts << " hashes" <<endl;
+        N++;
+        if (isFound) return solution;
+
+        if (stop()) return NULL_SHA256_HASH;
+    }
+
+    return NULL_SHA256_HASH;
+}
+#endif
 
 SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
     // By @Shifu!

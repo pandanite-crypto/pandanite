@@ -43,7 +43,15 @@ void Worker::loop(void)
     }
 
     skip_current.store(false);
-
+#ifdef GPU_ENABLED
+    SHA256Hash solution = mineHashGPU(job.newBlock.getHash(), job.newBlock.getDifficulty(),
+        [this](int count) {
+            this->hash_count.fetch_add(count);
+        },
+        [this]() {
+            return skip_current.load();
+    });
+#else
     SHA256Hash solution = mineHash(job.newBlock.getHash(), job.newBlock.getDifficulty(),
         [this](int count) {
             this->hash_count.fetch_add(count);
@@ -51,6 +59,7 @@ void Worker::loop(void)
         [this]() {
             return skip_current.load();
     });
+#endif
 
     if (solution != NULL_SHA256_HASH) {
         job.newBlock.setNonce(solution);

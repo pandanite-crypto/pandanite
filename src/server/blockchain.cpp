@@ -271,7 +271,7 @@ void BlockChain::updateDifficulty() {
     uint32_t numBlocksElapsed = lastID - firstID;
     int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
     int32_t difficulty = last.getDifficulty();
-    this->difficulty = computeDifficulty(difficulty, elapsed, target);
+    this->difficulty = 28; //computeDifficulty(difficulty, elapsed, target);
 }
 
 uint32_t BlockChain::findBlockForTransaction(Transaction &t) {
