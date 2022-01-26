@@ -211,14 +211,17 @@ SHA256Hash mineHashGPU(SHA256Hash target, unsigned char challengeSize, std::func
     while (true) {    
         SHA256Hash solution;
         int isFound = 0;
-        int numAttempts = 100000000;
+        int numAttempts = 0;
         uint32_t digest[SHA256_DIGEST_SIZE / sizeof(uint32_t)];
         runKernel((const char*) target.data(), (int) challengeSize, (const char*) start.data(), &isFound, (char*) solution.data(), &numAttempts, digest);
         incrementHashCount(numAttempts);
         *reinterpret_cast<uint64_t*>(start.data()) += numAttempts;
         cout<<"Did " << N * numAttempts << " hashes" <<endl;
         N++;
-        if (isFound) return solution;
+        if (isFound) {
+            cout<<"FOUND"<<endl;
+            return solution;
+        }
 
         if (stop()) return NULL_SHA256_HASH;
     }
