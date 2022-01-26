@@ -136,6 +136,8 @@ json RequestManager::getProofOfWork() {
     json result;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
+    result["chainLength"] = this->blockchain->getBlockCount();
+    result["chainPow"] = to_string(this->blockchain->getTotalWork());
     result["miningFee"] = this->blockchain->getCurrentMiningFee();
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
     result["lastTimestamp"] = uint64ToString(last.timestamp);
