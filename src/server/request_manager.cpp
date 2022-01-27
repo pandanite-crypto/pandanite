@@ -12,6 +12,7 @@ using namespace std;
 RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
     this->mempool = new MemPool(hosts, *this->blockchain);
+    this->rateLimiter = new RateLimiter(5,5); // max of 5 requests over 5 sec period
     if (!hosts.isDisabled()) {
         this->blockchain->sync();
      
@@ -30,12 +31,20 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
     }
     this->mempool->sync();
     this->blockchain->setMemPool(this->mempool);
+}
 
-
+RequestManager::~RequestManager() {
+    delete blockchain;
+    delete mempool;
+    delete rateLimiter;
 }
 
 void RequestManager::deleteDB() {
     this->blockchain->deleteDB();
+}
+
+bool RequestManager::acceptRequest(std::string& ip) {
+    return this->rateLimiter->limit(ip);
 }
 
 json RequestManager::addTransaction(Transaction& t) {

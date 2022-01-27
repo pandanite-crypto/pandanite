@@ -11,14 +11,19 @@
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
-#include "../server/request_manager.hpp"
 #include "../core/config.hpp"
+#include "../server/request_manager.hpp"
 using namespace std;
 
 
 
 void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=8000000) {
     if (buf.size() > maxSize) ptr->end("Buffer Overflow");
+}
+
+void rateLimit(RequestManager& manager, uWS::HttpResponse<false>* ptr) {
+    auto remoteAddress = string(ptr->getRemoteAddressAsText());
+    if (!manager.acceptRequest(remoteAddress)) ptr->end("Too many requests " + remoteAddress);
 }
 
 
@@ -33,11 +38,13 @@ int main(int argc, char **argv) {
 
     Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
+    
     Logger::logStatus("RequestManager ready...");
 
     Logger::logStatus("Server Ready.");
     
     auto logsHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             string s = "";
             for(auto str : Logger::buffer) {
@@ -52,6 +59,7 @@ int main(int argc, char **argv) {
     };
 
     auto statsHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             json stats = manager.getStats();
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(stats.dump());
@@ -63,6 +71,7 @@ int main(int argc, char **argv) {
     };
 
     auto totalWorkHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             std::string count = manager.getTotalWork();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
@@ -81,11 +90,13 @@ int main(int argc, char **argv) {
     };
 
     auto peerHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         json response = manager.getPeers();
         res->end(response.dump());
     };
 
     auto blockCountHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             std::string count = manager.getBlockCount();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
@@ -97,6 +108,7 @@ int main(int argc, char **argv) {
     };
 
     auto blockHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         json result;
         try {
             int blockId= std::stoi(string(req->getParameter(0)));
@@ -118,6 +130,7 @@ int main(int argc, char **argv) {
     };
 
     auto mineStatusHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         json result;
         try {
             int blockId = std::stoi(string(req->getParameter(0)));
@@ -139,6 +152,7 @@ int main(int argc, char **argv) {
     };
 
     auto ledgerHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             PublicWalletAddress w = stringToWalletAddress(string(req->getParameter(0)));
             json ledger = manager.getLedger(w);
@@ -152,6 +166,7 @@ int main(int argc, char **argv) {
 
 
     auto addPeerHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -175,6 +190,7 @@ int main(int argc, char **argv) {
 
 
     auto submitHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -235,6 +251,7 @@ int main(int argc, char **argv) {
     };
 
     auto getTxHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             res->writeHeader("Content-Type", "application/octet-stream");
             std::pair<char*, size_t> buffer = manager.getRawTransactionData();
@@ -253,6 +270,7 @@ int main(int argc, char **argv) {
     };
 
     auto mineHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             json response = manager.getProofOfWork();
             res->end(response.dump());
@@ -264,6 +282,7 @@ int main(int argc, char **argv) {
     };
 
     auto syncHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
@@ -290,6 +309,7 @@ int main(int argc, char **argv) {
     };
 
     auto blockHeaderHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         try {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
@@ -315,6 +335,7 @@ int main(int argc, char **argv) {
     };
 
     auto addTransactionHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -345,6 +366,7 @@ int main(int argc, char **argv) {
     };
 
     auto addTransactionJSONHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -367,6 +389,7 @@ int main(int argc, char **argv) {
     };
 
     auto verifyTransactionHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
         /* Allocate automatic, stack, variable as usual */
         std::string buffer;
         /* Move it to storage of lambda */
