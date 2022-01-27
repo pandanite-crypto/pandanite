@@ -179,7 +179,7 @@ string HostManager::getGoodHost() {
             bestHost = chain.first;
         }
     }
-
+    Logger::logStatus("Got host : " + bestHost);
     return bestHost;
 }
 

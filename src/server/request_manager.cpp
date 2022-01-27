@@ -12,7 +12,7 @@ using namespace std;
 RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
     this->mempool = new MemPool(hosts, *this->blockchain);
-    this->rateLimiter = new RateLimiter(5,5); // max of 5 requests over 5 sec period
+    this->rateLimiter = new RateLimiter(5,5); // max of 5 requests over 5 sec period 
     if (!hosts.isDisabled()) {
         this->blockchain->sync();
      
@@ -146,7 +146,6 @@ json RequestManager::getProofOfWork() {
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
     result["chainLength"] = this->blockchain->getBlockCount();
-    result["chainPow"] = to_string(this->blockchain->getTotalWork());
     result["miningFee"] = this->blockchain->getCurrentMiningFee();
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
     result["lastTimestamp"] = uint64ToString(last.timestamp);
