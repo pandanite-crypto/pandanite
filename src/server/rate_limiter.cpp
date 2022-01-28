@@ -10,12 +10,8 @@ bool RateLimiter::limit(const std::string &s) {
     if (iter == c.end()) {
         auto t = now - std::chrono::seconds(seconds) + add;
         c.emplace(std::make_pair(s, t));
-        for (auto it = c.cbegin(); it != c.cend();) {
-            if (now - it->second > std::chrono::seconds(seconds)) {
-                c.erase(it++);
-            } else {
-                ++it;
-            }
+        if (c.size() > 10000) {
+            
         }
         return true;
     } else {
