@@ -5,7 +5,7 @@
 using namespace std;
 
 #ifdef _WIN32
-#include <winsock2.h>
+#include <winsock.h>
 #endif
 
 string randomString(int length);
