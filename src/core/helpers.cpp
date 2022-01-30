@@ -16,7 +16,9 @@
 #ifdef WIN32
 #define popen _popen
 #define pclose _pclose
+#endif
 
+#ifndef __APPLE__ 
 uint64_t htonll(uint64_t x) {
     return x;
 }
