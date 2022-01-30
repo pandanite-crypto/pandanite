@@ -79,8 +79,12 @@ HostManager::HostManager(json config) {
         std::string line;
         while (std::getline(blacklist, line)) {
             if (line[0] != '#') {
-                this->blacklist.insert(line);
-                Logger::logStatus("Ignoring host " + line);
+                string blocked = line;
+                if (blocked[blocked.size() - 1] == '/') {
+                    blocked = blocked.substr(0, blocked.size() - 1);
+                }
+                this->blacklist.insert(blocked);
+                Logger::logStatus("Ignoring host " + blocked);
             }
         }
     }
@@ -298,7 +302,6 @@ set<string> HostManager::sampleAllHosts(int count) {
 */
 void HostManager::addPeer(string addr, uint64_t time, string version) {
     if (version != this->version) return;
-    // check if peer is on our local blacklist
     // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
