@@ -1,4 +1,4 @@
-#ifdef GPU_ENABLED
+
 #include <sys/time.h>
 #include <err.h>
 #include <stdio.h>
@@ -26,11 +26,10 @@ static cl_kernel kernel;
 static cl_command_queue command_queue;
 
 // OpenCL data exchange buffers.
-static cl_mem cl_pow_input, cl_digest, pow_buff, cl_start_nonce, cl_end_nonce,
-              cl_zero_bits_num, cl_is_found, cl_attempts_num;
+static cl_mem cl_pow_input, cl_start_nonce, cl_zero_bits_num, cl_results;
 
-static size_t global_work_size = 1;
-static size_t local_work_size = 1;
+static size_t global_work_size = 256 * 10;
+static uint64_t local_work_size = 256;
 
 // Check OpenCL call success.
 #define CHECK_CL(rc) do { \
@@ -54,8 +53,9 @@ void sha256_pow_load_source() {
 
 // Initialize OpenCL device.
 void sha256_pow_create_device() {
+
   CHECK_CL(clGetPlatformIDs(1, &platform_id, &ret_num_platforms));
-  CHECK_CL(clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_ALL, 1, &device_id, &ret_num_devices));
+  CHECK_CL(clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_ALL, 1, &device_id, &ret_num_devices));
   cl_int rc;
   context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &rc);
   CHECK_CL(rc);
@@ -97,26 +97,19 @@ void sha256_pow_create_cl_obj() {
   CHECK_CL(rc);
   cl_zero_bits_num = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(unsigned int) * 3, NULL, &rc);
   CHECK_CL(rc);
-  cl_end_nonce = clCreateBuffer(context, CL_MEM_WRITE_ONLY, POW_NONCE_SIZE, NULL, &rc);
-  CHECK_CL(rc);
-  cl_is_found = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int), NULL, &rc);
-  CHECK_CL(rc);
-  cl_digest = clCreateBuffer(context, CL_MEM_WRITE_ONLY, SHA256_DIGEST_SIZE, NULL, &rc);
-  CHECK_CL(rc);
-  cl_attempts_num = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int), NULL, &rc);
+  cl_results = clCreateBuffer(context, CL_MEM_WRITE_ONLY, global_work_size
+                              * sizeof(sha256_pow_result), NULL, &rc);
   CHECK_CL(rc);
 
   clSetKernelArg(kernel, 0, sizeof(cl_pow_input), (void *) &cl_pow_input);
   clSetKernelArg(kernel, 1, sizeof(cl_zero_bits_num), (void *) &cl_zero_bits_num);
   clSetKernelArg(kernel, 2, sizeof(cl_start_nonce), (void *) &cl_start_nonce);
-  clSetKernelArg(kernel, 3, sizeof(cl_digest), (void *) &cl_digest);
-  clSetKernelArg(kernel, 4, sizeof(cl_end_nonce), (void *) &cl_end_nonce);
-  clSetKernelArg(kernel, 5, sizeof(cl_is_found), (void *) &cl_is_found);
-  clSetKernelArg(kernel, 6, sizeof(cl_attempts_num), (void *) &cl_attempts_num);
+  clSetKernelArg(kernel, 3, sizeof(cl_results), (void *) &cl_results);
 }
 
 // Print a hex string prefixed by a message.
 void print_hex(const char* msg, const void* mem, int size) {
+
   printf("%s ", msg);
   for (int i = 0; i < size; i++)
     printf("%02x", ((unsigned char*)mem)[i]);
@@ -132,11 +125,8 @@ uint64_t get_timestamp_ms() {
 }
 
 // Execute PoW, according to the arguments.
-void runKernel(const char* pow_input, int zero_bits_num, const char* start_nonce,
-                int* is_found, char* end_nonce, int* attempts_num,
-                uint32_t* digest) {
-
-  global_work_size = 1;
+void sha256_pow(const char* pow_input, int zero_bits_num, const char* start_nonce,
+                sha256_pow_result* results) {
 
   CHECK_CL(clEnqueueWriteBuffer(command_queue, cl_zero_bits_num, CL_TRUE, 0,
                                 sizeof(int), &zero_bits_num, 0, NULL, NULL));
@@ -144,22 +134,38 @@ void runKernel(const char* pow_input, int zero_bits_num, const char* start_nonce
                                 POW_INPUT_SIZE, pow_input, 0, NULL, NULL));
   CHECK_CL(clEnqueueWriteBuffer(command_queue, cl_start_nonce, CL_TRUE, 0,
                                 POW_NONCE_SIZE, start_nonce, 0, NULL, NULL));
-
   CHECK_CL(clEnqueueNDRangeKernel(
     command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0,
     NULL, NULL
   ));
   CHECK_CL(clFinish(command_queue));
 
-  CHECK_CL(clEnqueueReadBuffer(command_queue, cl_digest, CL_TRUE, 0,
-                               SHA256_DIGEST_SIZE, digest, 0, NULL, NULL));
-  CHECK_CL(clEnqueueReadBuffer(command_queue, cl_end_nonce, CL_TRUE, 0,
-                               POW_NONCE_SIZE, end_nonce, 0, NULL, NULL));
-  CHECK_CL(clEnqueueReadBuffer(command_queue, cl_is_found, CL_TRUE, 0,
-                               sizeof(*is_found), is_found, 0, NULL, NULL));
-  CHECK_CL(clEnqueueReadBuffer(command_queue, cl_attempts_num, CL_TRUE, 0,
-                               sizeof(*attempts_num), attempts_num, 0, NULL, NULL));
+  CHECK_CL(clEnqueueReadBuffer(command_queue, cl_results, CL_TRUE, 0,
+                               global_work_size * sizeof(sha256_pow_result),
+                               results, 0, NULL, NULL));
 }
+
+bool runKernel(const char* pow_input, int zero_bits_num, const char* start_nonce, char* end_nonce, uint64_t& attempts) {
+    size_t results_size = global_work_size * sizeof(sha256_pow_result);
+    sha256_pow_result* results = (sha256_pow_result *)malloc(results_size);
+
+
+    sha256_pow(pow_input, zero_bits_num, start_nonce, results);
+    int found_idx = -1;
+    uint64_t total_attempts_num = 0;
+
+    for (int i = 0; i < global_work_size; i++) {
+      total_attempts_num += results[i].attempts_num;
+      if (results[i].is_found)
+        found_idx = i;
+    }
+    attempts = total_attempts_num;
+    if (found_idx < 0) return false;
+    memcpy(end_nonce, results[found_idx].end_nonce, POW_NONCE_SIZE);
+    return true;
+}
+
+
 
 void initKernel() {
   sha256_pow_load_source();
@@ -167,4 +173,3 @@ void initKernel() {
   sha256_pow_create_kernel();
   sha256_pow_create_cl_obj();
 }
-#endif

@@ -200,7 +200,6 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize) {
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
-#ifdef GPU_ENABLED
 SHA256Hash mineHashGPU(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
     initKernel();
     
@@ -211,9 +210,10 @@ SHA256Hash mineHashGPU(SHA256Hash target, unsigned char challengeSize, std::func
     while (true) {    
         SHA256Hash solution;
         int isFound = 0;
-        int numAttempts = 0;
+        uint64_t numAttempts = 0;
         uint32_t digest[SHA256_DIGEST_SIZE / sizeof(uint32_t)];
-        runKernel((const char*) target.data(), (int) challengeSize, (const char*) start.data(), &isFound, (char*) solution.data(), &numAttempts, digest);
+        
+        runKernel((const char*) target.data(), (int) challengeSize, (const char*) start.data(), (char*) solution.data(), numAttempts);
         incrementHashCount(numAttempts);
         *reinterpret_cast<uint64_t*>(start.data()) += numAttempts;
         cout<<"Did " << N * numAttempts << " hashes" <<endl;
@@ -228,7 +228,6 @@ SHA256Hash mineHashGPU(SHA256Hash target, unsigned char challengeSize, std::func
 
     return NULL_SHA256_HASH;
 }
-#endif
 
 SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
     // By @Shifu!

@@ -146,6 +146,7 @@ void sha256_crypt_subkernel(char* input, uint *digest) {
 
 // Print hex data prefixed with a number (OpenCL won't allow const char* arg).
 void print_hex(int num, void* mem, int size) {
+
   printf("%i: ", num);
   for (int i = 0; i < size; i++)
     printf("%02x", ((unsigned char*)mem)[i]);
@@ -156,27 +157,37 @@ void print_hex(int num, void* mem, int size) {
 __kernel void sha256_pow_kernel(__global char* input,
                                 __global int* zero_bits_num,
                                 __global char* start_nonce,
-                                __global uint* digest,
-                                __global char* end_nonce,
-                                __global int* is_found,
-                                __global int* attempts_num) {
-  *is_found = 0;
+                                __global sha256_pow_result* results) {
 
+  size_t item_id = get_global_id(0);
+
+  // Prepare bit mask for easier checking of leading bits.
   __uint128_t zero_bits_check_mask = ~0;
   zero_bits_check_mask <<= *zero_bits_num;
 
+  // Prepare input buffer and convenience byte pointer to it.
   __uint128_t local_input[4];
   char* local_input_bytes = (char*)&local_input;
 
+  // Copy hashed data to input buffer.
   for (int i = 0; i < POW_INPUT_SIZE; i++)
     local_input_bytes[i] = input[i];
 
+  // Copy start nonce to input buffer.
   for (int i = 0; i < POW_NONCE_SIZE; i++)
     local_input_bytes[POW_INPUT_SIZE + i] = start_nonce[i];
 
-  __uint128_t local_digest[2];
+  // Apply starting offset to nonce based on work item id.
+  __uint128_t initial_offset = item_id * POW_MAX_ITERATIONS;
+  __uint128_t initial_nonce_low = local_input[2];
+  local_input[2] += initial_offset;
+  if (local_input[2] < initial_nonce_low)
+    local_input[3]++;
 
-  for (*attempts_num = 1; *attempts_num < POW_MAX_ITERATIONS; ++*attempts_num) {
+  __uint128_t local_digest[2];
+  int attempts_num;
+
+  for (attempts_num = 1; attempts_num < POW_MAX_ITERATIONS; attempts_num++) {
 #ifdef DEBUG_POW
     print_hex(0, local_input, sizeof(local_input));
 #endif
@@ -188,7 +199,7 @@ __kernel void sha256_pow_kernel(__global char* input,
 #endif
 
     if ((local_digest[0] | zero_bits_check_mask) == zero_bits_check_mask) {
-      *is_found = 1;
+      results[item_id].is_found = 1;
       break;
     }
 
@@ -196,10 +207,13 @@ __kernel void sha256_pow_kernel(__global char* input,
     ++local_input[2] || ++local_input[3];
   }
 
+  // Copy found data to global (host-visible) memory.
+  results[item_id].attempts_num = attempts_num;
+
   uint* local_digest_words = (uint*)local_digest;
   for (int i = 0; i < 8; i++)
-    digest[i] = local_digest_words[i];
+    results[item_id].digest[i] = local_digest_words[i];
 
   for (int i = 0; i < POW_NONCE_SIZE; i++)
-    end_nonce[i] = local_input_bytes[POW_INPUT_SIZE + i];
+    results[item_id].end_nonce[i] = local_input_bytes[POW_INPUT_SIZE + i];
 }
