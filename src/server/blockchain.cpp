@@ -398,7 +398,6 @@ ExecutionStatus BlockChain::startChainSync() {
     int startCount = this->numBlocks;
 
     int needed = this->targetBlockCount - startCount;
-
     // download any remaining blocks in batches
     uint64_t start = std::time(0);
     for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {

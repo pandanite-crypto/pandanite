@@ -18,23 +18,22 @@
 #define pclose _pclose
 #endif
 
-#ifndef __APPLE__ 
-uint64_t htonll(uint64_t x) {
+
+uint64_t hostToNetworkUint64(uint64_t x) {
     return x;
 }
 
-uint32_t htonl(uint32_t x) {
+uint32_t hostToNetworkUint32(uint32_t x) {
     return x;
 }
 
-uint64_t ntohll(uint64_t x) {
+uint64_t networkToHostUint64(uint64_t x) {
     return x;
 }
-uint32_t ntohl(uint32_t x) {
+uint32_t networkToHostUint32(uint32_t x) {
     return x;
 }
 
-#endif
 
 using namespace std;
 
@@ -46,14 +45,14 @@ uint32_t readNetworkUint32(const char*& buffer) {
     uint32_t x;
     memcpy(&x, buffer, 4);
     buffer += 4;
-    return ntohl(x);
+    return networkToHostUint32(x);
 }
 
 uint64_t readNetworkUint64(const char*& buffer) {
     uint64_t x;
     memcpy(&x, buffer, 8);
     buffer += 8;
-    return ntohll(x);
+    return networkToHostUint64(x);
 }
 
 SHA256Hash readNetworkSHA256(const char*& buffer) {
@@ -76,13 +75,13 @@ void readNetworkNBytes(const char*& buffer, char* outBuffer, size_t N) {
 }
 
 void writeNetworkUint32(char*& buffer, uint32_t x) {
-    x = htonl(x);
+    x = hostToNetworkUint32(x);
     memcpy(buffer, &x, 4);
     buffer+=4;
 }
 
 void writeNetworkUint64(char*& buffer, uint64_t x) {
-    x = htonll(x);
+    x = hostToNetworkUint64(x);
     memcpy(buffer, &x, 8);
     buffer+=8;
 }
