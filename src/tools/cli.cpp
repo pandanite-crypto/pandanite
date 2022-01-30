@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     string to;
     cin>> to;
     PublicWalletAddress toWallet = stringToWalletAddress(to);
-    PublicWalletAddress fromWallet = stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"); // walletAddressFromPublicKey(publicKey);
+    PublicWalletAddress fromWallet = walletAddressFromPublicKey(publicKey);
 
     cout<<"Enter the amount in leaves (NOTE: 1 leaf = 1/10,000 BMB):"<<endl;
     TransactionAmount amount;
