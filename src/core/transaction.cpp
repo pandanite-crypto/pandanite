@@ -24,7 +24,7 @@ TransactionInfo transactionInfoFromBuffer(const char* buffer) {
         memcpy(pub.data(), t.signingKey, 32);
         t.from = walletAddressFromPublicKey(pub);
     } else {
-        t.from = stringToWalletAddress("");
+        t.from = NULL_ADDRESS;
     }
 
     return t;

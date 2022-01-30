@@ -16,7 +16,7 @@ struct TransactionInfo {
     bool isTransactionFee;
 };
 
-#define TRANSACTIONINFO_BUFFER_SIZE 174
+#define TRANSACTIONINFO_BUFFER_SIZE 149
 
 TransactionInfo transactionInfoFromBuffer(const char* buffer);
 void transactionInfoToBuffer(TransactionInfo& t, char* buffer);

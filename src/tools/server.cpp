@@ -227,7 +227,8 @@ int main(int argc, char **argv) {
                             for(int j = 0; j < blockH.numTransactions; j++) {
                                 TransactionInfo t = transactionInfoFromBuffer(ptr);
                                 ptr += TRANSACTIONINFO_BUFFER_SIZE;
-                                transactions.push_back(Transaction(t));
+                                Transaction tx(t);
+                                transactions.push_back(tx);
                             }
                             Block block(blockH, transactions);
                             json response = manager.submitProofOfWork(block);
@@ -355,7 +356,6 @@ int main(int argc, char **argv) {
                     } else {
                         TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
                         Transaction tx(t);
-                        cout<<tx.toJson().dump()<<endl;
                         json response = manager.addTransaction(tx);
                         res->end(response.dump());
                     }
