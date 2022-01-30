@@ -58,5 +58,6 @@ class BlockChain {
         int targetBlockCount;
         std::mutex lock;
         vector<std::thread> syncThread;
+        map<int,Block> specialBlocks;
         friend void chain_sync(BlockChain& blockchain);
 };

@@ -96,6 +96,11 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
 }
 
 void BlockChain::initChain() {
+
+    json specialBlocks = readJsonFromFile("special.json");
+    for(auto block : specialBlocks["data"]) {
+        this->specialBlocks[block["id"]] = Block(block);
+    }
     if (blockStore.hasBlockCount()) {
         Logger::logStatus("BlockStore exists, loading from disk");
         size_t count = blockStore.getBlockCount();
@@ -122,33 +127,6 @@ void BlockChain::resetChain() {
     this->ledger.clear();
     this->blockStore.clear();
     this->txdb.clear();
-    
-
-    // used to create genesis.json
-    // Block genesis;
-    // User miner;
-    // Transaction fee(stringToWalletAddress("0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249"), BMB(50));
-    // fee.setTimestamp(0);
-    // vector<Transaction> transactions;
-    
-    // genesis.setTimestamp(0);
-    // genesis.setId(1);
-    // genesis.addTransaction(fee);
-    // genesis.setLastBlockHash(NULL_SHA256_HASH);
-    // addGenesisTransactions(genesis);
-    
-    // // compute merkle tree
-    // MerkleTree m;
-    // m.setItems(genesis.getTransactions());
-    // SHA256Hash computedRoot = m.getRootHash();
-    // genesis.setMerkleRoot(m.getRootHash());
-
-    // SHA256Hash hash = genesis.getHash();
-
-    // SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
-    // genesis.setNonce(solution);
-
-    // writeJsonToFile(genesis.toJson(), "genesis.json");
     
     json genesisData = readJsonFromFile("genesis.json");
     Block genesis(genesisData);
@@ -409,8 +387,13 @@ ExecutionStatus BlockChain::startChainSync() {
             int count = 0;
             vector<Block> blocks;
             readRawBlocks(bestHost, i, end, blocks);
-            for(auto & b : blocks) {    
-                ExecutionStatus addResult = bc.addBlock(b);
+            for(auto & b : blocks) {   
+                ExecutionStatus addResult;
+                if (this->specialBlocks.find(b.getId()) != this->specialBlocks.end())  {
+                    addResult = bc.addBlock(this->specialBlocks[b.getId()]);
+                } else {
+                    addResult = bc.addBlock(b);
+                }
                 if (addResult != SUCCESS) {
                     failure = true;
                     status = addResult;
