@@ -85,6 +85,8 @@ string executionStatusAsString(ExecutionStatus status) {
     }
 }
 
+#define WALLET_SIG_FORK_BLOCK 11500
+
 void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  LedgerState& deltas) {
     if (!ledger.hasWallet(to)) {
         ledger.createWallet(to);   
@@ -119,7 +121,7 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
 
-    if (!t.isFee() && blockId > 11500 && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+    if (!t.isFee() && blockId > WALLET_SIG_FORK_BLOCK && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
         return WALLET_SIGNATURE_MISMATCH;
     }
     
@@ -223,7 +225,7 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
             return EXPIRED_TRANSACTION;
         }
         
-        if (!t.isFee() && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+        if (!t.isFee() && curr.getId() > WALLET_SIG_FORK_BLOCK && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
             return WALLET_SIGNATURE_MISMATCH;
         }
     }

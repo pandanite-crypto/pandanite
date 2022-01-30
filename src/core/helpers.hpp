@@ -4,10 +4,6 @@
 #include <ctime>
 using namespace std;
 
-#ifdef _WIN32
-#include <winsock.h>
-#endif
-
 string randomString(int length);
 void writeJsonToFile(json data, string filepath);
 json readJsonFromFile(string filepath);

@@ -16,6 +16,22 @@
 #ifdef WIN32
 #define popen _popen
 #define pclose _pclose
+
+uint64_t htonll(uint64_t x) {
+    return x;
+}
+
+uint32_t htonl(uint32_t x) {
+    return x;
+}
+
+uint64_t ntohll(uint64_t x) {
+    return x;
+}
+uint32_t ntohl(uint32_t x) {
+    return x;
+}
+
 #endif
 
 using namespace std;

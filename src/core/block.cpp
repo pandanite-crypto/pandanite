@@ -22,23 +22,13 @@ BlockHeader blockHeaderFromBuffer(const char* buffer) {
 }
 
 void blockHeaderToBuffer(BlockHeader& b, char* buffer) {
-    uint32_t id = htonl(b.id);
-    uint64_t timestamp = htonll(b.timestamp);
-    uint32_t difficulty = htonl(b.difficulty);
-    uint32_t numTransactions = htonl(b.numTransactions);
-    memcpy(buffer, &id, 4);
-    buffer += 4;
-    memcpy(buffer, &timestamp, 8);
-    buffer += 8;
-    memcpy(buffer, &difficulty, 4);
-    buffer += 4;
-    memcpy(buffer, &numTransactions, 4);
-    buffer += 4;
-    memcpy(buffer, b.lastBlockHash.data(), 32);
-    buffer += 32;
-    memcpy(buffer, b.merkleRoot.data(), 32);
-    buffer += 32;
-    memcpy(buffer, b.nonce.data(), 32);
+    writeNetworkUint32(buffer, b.id);
+    writeNetworkUint64(buffer, b.timestamp);
+    writeNetworkUint32(buffer, b.difficulty);
+    writeNetworkUint32(buffer, b.numTransactions);
+    writeNetworkSHA256(buffer, b.lastBlockHash);
+    writeNetworkSHA256(buffer, b.merkleRoot);
+    writeNetworkSHA256(buffer, b.nonce);
 }
 
 
