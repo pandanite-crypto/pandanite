@@ -212,6 +212,7 @@ json RequestManager::getStats() {
         info["error"] = "Need more data";
         return info;
     }
+    info["node_version"] = BUILD_VERSION;
     int coins = this->blockchain->getBlockCount()*50;
     info["node_version"] = BUILD_VERSION;
     info["num_coins"] = coins;

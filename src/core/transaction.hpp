@@ -16,6 +16,11 @@ struct TransactionInfo {
     bool isTransactionFee;
 };
 
+#define TRANSACTIONINFO_BUFFER_SIZE 149
+
+TransactionInfo transactionInfoFromBuffer(const char* buffer);
+void transactionInfoToBuffer(TransactionInfo& t, char* buffer);
+
 class Transaction {
     public:
         Transaction(json t);

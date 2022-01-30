@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     TransactionAmount fee;
     cin>>fee;
 
-    string host = "http://52.10.123.71:3000"; // hosts.getGoodHost();
+    string host = hosts.getGoodHost();
     
     Transaction t(fromWallet, toWallet, amount,publicKey, fee);
     t.sign(publicKey, privateKey);

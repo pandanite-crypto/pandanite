@@ -222,6 +222,10 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         } else if (txdb.hasTransaction(t) && curr.getId() != 1) {
             return EXPIRED_TRANSACTION;
         }
+        
+        if (!t.isFee() && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+            return WALLET_SIGNATURE_MISMATCH;
+        }
     }
     if (!foundFee) {
         return NO_MINING_FEE;

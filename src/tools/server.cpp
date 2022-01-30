@@ -200,21 +200,21 @@ int main(int argc, char **argv) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    if (buffer.length() < sizeof(BlockHeader) + sizeof(TransactionInfo)) {
+                    if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE) {
                         json response;
                         response["error"] = "Malformed block";
                         Logger::logError("/submit","Malformed block");
                         res->end(response.dump());
                     } else {
                         char * ptr = (char*)buffer.c_str();
-                        BlockHeader blockH = *((BlockHeader*)ptr);
-                        ptr += sizeof(BlockHeader);
-                        
-                        if (buffer.size() < sizeof(BlockHeader) + blockH.numTransactions*sizeof(TransactionInfo)) {
+                        BlockHeader blockH = blockHeaderFromBuffer(ptr);
+                        ptr += BLOCKHEADER_BUFFER_SIZE;
+                        if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
                             json response;
                             response["error"] = "Malformed block";
                             Logger::logError("/submit","Malformed block");
                             res->end(response.dump());
+                            return;
                         }
 
                         vector<Transaction> transactions;
@@ -225,9 +225,10 @@ int main(int argc, char **argv) {
                             Logger::logError("/submit","Too many transactions");
                         } else {
                             for(int j = 0; j < blockH.numTransactions; j++) {
-                                TransactionInfo t = *((TransactionInfo*)ptr);
-                                ptr += sizeof(TransactionInfo);
-                                transactions.push_back(Transaction(t));
+                                TransactionInfo t = transactionInfoFromBuffer(ptr);
+                                ptr += TRANSACTIONINFO_BUFFER_SIZE;
+                                Transaction tx(t);
+                                transactions.push_back(tx);
                             }
                             Block block(blockH, transactions);
                             json response = manager.submitProofOfWork(block);
@@ -320,7 +321,9 @@ int main(int argc, char **argv) {
             res->writeHeader("Content-Type", "application/octet-stream");
             for (int i = start; i <=end; i++) {
                 BlockHeader b = manager.getBlockHeader(i);
-                std::string_view str((char*)&b, sizeof(BlockHeader));
+                char bhBytes[BLOCKHEADER_BUFFER_SIZE];
+                blockHeaderToBuffer(b, bhBytes);
+                std::string_view str(bhBytes, BLOCKHEADER_BUFFER_SIZE);
                 res->write(str);
             }
             res->end("");
@@ -345,13 +348,13 @@ int main(int argc, char **argv) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    if (buffer.length() < sizeof(TransactionInfo)) {
+                    if (buffer.length() < TRANSACTIONINFO_BUFFER_SIZE) {
                         json response;
                         response["error"] = "Malformed transaction";
                         Logger::logError("/add_transaction","Malformed transaction");
                         res->end(response.dump());
                     } else {
-                        TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+                        TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
                         Transaction tx(t);
                         json response = manager.addTransaction(tx);
                         res->end(response.dump());
@@ -397,14 +400,14 @@ int main(int argc, char **argv) {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             if (last) {
-                if (buffer.length() < sizeof(TransactionInfo)) {
+                if (buffer.length() < TRANSACTIONINFO_BUFFER_SIZE) {
                     json response;
                     response["error"] = "Malformed transaction";
                     res->end(response.dump());
                     Logger::logError("/verify_transaction","Malformed transaction");
                     return;
                 }
-                TransactionInfo t = *((TransactionInfo*)buffer.c_str());
+                TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
                 Transaction tx(t);
                 json response = manager.verifyTransaction(tx);
                 res->end(response.dump());

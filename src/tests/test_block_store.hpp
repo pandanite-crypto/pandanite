@@ -28,8 +28,6 @@ TEST(test_blockstore_stores_block) {
 TEST(test_blockstore_stores_multiple) {
     BlockStore blocks;
     blocks.init("./test-data/tmpdb");
-    
-
     User miner;
     User receiver;
     for (int i = 0; i < 30; i++) {
@@ -72,7 +70,18 @@ TEST(test_blockstore_returns_valid_raw_data) {
     }
     blocks.setBlock(a);
     std::pair<uint8_t*,size_t> buffer = blocks.getRawData(a.getId());
-    Block b = Block(buffer);
+    const char* currPtr  = (const char*)buffer.first;
+    BlockHeader header = blockHeaderFromBuffer(currPtr);
+    currPtr += BLOCKHEADER_BUFFER_SIZE;
+
+    vector<Transaction> transactions;
+    for(int i = 0; i < header.numTransactions; i++) {
+        TransactionInfo tx = transactionInfoFromBuffer(currPtr);
+        currPtr += TRANSACTIONINFO_BUFFER_SIZE;
+        transactions.push_back(Transaction(tx));
+    }
+
+    Block b = Block(header, transactions);
     ASSERT_TRUE(a==b);
     blocks.closeDB();
     blocks.deleteDB();
