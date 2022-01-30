@@ -169,6 +169,10 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             vector<Transaction> transactions;
             readRawTransactions(host, transactions);
 
+            for(auto tx : transactions) {
+                cout<<tx.toJson().dump()<<endl;
+            }
+
             Logger::logStatus("[ NEW ] block = " + std::to_string(nextBlock) + ", difficulty = " + to_string(problem["challengeSize"]) + ", transactions = " + to_string(transactions.size()) + " - " + host);
 
             string lastHashStr = problem["lastHash"];

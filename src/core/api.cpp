@@ -74,13 +74,11 @@ json getMiningProblem(string host_url) {
 
 json sendTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/add_transaction");
+
     TransactionInfo info = t.serialize();
-    vector<uint8_t> bytes;
-    char * ptr = (char*)&info;
-    for(int i = 0; i < sizeof(TransactionInfo); i++) {
-        bytes.push_back(*ptr);
-        ptr++;
-    }
+    vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE);
+    transactionInfoToBuffer(info, (char*)bytes.data());
+    
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS * 3});

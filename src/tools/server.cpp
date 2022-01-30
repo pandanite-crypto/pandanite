@@ -355,6 +355,7 @@ int main(int argc, char **argv) {
                     } else {
                         TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
                         Transaction tx(t);
+                        cout<<tx.toJson().dump()<<endl;
                         json response = manager.addTransaction(tx);
                         res->end(response.dump());
                     }

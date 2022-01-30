@@ -15,10 +15,18 @@ TransactionInfo transactionInfoFromBuffer(const char* buffer) {
     readNetworkNBytes(buffer, t.signingKey, 32);
     t.timestamp = readNetworkUint64(buffer);
     t.to = readNetworkPublicWalletAddress(buffer);
-    t.from = readNetworkPublicWalletAddress(buffer);
     t.amount = readNetworkUint64(buffer);
     t.fee = readNetworkUint64(buffer);
     t.isTransactionFee = readNetworkUint32(buffer) > 0;
+
+    if (!t.isTransactionFee) {
+        PublicKey pub;
+        memcpy(pub.data(), t.signingKey, 32);
+        t.from = walletAddressFromPublicKey(pub);
+    } else {
+        t.from = stringToWalletAddress("");
+    }
+
     return t;
 }
 
@@ -27,7 +35,6 @@ void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
     writeNetworkNBytes(buffer, t.signingKey, 32);
     writeNetworkUint64(buffer, t.timestamp);
     writeNetworkPublicWalletAddress(buffer, t.to);
-    writeNetworkPublicWalletAddress(buffer, t.from);
     writeNetworkUint64(buffer, t.amount);
     writeNetworkUint64(buffer, t.fee);
     uint32_t flag = 0;
