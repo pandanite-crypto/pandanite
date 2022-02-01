@@ -354,9 +354,14 @@ int main(int argc, char **argv) {
                         Logger::logError("/add_transaction","Malformed transaction");
                         res->end(response.dump());
                     } else {
-                        TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
-                        Transaction tx(t);
-                        json response = manager.addTransaction(tx);
+                        uint32_t numTransactions = buffer.length() / TRANSACTIONINFO_BUFFER_SIZE;
+                        const char* buf = buffer.c_str();
+                        json response = json::array();
+                        for (int i = 0; i < numTransactions; i++) {
+                            TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
+                            Transaction tx(t);
+                            response.push_back(manager.addTransaction(tx));
+                        }
                         res->end(response.dump());
                     }
                 }  catch(const std::exception &e) {

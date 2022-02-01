@@ -11,6 +11,7 @@ string getName(string host_url);
 json getBlockData(string host_url, int idx);
 json getMiningProblem(string host_url);
 json sendTransaction(string host_url, Transaction& t);
+json sendTransactions(string host_url, vector<Transaction>& transactionList);
 json verifyTransaction(string host_url, Transaction& t);
 json pingPeer(string host_url, string peer_url, uint64_t time, string version);
 json submitBlock(string host_url, Block& b);
