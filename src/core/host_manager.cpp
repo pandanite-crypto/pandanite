@@ -302,6 +302,10 @@ set<string> HostManager::sampleAllHosts(int count) {
 */
 void HostManager::addPeer(string addr, uint64_t time, string version) {
     if (version != this->version) return;
+
+    // check if host is in blacklist
+    if (this->blacklist.find(addr) != this->blacklist.end()) return;
+
     // check if we already have this peer host
     auto existing = std::find(this->hosts.begin(), this->hosts.end(), addr);
     if (existing != this->hosts.end()) {
