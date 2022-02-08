@@ -152,6 +152,7 @@ uint64_t HostManager::getNetworkTimestamp() {
     Asks nodes for their current POW and chooses the best
 */
 string HostManager::getGoodHost() {
+    if (this->currPeers.size() < 1) return "";
     Bigint bestWork = 0;
     string bestHost = this->currPeers[0]->getHost();
     this->lock.lock();
