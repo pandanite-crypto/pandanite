@@ -233,6 +233,14 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
     
     // add to our host list
     this->hosts.push_back(addr);
+
+    // check if we have less peers than needed
+    if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
+        this->lock.lock();
+        this->currPeers.push_back(new HeaderChain(addr));
+        this->lock.unlock();
+    }
+
     // pick random neighbor hosts and forward the addPeer request to them:
     set<string> neighbors = this->sampleFreshHosts(ADD_PEER_BRANCH_FACTOR);
     vector<future<void>> reqs;
