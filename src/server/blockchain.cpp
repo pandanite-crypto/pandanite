@@ -48,7 +48,6 @@ void chain_sync(BlockChain& blockchain) {
             }
 
             if (chainPopCount > FORK_RESET_RETRIES) {
-                blockchain.hosts.initTrustedHost();
                 chainPopCount = 0;
                 failureCount = 0;
             }
@@ -70,7 +69,6 @@ void chain_sync(BlockChain& blockchain) {
                 connectionFailureCount++;
                 if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
                     Logger::logError("chain_sync", string(e.what()));
-                    blockchain.hosts.initTrustedHost();
                     connectionFailureCount = 0;
                 }
             } catch (...) {
@@ -79,8 +77,6 @@ void chain_sync(BlockChain& blockchain) {
         }
         blockchain.release();
         i++;
-        // resync headers and find new peer ~27 hrs
-        if (i % 10000 == 0) blockchain.hosts.initTrustedHost();
     }
 }
 

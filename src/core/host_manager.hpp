@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include "header_chain.hpp"
 #include <set>
 #include <mutex>
  #include <thread>
@@ -12,12 +13,8 @@ class HostManager {
         size_t size();
         string computeAddress();
         void refreshHostList();
-        void initTrustedHost();
         void startPingingPeers();
 
-        SHA256Hash getBlockHash(uint64_t blockId);
-        std::pair<string,uint64_t> getTrustedHost();
-        Bigint getTrustedHostWork();
         string getGoodHost();
         std::pair<string,uint64_t> getRandomHost();
         vector<string> getHosts(bool includeSelf=true);
@@ -32,24 +29,22 @@ class HostManager {
         void acquire();
         void release();
     protected:
+        void syncHeadersWithPeers();
+        vector<HeaderChain*> currPeers;
+
         std::mutex lock;
         bool disabled;
-        bool hasTrustedHost;
         string ip;
         int port;
         string name;
         string address;
         string version;
         
-        std::pair<string,uint64_t> trustedHost;
-        Bigint trustedWork;
-        
         map<string,uint64_t> hostPingTimes;
         map<string,int32_t> peerClockDeltas;
         vector<string> hostSources;
         vector<string> hosts;
         set<string> blacklist;
-        vector<SHA256Hash> validationHashes;
 
         vector<std::thread> syncThread;
         friend void peer_sync(HostManager& hm);
