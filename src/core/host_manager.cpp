@@ -154,12 +154,14 @@ uint64_t HostManager::getNetworkTimestamp() {
 string HostManager::getGoodHost() {
     Bigint bestWork = 0;
     string bestHost = this->currPeers[0]->getHost();
+    this->lock.lock();
     for(auto h : this->currPeers) {
         if (h->getTotalWork() > bestWork) {
             bestWork = h->getTotalWork();
             bestHost = h->getHost();
         }
     }
+    this->lock.unlock();
     return bestHost;
 }
 
@@ -319,16 +321,18 @@ void HostManager::refreshHostList() {
 
 void HostManager::syncHeadersWithPeers() {
     // free existing peers
+    this->lock.lock();
     for(auto peer : this->currPeers) {
         delete peer;
     }
     this->currPeers.empty();
-
+    
     set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
         this->currPeers.push_back(new HeaderChain(h));
     }
+    this->lock.unlock();
 }
 
 
