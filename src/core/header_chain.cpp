@@ -3,13 +3,26 @@
 #include "block.hpp"
 #include "logger.hpp"
 #include <iostream>
+#include <thread>
 using namespace std;
+
+#define MAX_HASH_RETENTION 1000
+
+void chain_sync(HeaderChain& chain) {
+    while(true) {
+        chain.load();
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+    }
+}
+
 
 HeaderChain::HeaderChain(string host) {
     this->host = host;
     this->failed = false;
+    this->offset = 0;
     this->totalWork = 0;
     this->chainLength = 0;
+    this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
 bool HeaderChain::valid() {
@@ -37,15 +50,20 @@ void HeaderChain::load() {
         this->failed = true;
         return;
     }
+    
     SHA256Hash lastHash = NULL_SHA256_HASH;
-    uint64_t numBlocks = 0;
-    Bigint totalWork = 0;
+    if (this->blockHashes.size() > 0) {
+        lastHash = this->blockHashes.back();
+    }
+    uint64_t numBlocks = this->blockHashes.size();
+    uint64_t startBlocks = numBlocks;
+    Bigint totalWork = this->totalWork;
     // download any remaining blocks in batches
-    for(int i = 1; i <= targetBlockCount; i+=BLOCK_HEADERS_PER_FETCH) {
+    for(int i = numBlocks + 1; i <= targetBlockCount; i+=BLOCK_HEADERS_PER_FETCH) {
         try {
             int end = min(targetBlockCount, (uint64_t) i + BLOCK_HEADERS_PER_FETCH - 1);
             bool failure = false;
-            vector<SHA256Hash>& hashes = this->blockHashes;
+            list<SHA256Hash>& hashes = this->blockHashes;
             vector<BlockHeader> blockHeaders;
             readRawHeaders(this->host, i, end, blockHeaders);
             for (auto& b : blockHeaders) {
@@ -53,10 +71,12 @@ void HeaderChain::load() {
                 vector<Transaction> empty;
                 Block block(b, empty);
                 if (!block.verifyNonce()) {
+                    Logger::logStatus("failed nonce verification");
                     failure = true;
                     break;
                 };
                 if (block.getLastBlockHash() != lastHash) {
+                    Logger::logStatus("failed last hash verification");
                     failure = true;
                     break;
                 }
@@ -80,6 +100,9 @@ void HeaderChain::load() {
     this->chainLength = numBlocks;
     this->totalWork = totalWork;
     this->failed = false;
+    if (numBlocks != startBlocks) {
+        Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength));
+    }
 }
 
 

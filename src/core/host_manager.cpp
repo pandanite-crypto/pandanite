@@ -90,8 +90,6 @@ HostManager::HostManager(json config) {
     }
 
     this->disabled = false;
-    this->hasTrustedHost = false;
-    this->trustedWork = 0;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
@@ -154,110 +152,17 @@ uint64_t HostManager::getNetworkTimestamp() {
     Asks nodes for their current POW and chooses the best
 */
 string HostManager::getGoodHost() {
-    // pick random hosts
-    set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
-
-    if (hosts.size() == 0) {
-        Logger::logStatus("No hosts found");
-    }
-
-    Logger::logStatus("Getting chain lengths from peers (finding current best host).");
-
-    vector<std::pair<string,Bigint>> chains;
-    // TODO: these should happen asynchronously!
-    for(auto host : hosts) {
-        try {
-            Bigint work = getTotalWork(host);
-            chains.push_back(std::pair<string,Bigint>(host, work));
-        } catch (...) {
-            // host unreachable
-        }
-    }
-    // pick the best (highest POW) node as host:
     Bigint bestWork = 0;
-    string bestHost = "";
-    
-    for(auto chain : chains) {
-        if (chain.second > bestWork) {
-            bestWork = chain.second;
-            bestHost = chain.first;
+    string bestHost = this->currPeers[0]->getHost();
+    for(auto h : this->currPeers) {
+        if (h->getTotalWork() > bestWork) {
+            bestWork = h->getTotalWork();
+            bestHost = h->getHost();
         }
     }
-    Logger::logStatus("Got host : " + bestHost);
     return bestHost;
 }
 
-/*
-    Loads header chains from peers and validates them, storing hash headers from highest POW chain
-*/
-void HostManager::initTrustedHost() {
-    // pick random hosts
-    set<string> hosts = this->sampleFreshHosts(HEADER_VALIDATION_HOST_COUNT);
-    if (hosts.size() == 0) {
-        Logger::logStatus("No hosts found");
-    }
-
-    vector<HeaderChain*> chains;
-
-    // fetch block headers from each host
-    vector<std::thread> threads;
-    Logger::logStatus("Validating header chains from peers [This may take 15-20 minutes]");
-
-    for(auto& host : hosts) {
-        HeaderChain * newChain = new HeaderChain(host);
-        chains.push_back(newChain);
-        Logger::logStatus(">> Loading headers from " + host);
-        threads.emplace_back(
-            std::thread([newChain](){
-                newChain->load();
-            })
-        );
-    }
-
-    for (auto& th : threads) th.join();
-
-    for(auto& chain : chains) {
-        Logger::logStatus(">> Loaded " + to_string(chain->getChainLength()) + " blocks from " + chain->getHost());
-    }
-
-    // pick the best (highest POW) header chain as host:
-    Bigint bestWork = 0;
-    uint64_t bestLength = 0;
-    string bestHost = "";
-    
-    for(auto chain : chains) {
-        if (chain->valid()) {
-            if (chain->getTotalWork() > bestWork) {
-                bestWork = chain->getTotalWork();
-                bestLength = chain->getChainLength();
-                bestHost = chain->getHost();
-                // store the validation hashes 
-                this->validationHashes = chain->blockHashes;
-            }
-        }
-    }
-
-    if (bestHost == "") {
-        throw std::runtime_error("Could not find valid header chain!");
-    }
-
-    for(auto& chain : chains) {
-        delete chain;
-    }
-
-    Logger::logStatus(GREEN + "[ FINISHED ]" + RESET);
-
-    this->hasTrustedHost = true;
-    this->trustedHost = std::pair<string, uint64_t>(bestHost, bestLength);
-    this->trustedWork = bestWork;
-}
-
-/*
-    returns the total POW of trusted host
-*/
-Bigint HostManager::getTrustedHostWork() {
-    return this->trustedWork;
-}
 
 /*
     Returns N unique random hosts that have pinged us
@@ -352,18 +257,6 @@ bool HostManager::isDisabled() {
 
 
 /*
-    Returns the trusted hosts block hash for blockID
-*/
-SHA256Hash HostManager::getBlockHash(uint64_t blockId) {
-    if (!this->hasTrustedHost) throw std::runtime_error("Cannot lookup block hashes without trusted host.");
-    if (blockId > this->validationHashes.size() || blockId < 1) {
-        return NULL_SHA256_HASH;
-    } else {
-        return this->validationHashes[blockId - 1];
-    }
-}
-
-/*
     Downloads an initial list of peers and validates connectivity to them
 */
 void HostManager::refreshHostList() {
@@ -420,6 +313,22 @@ void HostManager::refreshHostList() {
         );
     }
     for (auto& th : threads) th.join();
+
+    this->syncHeadersWithPeers();
+}
+
+void HostManager::syncHeadersWithPeers() {
+    // free existing peers
+    for(auto peer : this->currPeers) {
+        delete peer;
+    }
+    this->currPeers.empty();
+
+    set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
+
+    for (auto h : hosts) {
+        this->currPeers.push_back(new HeaderChain(h));
+    }
 }
 
 
@@ -441,14 +350,6 @@ vector<string> HostManager::getHosts(bool includeSelf) {
 
 size_t HostManager::size() {
     return this->hosts.size();
-}
-
-/*
-    Returns the current trusted host
-*/
-std::pair<string, uint64_t> HostManager::getTrustedHost() {
-    if (!this->hasTrustedHost) this->initTrustedHost();
-    return this->trustedHost;
 }
 
 /*
