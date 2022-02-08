@@ -9,7 +9,7 @@ class HeaderChain {
     public:
         HeaderChain(string host);
         void load();
-        void sync();
+        void reset();
         bool valid();
         string getHost();
         Bigint getTotalWork();

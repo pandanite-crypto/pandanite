@@ -25,6 +25,14 @@ HeaderChain::HeaderChain(string host) {
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
+void HeaderChain::reset() {
+    this->failed = false;
+    this->offset = 0;
+    this->totalWork = 0;
+    this->chainLength = 0;
+    this->blockHashes.empty();
+}
+
 bool HeaderChain::valid() {
     return !this->failed && this->totalWork > 0;
 }
@@ -87,13 +95,16 @@ void HeaderChain::load() {
             }
             if (failure) {
                 this->failed = true;
+                this->reset();
                 return;
             }
         } catch (std::exception& e) {
             this->failed = true;
+            this->reset();
             return;
         } catch (...) {
             this->failed = true;
+            this->reset();
             return;
         }
     }
