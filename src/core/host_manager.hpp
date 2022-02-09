@@ -49,6 +49,7 @@ class HostManager {
         vector<string> hostSources;
         vector<string> hosts;
         set<string> blacklist;
+        set<string> whitelist;
 
         vector<std::thread> syncThread;
         friend void peer_sync(HostManager& hm);

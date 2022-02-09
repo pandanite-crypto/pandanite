@@ -89,6 +89,22 @@ HostManager::HostManager(json config) {
         }
     }
 
+    // check if a whitelist file exists
+    std::ifstream whitelist("whitelist.txt");
+    if (whitelist.good()) {
+        std::string line;
+        while (std::getline(whitelist, line)) {
+            if (line[0] != '#') {
+                string enabled = line;
+                if (enabled[enabled.size() - 1] == '/') {
+                    enabled = enabled.substr(0, enabled.size() - 1);
+                }
+                this->whitelist.insert(enabled);
+                Logger::logStatus("Enabling host " + enabled);
+            }
+        }
+    }
+
     this->disabled = false;
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
@@ -282,7 +298,9 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
     }
     
     // add to our host list
-    this->hosts.push_back(addr);
+    if (this->whitelist.size() == 0 || this->whitelist.find(addr) != this->whitelist.end()){
+        hosts.push_back(addr);
+    }
 
     // check if we have less peers than needed
     if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
@@ -363,10 +381,13 @@ void HostManager::refreshHostList() {
                 try {
                     string hostName = getName(hostUrl);
                     lock.lock();
-                    hm.hosts.push_back(hostUrl);
-                    hm.hostPingTimes[hostUrl] = std::time(0);
+                    if (hm.whitelist.size() == 0 || hm.whitelist.find(hostUrl) != hm.whitelist.end()){
+                        hm.hosts.push_back(hostUrl);
+                        Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
+                        hm.hostPingTimes[hostUrl] = std::time(0);
+                    }
                     lock.unlock();
-                    Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
+                    
                 } catch (...) {
                     Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
                 }
