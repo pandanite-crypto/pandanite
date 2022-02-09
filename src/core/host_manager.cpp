@@ -300,6 +300,8 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
     // add to our host list
     if (this->whitelist.size() == 0 || this->whitelist.find(addr) != this->whitelist.end()){
         hosts.push_back(addr);
+    } else {
+        return;
     }
 
     // check if we have less peers than needed
