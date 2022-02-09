@@ -161,6 +161,7 @@ Block BlockChain::getBlock(uint32_t blockId) {
 }
 
 ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
+    if (t.isFee()) return EXTRA_MINING_FEE;
     if (!t.signatureValid()) return INVALID_SIGNATURE;
     LedgerState deltas;
     // verify the transaction is consistent with ledger
