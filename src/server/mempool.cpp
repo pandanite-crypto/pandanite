@@ -96,6 +96,14 @@ size_t MemPool::size() {
     return this->transactionQueue.size();
 }
 
+vector<Transaction> MemPool::getTransactions() {
+    vector<Transaction> transactions;
+    for(auto tx : this->transactionQueue) {
+        transactions.push_back(tx);
+    }
+    return std::move(transactions);
+}
+
 std::pair<char*, size_t> MemPool::getRaw() {
     int count = 0;
     this->lock.lock();

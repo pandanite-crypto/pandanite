@@ -149,7 +149,7 @@ uint64_t HostManager::getNetworkTimestamp() {
 
 
 /*
-    Asks nodes for their current POW and chooses the best
+    Asks nodes for their current POW and chooses the best peer
 */
 string HostManager::getGoodHost() {
     if (this->currPeers.size() < 1) return "";
@@ -164,6 +164,56 @@ string HostManager::getGoodHost() {
     }
     this->lock.unlock();
     return bestHost;
+}
+
+/*
+    Returns the block count of the highest PoW chain amongst current peers
+*/
+uint64_t HostManager::getBlockCount() {
+    if (this->currPeers.size() < 1) return 0;
+    uint64_t bestLength = 0;
+    Bigint bestWork = 0;
+    this->lock.lock();
+    for(auto h : this->currPeers) {
+        if (h->getTotalWork() > bestWork) {
+            bestWork = h->getTotalWork();
+            bestLength = h->getChainLength();
+        }
+    }
+    this->lock.unlock();
+    return bestLength;
+}
+
+/*
+    Returns the total work of the highest PoW chain amongst current peers
+*/
+Bigint HostManager::getTotalWork() {
+    Bigint bestWork = 0;
+    if (this->currPeers.size() < 1) return bestWork;
+    this->lock.lock();
+    for(auto h : this->currPeers) {
+        if (h->getTotalWork() > bestWork) {
+            bestWork = h->getTotalWork();
+        }
+    }
+    this->lock.unlock();
+    return bestWork;
+}
+
+/*
+    Returns the block header hash for the given block, peer host
+ */
+SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) {
+    SHA256Hash ret = NULL_SHA256_HASH;
+    this->lock.lock();
+    for(auto h : this->currPeers) {
+        if (h->getHost() == host) {
+            ret = h->getHash(blockId);
+            break;
+        }
+    }
+    this->lock.unlock();
+    return ret;
 }
 
 

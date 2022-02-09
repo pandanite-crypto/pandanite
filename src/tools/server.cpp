@@ -107,6 +107,22 @@ int main(int argc, char **argv) {
         }
     };
 
+    auto txJsonHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        json result;
+        try {
+            json result = manager.getTransactionQueue();
+            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+        } catch(const std::exception &e) {
+            result["error"] = "Unknown error";
+            Logger::logError("/get_tx_json", e.what());
+            res->end("");
+        } catch(...) {
+            Logger::logError("/get_tx_json", "unknown");
+            res->end("");
+        }
+    };
+
     auto blockHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         json result;
@@ -441,6 +457,7 @@ int main(int argc, char **argv) {
         .get("/logs", logsHandler)
         .get("/stats", statsHandler)
         .get("/block/:b", blockHandler)
+        .get("/tx_json", txJsonHandler)
         .get("/mine_status/:b", mineStatusHandler)
         .get("/ledger/:user", ledgerHandler)
         .get("/mine", mineHandler)

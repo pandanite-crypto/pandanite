@@ -153,6 +153,14 @@ json RequestManager::getProofOfWork() {
     return result;
 }
 
+json RequestManager::getTransactionQueue() {
+    json ret = json::array();
+    for(auto & tx : this->mempool->getTransactions()) {
+        ret.push_back(tx.toJson());
+    }
+    return ret;
+}
+
 std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
     return this->blockchain->getRaw(blockId);
 }

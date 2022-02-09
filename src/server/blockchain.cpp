@@ -21,7 +21,7 @@
 #include "mempool.hpp"
 #include "genesis.hpp"
 
-#define FORK_CHAIN_POP_COUNT 15
+#define FORK_CHAIN_POP_COUNT 1
 #define FORK_RESET_RETRIES 3
 #define MAX_DISCONNECTS_BEFORE_RESET 10
 #define FAILURES_BEFORE_POP_ATTEMPT 1
@@ -29,54 +29,11 @@
 using namespace std;
 
 void chain_sync(BlockChain& blockchain) {
-    unsigned long i = 0;
-    int failureCount = 0;
-    int connectionFailureCount = 0;
-    int chainPopCount = 0;
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         blockchain.acquire();
-        try {
-            ExecutionStatus valid;
-            valid = blockchain.startChainSync();
-            connectionFailureCount = 0;
-            if (valid != SUCCESS) {
-                Logger::logStatus("chain_sync: peer chain diverges: " + executionStatusAsString(valid));
-                failureCount++;
-            } else {
-                failureCount = 0;
-            }
-
-            if (chainPopCount > FORK_RESET_RETRIES) {
-                chainPopCount = 0;
-                failureCount = 0;
-            }
-            if (failureCount > FAILURES_BEFORE_POP_ATTEMPT) {
-                int toPop = FORK_CHAIN_POP_COUNT;
-                if (blockchain.getBlockCount() < FORK_CHAIN_POP_COUNT + 1) {
-                    blockchain.resetChain();
-                } else {
-                    Logger::logStatus("chain_sync: removing " + to_string(toPop) + " blocks and re-trying.");
-                    for(int j = 0; j < toPop; j++) {
-                        blockchain.popBlock();
-                    }
-                    chainPopCount += 1;
-                }
-                failureCount = 0;
-            }
-        } catch(std::exception & e) {
-            try {
-                connectionFailureCount++;
-                if (connectionFailureCount > MAX_DISCONNECTS_BEFORE_RESET) {
-                    Logger::logError("chain_sync", string(e.what()));
-                    connectionFailureCount = 0;
-                }
-            } catch (...) {
-                Logger::logError("chain_sync", "No new host found. Running as solo node.");
-            }
-        }
+        blockchain.startChainSync();
         blockchain.release();
-        i++;
     }
 }
 
@@ -89,6 +46,8 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     this->blockStore.init(blockPath);
     this->txdb.init(txdbPath);
     this->initChain();
+
+    checkpoints[31195] = stringToSHA256("F5B6F965255138619033AF5DF5E7FFCD25EDF94B36969E0D1E53F58DCB7FDE62");
 }
 
 void BlockChain::initChain() {
@@ -305,10 +264,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty) {
-        Logger::logStatus("Mine: " + to_string(this->difficulty) + " THEIRS: " + to_string(block.getDifficulty()));
-        return INVALID_DIFFICULTY;
-    }
+    if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     if (block.getId() != 1) {
@@ -367,11 +323,31 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 ExecutionStatus BlockChain::startChainSync() {
     string bestHost = this->hosts.getGoodHost();
-    this->targetBlockCount = getCurrentBlockCount(bestHost);
+    this->targetBlockCount = this->hosts.getBlockCount();
+    // If our current chain is lower POW than the trusted host
+    // remove anything that does not align with the hashes of the trusted chain
+    if (this->hosts.getTotalWork() > this->getTotalWork()) {
+        // iterate through our current chain until a hash diverges from trusted chain
+        uint64_t toPop = 0;
+        for(uint64_t i = 1; i <= this->numBlocks; i++) {
+            SHA256Hash trustedHash = this->hosts.getBlockHash(bestHost, i);
+            SHA256Hash myHash = this->getBlock(i).getHash();
+            if (trustedHash != myHash) {
+                toPop = this->numBlocks - i + 1;
+                break;
+            }
+        }
+        // pop all subsequent blocks
+        for (uint64_t i = 0; i < toPop; i++) {
+            if (this->numBlocks == 1) break;
+            this->popBlock();
+        }
+    }
 
     int startCount = this->numBlocks;
 
     int needed = this->targetBlockCount - startCount;
+    if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
     // download any remaining blocks in batches
     uint64_t start = std::time(0);
     for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {

@@ -25,12 +25,17 @@ HeaderChain::HeaderChain(string host) {
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
+SHA256Hash HeaderChain::getHash(uint64_t blockId) {
+    if (blockId >= this->blockHashes.size()) return NULL_SHA256_HASH;
+    return this->blockHashes[blockId - 1];
+}
+
 void HeaderChain::reset() {
     this->failed = false;
     this->offset = 0;
     this->totalWork = 0;
     this->chainLength = 0;
-    this->blockHashes.empty();
+    this->blockHashes.clear();
 }
 
 bool HeaderChain::valid() {
@@ -71,7 +76,7 @@ void HeaderChain::load() {
         try {
             int end = min(targetBlockCount, (uint64_t) i + BLOCK_HEADERS_PER_FETCH - 1);
             bool failure = false;
-            list<SHA256Hash>& hashes = this->blockHashes;
+            vector<SHA256Hash>& hashes = this->blockHashes;
             vector<BlockHeader> blockHeaders;
             readRawHeaders(this->host, i, end, blockHeaders);
             for (auto& b : blockHeaders) {
@@ -79,12 +84,10 @@ void HeaderChain::load() {
                 vector<Transaction> empty;
                 Block block(b, empty);
                 if (!block.verifyNonce()) {
-                    Logger::logStatus("failed nonce verification");
                     failure = true;
                     break;
                 };
                 if (block.getLastBlockHash() != lastHash) {
-                    Logger::logStatus("failed last hash verification");
                     failure = true;
                     break;
                 }
@@ -112,7 +115,7 @@ void HeaderChain::load() {
     this->totalWork = totalWork;
     this->failed = false;
     if (numBlocks != startBlocks) {
-        Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength));
+        Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
     }
 }
 

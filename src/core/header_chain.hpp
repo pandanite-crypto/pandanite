@@ -1,7 +1,6 @@
 #pragma once
 #include "constants.hpp"
 #include "common.hpp"
-#include <list>
 #include <thread>
 using namespace std;
 
@@ -14,7 +13,8 @@ class HeaderChain {
         string getHost();
         Bigint getTotalWork();
         uint64_t getChainLength();
-        list<SHA256Hash> blockHashes;
+        SHA256Hash getHash(uint64_t blockId);
+        vector<SHA256Hash> blockHashes;
     protected:
         string host;
         Bigint totalWork;

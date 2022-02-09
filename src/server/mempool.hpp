@@ -22,6 +22,7 @@ class MemPool {
         bool hasTransaction(Transaction t);
         size_t size();
         std::pair<char*, size_t> getRaw();
+        vector<Transaction> getTransactions();
     protected:
         map<PublicWalletAddress,TransactionAmount> mempoolOutgoing;
         list<Transaction> toSend;
