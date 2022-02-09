@@ -384,8 +384,17 @@ int main(int argc, char **argv) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    Transaction tx(json::parse(string(buffer)));
-                    json response = manager.addTransaction(tx);
+                    json parsed = json::parse(string(buffer));
+                    json response = json::array();
+                    if (parsed.is_array()) {
+                        for (auto& item : parsed) {
+                            Transaction tx(item);
+                            response.push_back(manager.addTransaction(tx));
+                        }
+                    } else {
+                        Transaction tx(parsed);
+                        response.push_back(manager.addTransaction(tx));
+                    }
                     res->end(response.dump());
                 }  catch(const std::exception &e) {
                     Logger::logError("/add_transaction", e.what());
