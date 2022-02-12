@@ -80,7 +80,6 @@ void HeaderChain::load() {
             vector<BlockHeader> blockHeaders;
             readRawHeaders(this->host, i, end, blockHeaders);
             for (auto& b : blockHeaders) {
-                if (failure) return;
                 vector<Transaction> empty;
                 Block block(b, empty);
                 if (!block.verifyNonce()) {
@@ -97,6 +96,7 @@ void HeaderChain::load() {
                 numBlocks++;
             }
             if (failure) {
+                Logger::logStatus("header chain sync failed host=" + this->host);
                 this->failed = true;
                 this->reset();
                 return;

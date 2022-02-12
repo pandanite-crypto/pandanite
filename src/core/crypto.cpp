@@ -20,7 +20,6 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
     return ret;
 }
 
-
 std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
     std::array<uint8_t, 32> ret;
     sha256_ctx sha256;

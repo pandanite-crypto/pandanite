@@ -111,7 +111,7 @@ std::pair<char*, size_t> MemPool::getRaw() {
     char* buf = (char*) malloc(len);
     for (auto tx : this->transactionQueue) {
         TransactionInfo t = tx.serialize();
-        transactionInfoToBuffer(t, buf);
+        transactionInfoToBuffer(t, buf + count);
         count+=TRANSACTIONINFO_BUFFER_SIZE;
     }
     this->lock.unlock();
