@@ -114,6 +114,7 @@ HostManager::HostManager(json config) {
         this->hosts.push_back(localhost);
         this->hostPingTimes[localhost] = std::time(0);
         this->peerClockDeltas[localhost] = 0;
+        this->syncHeadersWithPeers();
     } else {
         this->refreshHostList();
     }

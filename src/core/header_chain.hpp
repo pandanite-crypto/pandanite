@@ -2,6 +2,7 @@
 #include "constants.hpp"
 #include "common.hpp"
 #include <thread>
+#include <map>
 using namespace std;
 
 class HeaderChain {
@@ -21,6 +22,7 @@ class HeaderChain {
         uint64_t chainLength;
         uint64_t offset;
         bool failed;
+        map<uint64_t, SHA256Hash> checkPoints;
         vector<std::thread> syncThread;
         friend void chain_sync(HeaderChain& chain);
 };
