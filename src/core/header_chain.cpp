@@ -88,7 +88,7 @@ void HeaderChain::load() {
                 if (this->checkPoints.find(curr) != this->checkPoints.end()) {
                     // check the checkpoint hash:
                     if (block.getHash() != this->checkPoints[curr]) {
-                        Logger::logStatus("Checkpoint hash failed for block: " + to_string(curr));
+                        // Logger::logStatus("Checkpoint hash failed for block: " + to_string(curr));
                         failure = true;
                         break;
                     } 
@@ -107,7 +107,7 @@ void HeaderChain::load() {
                 numBlocks++;
             }
             if (failure) {
-                Logger::logStatus("header chain sync failed host=" + this->host);
+                // Logger::logStatus("header chain sync failed host=" + this->host);
                 this->failed = true;
                 this->reset();
                 return;
@@ -126,7 +126,7 @@ void HeaderChain::load() {
     this->totalWork = totalWork;
     this->failed = false;
     if (numBlocks != startBlocks) {
-        Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
+        // Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
     }
 }
 
