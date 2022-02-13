@@ -24,7 +24,7 @@ HeaderChain::HeaderChain(string host) {
     this->chainLength = 0;
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 
-    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(1, stringToSHA256("0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750")));
+    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(2, stringToSHA256("0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750")));
 }
 
 SHA256Hash HeaderChain::getHash(uint64_t blockId) {

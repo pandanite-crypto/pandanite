@@ -163,8 +163,6 @@ uint64_t HostManager::getNetworkTimestamp() {
     return medianTime;
 }   
 
-
-
 /*
     Asks nodes for their current POW and chooses the best peer
 */
