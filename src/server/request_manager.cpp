@@ -44,8 +44,7 @@ void RequestManager::deleteDB() {
 }
 
 bool RequestManager::acceptRequest(std::string& ip) {
-    return true;
-    //return this->rateLimiter->limit(ip);
+    return this->rateLimiter->limit(ip);
 }
 
 json RequestManager::addTransaction(Transaction& t) {

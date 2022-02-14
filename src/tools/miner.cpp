@@ -18,8 +18,6 @@ using namespace std;
 
 vector<Worker*> workers;
 
-#define MAX_CONNECTION_FAILURE_BEFORE_RESET 10
-
 struct block_status {
     std::vector<double> block_hashrates;
     std::mutex _lock;
@@ -92,55 +90,26 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
 
     time_t blockstart = std::time(0);
 
-    string host;
-    
-    if (customHostIp != "") {
-        // mine against a specific IP
-        host = customHostIp;
-    } else {
-        // find a random "good" host
-        host = hosts.getGoodHost();
-    }
-
-    if (host == "") {
-        Logger::logStatus("no host found");
-        return;
-    }
+   
 
     while(true) {
         try {
-            int retries = 0;
             uint64_t currCount;
 
-            // try 10 times to get block count from current host
-            do {
-                try {
-                    currCount = getCurrentBlockCount(host);
-                    break;
-                }
-                catch (...) { }
+             string host;
+    
+            if (customHostIp != "") {
+                // mine against a specific IP
+                host = customHostIp;
+                currCount = getCurrentBlockCount(host);
+            } else {
+                host = hosts.getGoodHost();
+                currCount = hosts.getBlockCount();
+            }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                retries++;
-            } while (retries < MAX_CONNECTION_FAILURE_BEFORE_RESET);
-
-            // if not found, select new host
-            if (retries >= MAX_CONNECTION_FAILURE_BEFORE_RESET) {
-                Logger::logStatus("Could not reach host after 10 tries. Connecting to new host...");
-                try {
-                    host = hosts.getGoodHost();
-
-                    if (host == "") {
-                        Logger::logStatus("Refreshing host list...");
-                        // refresh hosts and try to get new
-                        hosts.refreshHostList();
-                        host = hosts.getGoodHost();
-                    }
-                }
-                catch (...) { }
-
-                Logger::logStatus("Connected to host " + host);
-                continue;
+            if (host == "") {
+                Logger::logStatus("no host found");
+                return;
             }
 
             if (last_block_id < currCount) {

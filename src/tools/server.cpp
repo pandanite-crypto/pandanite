@@ -22,8 +22,8 @@ void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=80
 }
 
 void rateLimit(RequestManager& manager, uWS::HttpResponse<false>* ptr) {
-    //auto remoteAddress = string(ptr->getRemoteAddressAsText());
-    //if (!manager.acceptRequest(remoteAddress)) ptr->end("Too many requests " + remoteAddress);
+    auto remoteAddress = string(ptr->getRemoteAddressAsText());
+    if (!manager.acceptRequest(remoteAddress)) ptr->end("Too many requests " + remoteAddress);
 }
 
 
