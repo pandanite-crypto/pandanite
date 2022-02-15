@@ -38,6 +38,8 @@ int main(int argc, char **argv) {
 
     Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
+
+    if (config["rateLimiter"] == false) manager.enableRateLimiting(false);
     
     Logger::logStatus("RequestManager ready...");
 

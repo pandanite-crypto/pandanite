@@ -34,7 +34,9 @@ class RequestManager {
         string getBlockCount();
         string getTotalWork();
         void deleteDB();
+        void enableRateLimiting(bool enabled);
     protected:
+        bool limitRequests;
         HostManager& hosts;
         RateLimiter* rateLimiter;
         BlockChain* blockchain;

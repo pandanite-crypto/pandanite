@@ -26,6 +26,7 @@ json getConfig(int argc, char**argv) {
     std::vector<string>::iterator it;
     bool testnet = false;
     bool local = false;
+    bool rateLimiter = true;
     string customWallet = "";
     string customIp = "";
     string customName = randomString(25);
@@ -78,7 +79,13 @@ json getConfig(int argc, char**argv) {
         local = true;
     }
 
+    it = std::find(args.begin(), args.end(), "--disable-limiter");
+    if (it != args.end()) {
+        rateLimiter = false;
+    }
+
     json config;
+    config["rateLimiter"] = rateLimiter;
     config["threads"] = threads;
     config["wallet"] = customWallet;
     config["port"] = customPort;
