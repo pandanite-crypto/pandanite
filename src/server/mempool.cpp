@@ -71,13 +71,14 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     } else {
         // check how much of the from wallets balance is outstanding in mempool
         TransactionAmount outgoing = 0;
+        TransactionAmount totalTxAmount = t.getAmount() + t.getFee();
         if (!t.isFee()) outgoing = this->mempoolOutgoing[t.fromWallet()];
 
-        if (!t.isFee() && outgoing + t.getAmount() > this->blockchain.getWalletValue(t.fromWallet())) {
+        if (!t.isFee() && outgoing + totalTxAmount > this->blockchain.getWalletValue(t.fromWallet())) {
             status = BALANCE_TOO_LOW;
         } else  if (this->transactionQueue.size() < MAX_TRANSACTIONS_PER_BLOCK) {
             this->transactionQueue.insert(t);
-            this->mempoolOutgoing[t.fromWallet()] += t.getAmount();
+            this->mempoolOutgoing[t.fromWallet()] += totalTxAmount;
             status = SUCCESS;
         } else {
             status = QUEUE_FULL;

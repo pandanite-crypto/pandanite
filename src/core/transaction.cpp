@@ -208,6 +208,10 @@ TransactionAmount Transaction::getAmount() const {
     return this->amount;
 }
 
+TransactionAmount Transaction::getFee() const {
+    return this->fee;
+}
+
 SHA256Hash Transaction::hashContents() const {
     SHA256Hash ret;
     SHA256_CTX sha256;

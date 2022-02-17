@@ -40,6 +40,7 @@ class Transaction {
         PublicWalletAddress fromWallet() const;
         PublicWalletAddress toWallet() const;
         TransactionAmount getAmount() const;
+        TransactionAmount getFee() const;
         void setTimestamp(uint64_t t);
         uint64_t getTimestamp();
         SHA256Hash getHash() const;
