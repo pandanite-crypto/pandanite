@@ -161,10 +161,10 @@ uint32_t BlockChain::getBlockCount() {
 
 uint32_t BlockChain::getCurrentMiningFee() {
     // NOTE:
-    // The chain was forked twice, once at 7,750 and again at 125,180
+    // The chain was forked three times, once at 7,750 and again at 125,180, then at 18k
     // Thus we push the chain ahead by this count.
     // SEE: https://bitcointalk.org/index.php?topic=5372707.msg58965610#msg58965610
-    uint64_t logicalBlock = this->numBlocks + 125180 + 7750;
+    uint64_t logicalBlock = this->numBlocks + 125180 + 7750 + 18000;
     if (logicalBlock < 1000000) {
         return BMB(50.0);
     } else if (logicalBlock < 2000000) {
