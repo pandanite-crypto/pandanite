@@ -409,7 +409,7 @@ int main(int argc, char **argv) {
                             Transaction tx(item);
                             response.push_back(manager.addTransaction(tx));
                             // only add a maximum of 100 transactions per request
-                            if (response.size() > 100)) break;
+                            if (response.size() > 100) break;
                         }
                     } else {
                         Transaction tx(parsed);
