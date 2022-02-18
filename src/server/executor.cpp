@@ -82,6 +82,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case WALLET_SIGNATURE_MISMATCH:
             return "WALLET_SIGNATURE_MISMATCH";
         break;
+        case TRANSACTION_FEE_TOO_LOW:
+            return "TRANSACTION_FEE_TOO_LOW";
+        break;
     }
 }
 

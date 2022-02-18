@@ -8,6 +8,7 @@
 using namespace std;
 
 #define TX_BRANCH_FACTOR 10
+#define MIN_FEE_TO_ENTER_MEMPOOL 1
 
 MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
 }
@@ -60,6 +61,12 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     this->lock.lock();
     if (this->transactionQueue.find(t) != this->transactionQueue.end()) {
         status = ALREADY_IN_QUEUE;
+        this->lock.unlock();
+        return status;
+    }
+
+    if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL) {
+        status = TRANSACTION_FEE_TOO_LOW;
         this->lock.unlock();
         return status;
     }
