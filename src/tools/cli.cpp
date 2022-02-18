@@ -59,9 +59,6 @@ int main(int argc, char** argv) {
     cout<<"=============================="<<endl;
     json result = sendTransaction(host, t);
     cout<<result<<endl;
-    if(result["status"] != "SUCCESS") {
-        cout<<"Transaction failed: " << result["status"]<<endl;
-    }
     cout<<"Finished."<<endl;
     return 0;
 }
