@@ -436,16 +436,3 @@ vector<string> HostManager::getHosts(bool includeSelf) {
 size_t HostManager::size() {
     return this->hosts.size();
 }
-
-/*
-    Returns a random host
-*/
-std::pair<string,uint64_t> HostManager::getRandomHost() {
-    set<string> hosts = this->sampleAllHosts(1);
-    if (hosts.size() == 0) {
-        return std::pair<string, uint64_t>("", 0);
-    }
-    string host = *hosts.begin();
-    uint64_t chainLength = getCurrentBlockCount(host);
-    return std::pair<string, uint64_t>(host, chainLength);
-}
