@@ -140,7 +140,7 @@ uint64_t HostManager::getNetworkTimestamp() {
     vector<int32_t> deltas;
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;
-        // only use peers that have pinged in the last hour
+        // only use peers that have pinged recently
         if (lastPingAge < HOST_MIN_FRESHNESS) { 
             deltas.push_back(this->peerClockDeltas[pair.first]);
         }
@@ -303,7 +303,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
         return;
     }
 
-    // check if we have less peers than needed
+    // check if we have less peers than needed, if so add this to our peer list
     if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
         this->lock.lock();
         this->currPeers.push_back(new HeaderChain(addr));
@@ -408,6 +408,7 @@ void HostManager::syncHeadersWithPeers() {
     }
     this->currPeers.empty();
     
+    // pick N random peers
     set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {

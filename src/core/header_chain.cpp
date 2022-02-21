@@ -24,7 +24,8 @@ HeaderChain::HeaderChain(string host) {
     this->chainLength = 0;
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 
-    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(2, stringToSHA256("0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750")));
+    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(1, stringToSHA256("0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750")));
+    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(7774, stringToSHA256("E1DC4CA2F2D634868C12B2C8963B33DD8632F459A1D37701A6B9BE17C0DA99EB")));
 }
 
 SHA256Hash HeaderChain::getHash(uint64_t blockId) {
@@ -84,7 +85,7 @@ void HeaderChain::load() {
             for (auto& b : blockHeaders) {
                 vector<Transaction> empty;
                 Block block(b, empty);
-                uint64_t curr = i;
+                uint64_t curr = b.id;
                 if (this->checkPoints.find(curr) != this->checkPoints.end()) {
                     // check the checkpoint hash:
                     if (block.getHash() != this->checkPoints[curr]) {
@@ -107,7 +108,7 @@ void HeaderChain::load() {
                 numBlocks++;
             }
             if (failure) {
-                // Logger::logStatus("header chain sync failed host=" + this->host);
+                Logger::logStatus("header chain sync failed host=" + this->host);
                 this->failed = true;
                 this->reset();
                 return;
