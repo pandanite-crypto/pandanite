@@ -46,16 +46,9 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     this->blockStore.init(blockPath);
     this->txdb.init(txdbPath);
     this->initChain();
-
-    checkpoints[31195] = stringToSHA256("F5B6F965255138619033AF5DF5E7FFCD25EDF94B36969E0D1E53F58DCB7FDE62");
 }
 
 void BlockChain::initChain() {
-
-    json specialBlocks = readJsonFromFile("special.json");
-    for(auto block : specialBlocks["data"]) {
-        this->specialBlocks[block["id"]] = Block(block);
-    }
     if (blockStore.hasBlockCount()) {
         Logger::logStatus("BlockStore exists, loading from disk");
         size_t count = blockStore.getBlockCount();
@@ -386,12 +379,7 @@ ExecutionStatus BlockChain::startChainSync() {
             vector<Block> blocks;
             readRawBlocks(bestHost, i, end, blocks);
             for(auto & b : blocks) {   
-                ExecutionStatus addResult;
-                if (this->specialBlocks.find(b.getId()) != this->specialBlocks.end())  {
-                    addResult = bc.addBlock(this->specialBlocks[b.getId()]);
-                } else {
-                    addResult = bc.addBlock(b);
-                }
+                ExecutionStatus addResult = bc.addBlock(b);
                 if (addResult != SUCCESS) {
                     failure = true;
                     status = addResult;

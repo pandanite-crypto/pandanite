@@ -159,7 +159,7 @@ void Block::setDifficulty(uint8_t d) {
     this->difficulty = d;
 }
 
-uint8_t Block::getDifficulty() const {
+uint32_t Block::getDifficulty() const {
     return this->difficulty;
 }
 

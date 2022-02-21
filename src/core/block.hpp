@@ -44,7 +44,7 @@ class Block {
         SHA256Hash getLastBlockHash();
         void setLastBlockHash(SHA256Hash hash);
         uint64_t getTimestamp();
-        uint8_t getDifficulty() const;
+        uint32_t getDifficulty() const;
         vector<Transaction>& getTransactions();
         uint32_t getId();
         bool verifyNonce();
