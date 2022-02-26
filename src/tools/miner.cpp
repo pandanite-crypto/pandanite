@@ -133,14 +133,10 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             int nextBlock = currCount + 1;
             
             json problem = getMiningProblem(host);
-
+        
             // download transactions
             vector<Transaction> transactions;
             readRawTransactions(host, transactions);
-
-            for(auto tx : transactions) {
-                cout<<tx.toJson().dump()<<endl;
-            }
 
             Logger::logStatus("[ NEW ] block = " + std::to_string(nextBlock) + ", difficulty = " + to_string(problem["challengeSize"]) + ", transactions = " + to_string(transactions.size()) + " - " + host);
 
@@ -153,20 +149,17 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
             Block newBlock;
 
             uint64_t lastTimestamp = std::time(0);
-            try { // TODO: remove try catch when all servers are patched with timestamp 
-                lastTimestamp = (uint64_t) stringToUint64(problem["lastTimestamp"]);
 
-                // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
-                // if it's not then your system clock is wonky, so we just make up a date:
-                if (newBlock.getTimestamp() < lastTimestamp) {
-                    newBlock.setTimestamp(lastTimestamp + 1);
-                }
-            } catch (...) {}
+            lastTimestamp = (uint64_t) stringToUint64(problem["lastTimestamp"]);
 
+            // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
+            // if it's not then your system clock is wonky, so we just make up a date:
+            if (newBlock.getTimestamp() < lastTimestamp) {
+                newBlock.setTimestamp(lastTimestamp + 1);
+            }
 
             newBlock.setId(nextBlock);
             newBlock.addTransaction(fee);
-
 
             TransactionAmount total = problem["miningFee"];
             if (newBlock.getTimestamp() < lastTimestamp) {

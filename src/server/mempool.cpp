@@ -134,7 +134,7 @@ void MemPool::finishBlock(Block& block) {
         if (it != this->transactionQueue.end()) {
             this->transactionQueue.erase(it);
             if (!tx.isFee()) {
-                this->mempoolOutgoing[tx.fromWallet()] -= tx.getAmount();
+                this->mempoolOutgoing[tx.fromWallet()] -= tx.getAmount() + tx.getFee();
                 if (this->mempoolOutgoing[tx.fromWallet()] == 0) {
                     // remove the key if there is no longer an outgoing amount
                     auto it = this->mempoolOutgoing.find(tx.fromWallet());
