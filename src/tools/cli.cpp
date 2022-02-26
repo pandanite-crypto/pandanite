@@ -47,6 +47,8 @@ int main(int argc, char** argv) {
     cin>>fee;
 
     string host = hosts.getGoodHost();
+
+    cout<<"Sending to host : " <<host<<endl;
     
     Transaction t(fromWallet, toWallet, amount,publicKey, fee);
     t.sign(publicKey, privateKey);
