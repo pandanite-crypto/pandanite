@@ -59,7 +59,7 @@ void peer_sync(HostManager& hm) {
     while(true) {
         for(auto host : hm.hosts) {
             try {
-                pingPeer(host, hm.computeAddress(), std::time(0), hm.version);
+                pingPeer(host, hm.computeAddress(), std::time(0), hm.version, hm.networkName);
             } catch (...) { }
         }
         std::this_thread::sleep_for(std::chrono::minutes(5));
@@ -71,7 +71,13 @@ HostManager::HostManager(json config) {
     this->port = config["port"];
     this->ip = config["ip"];
     this->version = BUILD_VERSION;
+    this->networkName = config["networkName"];
     this->computeAddress();
+
+    // parse checkpoints
+    for(auto checkpoint : config["checkpoints"]) {
+        this->checkpoints.insert(std::pair<uint64_t, SHA256Hash>(checkpoint[0], stringToSHA256(checkpoint[1])));
+    }
 
     // check if a blacklist file exists
     std::ifstream blacklist("blacklist.txt");
@@ -273,7 +279,8 @@ set<string> HostManager::sampleAllHosts(int count) {
 /*
     Adds a peer to the host list, 
 */
-void HostManager::addPeer(string addr, uint64_t time, string version) {
+void HostManager::addPeer(string addr, uint64_t time, string version, string network) {
+    if (network != this->networkName) return;
     if (version != this->version) return;
 
     // check if host is in blacklist
@@ -306,7 +313,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
     // check if we have less peers than needed, if so add this to our peer list
     if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
         this->lock.lock();
-        this->currPeers.push_back(new HeaderChain(addr));
+        this->currPeers.push_back(new HeaderChain(addr, this->checkpoints));
         this->lock.unlock();
     }
 
@@ -314,11 +321,12 @@ void HostManager::addPeer(string addr, uint64_t time, string version) {
     set<string> neighbors = this->sampleFreshHosts(ADD_PEER_BRANCH_FACTOR);
     vector<future<void>> reqs;
     string _version = this->version;
+    string networkName = this->networkName;
     for(auto neighbor : neighbors) {
-        reqs.push_back(std::async([neighbor, addr, _version](){
+        reqs.push_back(std::async([neighbor, addr, _version, networkName](){
             if (neighbor == addr) return;
             try {
-                pingPeer(neighbor, addr, std::time(0), _version);
+                pingPeer(neighbor, addr, std::time(0), _version, networkName);
             } catch(...) {
                 Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
             }
@@ -412,7 +420,7 @@ void HostManager::syncHeadersWithPeers() {
     set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
-        this->currPeers.push_back(new HeaderChain(h));
+        this->currPeers.push_back(new HeaderChain(h, this->checkpoints));
     }
     this->lock.unlock();
 }

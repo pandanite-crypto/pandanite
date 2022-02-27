@@ -27,7 +27,7 @@ class HostManager {
         string getAddress();
         uint64_t getNetworkTimestamp();
         
-        void addPeer(string addr, uint64_t time, string version);
+        void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
         
         void acquire();
@@ -43,9 +43,11 @@ class HostManager {
         string name;
         string address;
         string version;
+        string networkName;
         
         map<string,uint64_t> hostPingTimes;
         map<string,int32_t> peerClockDeltas;
+        map<uint64_t, SHA256Hash> checkpoints;
         vector<string> hostSources;
         vector<string> hosts;
         set<string> blacklist;

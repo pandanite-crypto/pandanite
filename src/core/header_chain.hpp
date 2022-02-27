@@ -7,7 +7,7 @@ using namespace std;
 
 class HeaderChain {
     public:
-        HeaderChain(string host);
+        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints);
         void load();
         void reset();
         bool valid();

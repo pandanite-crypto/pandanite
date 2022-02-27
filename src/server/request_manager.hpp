@@ -27,7 +27,7 @@ class RequestManager {
         json verifyTransaction(Transaction& t);
         json getPeers();
         json getMineStatus(uint32_t blockId);
-        json addPeer(string address, uint64_t time, string version);
+        json addPeer(string address, uint64_t time, string version, string network);
         BlockHeader getBlockHeader(uint32_t blockId);
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t blockId);
         std::pair<char*, size_t> getRawTransactionData();

@@ -32,9 +32,10 @@ json getBlockData(string host_url, int idx) {
     return json::parse(responseStr);  
 }
 
-json pingPeer(string host_url, string peer_url, uint64_t networkTime, string version) {
+json pingPeer(string host_url, string peer_url, uint64_t networkTime, string version, string networkName) {
     json info;
     info["address"] = peer_url;
+    info["networkName"] = networkName;
     info["time"] = networkTime;
     info["version"] = version;
     http::Request request{host_url + "/add_peer"};

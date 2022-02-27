@@ -16,16 +16,14 @@ void chain_sync(HeaderChain& chain) {
 }
 
 
-HeaderChain::HeaderChain(string host) {
+HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints) {
     this->host = host;
     this->failed = false;
     this->offset = 0;
     this->totalWork = 0;
     this->chainLength = 0;
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
-
-    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(1, stringToSHA256("0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750")));
-    this->checkPoints.insert(std::pair<uint64_t, SHA256Hash>(7774, stringToSHA256("E1DC4CA2F2D634868C12B2C8963B33DD8632F459A1D37701A6B9BE17C0DA99EB")));
+    this->checkPoints = checkpoints;
 }
 
 SHA256Hash HeaderChain::getHash(uint64_t blockId) {
