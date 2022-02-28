@@ -226,7 +226,7 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
             return EXPIRED_TRANSACTION;
         }
         
-        if (!t.isFee() && curr.getId() > WALLET_SIG_FORK_BLOCK && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+        if (!t.isFee() && walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
             return WALLET_SIGNATURE_MISMATCH;
         }
     }
