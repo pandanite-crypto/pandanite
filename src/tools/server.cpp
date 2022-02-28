@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
         json response;
         response["name"] = string(config["name"]);
         response["version"] = BUILD_VERSION;
+        response["networkName"] = string(config["networkName"]);
         res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(response.dump());
     };
 
