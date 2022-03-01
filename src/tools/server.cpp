@@ -6,6 +6,7 @@
 #include <thread>
 #include <string_view>
 #include <atomic>
+#include <signal.h>
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
@@ -212,6 +213,8 @@ int main(int argc, char **argv) {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             json peerInfo = json::parse(string(buffer));
+            // for handling older hosts:
+            if (!peerInfo.contains("networkName")) peerInfo["networkName"] = "mainnet";
             if (last) {
                 try {
                     json result = manager.addPeer(peerInfo["address"], peerInfo["time"], peerInfo["version"], peerInfo["networkName"]);
