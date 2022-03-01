@@ -10,8 +10,16 @@ bool RateLimiter::limit(const std::string &s) {
     if (iter == c.end()) {
         auto t = now - std::chrono::seconds(seconds) + add;
         c.emplace(std::make_pair(s, t));
-        if (c.size() > 10000) {
-            
+        if (c.size() > 100000) {
+            std::map<std::string, std::chrono::steady_clock::time_point>::iterator itr = c.begin();
+            // discard half the IP's
+            while (itr != c.end()) {
+                if (std::rand() % 2 == 0) {
+                    itr = c.erase(itr);
+                } else {
+                    ++itr;
+                }
+            }
         }
         return true;
     } else {

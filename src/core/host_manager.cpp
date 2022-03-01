@@ -308,6 +308,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     
     // add to our host list
     if (this->whitelist.size() == 0 || this->whitelist.find(addr) != this->whitelist.end()){
+        Logger::logStatus("Added new peer: " + addr);
         hosts.push_back(addr);
     } else {
         return;
