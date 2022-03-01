@@ -109,6 +109,7 @@ json getConfig(int argc, char**argv) {
     config["ip"] = customIp;
     config["thread_priority"] = thread_priority;
     config["hostSources"] = json::array();
+    config["minHostVersion"] = "0.2.3-alpha";
 
     if (local) {
         // do nothing

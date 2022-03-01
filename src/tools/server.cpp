@@ -1,5 +1,6 @@
 #include <App.h>
 #include <HttpResponse.h>
+#include <functional>
 #include <string>
 #include <mutex>
 #include <thread>
@@ -26,6 +27,13 @@ void rateLimit(RequestManager& manager, uWS::HttpResponse<false>* ptr) {
     if (!manager.acceptRequest(remoteAddress)) ptr->end("Too many requests " + remoteAddress);
 }
 
+namespace {
+    std::function<void(int)> shutdown_handler;
+    void signal_handler(int signal) { 
+        shutdown_handler(signal); 
+        exit(0);
+    }
+}
 
 int main(int argc, char **argv) {  
     srand(time(0));
@@ -38,6 +46,16 @@ int main(int argc, char **argv) {
 
     Logger::logStatus("HostManager ready...");
     RequestManager manager(hosts);
+
+    shutdown_handler = [&](int signal) {
+        Logger::logStatus("Shutting down server.");
+        manager.exit();
+        Logger::logStatus("FINISHED");
+    };
+
+    signal(SIGINT, signal_handler);
+    signal(SIGQUIT, signal_handler);
+    signal(SIGKILL, signal_handler);
 
     if (config["rateLimiter"] == false) manager.enableRateLimiting(false);
     
@@ -193,12 +211,13 @@ int main(int argc, char **argv) {
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
+            json peerInfo = json::parse(string(buffer));
             if (last) {
                 try {
-                    json data = json::parse(string(buffer));
-                    json result = manager.addPeer(data["address"], data["time"], data["version"], data["networkName"]);
+                    json result = manager.addPeer(peerInfo["address"], peerInfo["time"], peerInfo["version"], peerInfo["networkName"]);
                     res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
                 }  catch(const std::exception &e) {
+                    Logger::logStatus(peerInfo.dump());
                     Logger::logError("/add_peer", e.what());
                 } catch(...) {
                     Logger::logError("/add_peer", "unknown");

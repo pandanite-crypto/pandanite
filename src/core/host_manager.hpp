@@ -43,6 +43,7 @@ class HostManager {
         string name;
         string address;
         string version;
+        string minHostVersion;
         string networkName;
         
         map<string,uint64_t> hostPingTimes;

@@ -38,6 +38,10 @@ void RequestManager::enableRateLimiting(bool enabled) {
     this->limitRequests = enabled;
 }
 
+void RequestManager::exit() {
+    this->blockchain->closeDB();
+}
+
 RequestManager::~RequestManager() {
     delete blockchain;
     delete mempool;

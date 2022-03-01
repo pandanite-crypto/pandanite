@@ -79,6 +79,9 @@ HostManager::HostManager(json config) {
         this->checkpoints.insert(std::pair<uint64_t, SHA256Hash>(checkpoint[0], stringToSHA256(checkpoint[1])));
     }
 
+    // parse supported host versions
+    this->minHostVersion = config["minHostVersion"];
+
     // check if a blacklist file exists
     std::ifstream blacklist("blacklist.txt");
     if (blacklist.good()) {
@@ -281,7 +284,7 @@ set<string> HostManager::sampleAllHosts(int count) {
 */
 void HostManager::addPeer(string addr, uint64_t time, string version, string network) {
     if (network != this->networkName) return;
-    if (version != this->version) return;
+    if (version < this->minHostVersion) return;
 
     // check if host is in blacklist
     if (this->blacklist.find(addr) != this->blacklist.end()) return;

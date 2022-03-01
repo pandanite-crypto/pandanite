@@ -33,6 +33,7 @@ class RequestManager {
         std::pair<char*, size_t> getRawTransactionData();
         string getBlockCount();
         string getTotalWork();
+        void exit();
         void deleteDB();
         void enableRateLimiting(bool enabled);
     protected:
