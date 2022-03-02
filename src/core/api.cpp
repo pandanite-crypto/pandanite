@@ -19,10 +19,10 @@ Bigint getTotalWork(string host_url) {
     return Bigint(std::string{response.body.begin(), response.body.end()});
 }
 
-string getName(string host_url) {
+json getName(string host_url) {
     http::Request request{host_url + "/name"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return std::string{response.body.begin(), response.body.end()};
+    return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
 json getBlockData(string host_url, int idx) {

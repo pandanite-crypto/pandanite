@@ -392,7 +392,11 @@ void HostManager::refreshHostList() {
         threads.emplace_back(
             std::thread([hostUrl, &hm, &lock](){
                 try {
-                    string hostName = getName(hostUrl);
+                    json hostInfo = getName(hostUrl);
+                    if (hostInfo["version"] < hm.minHostVersion) {
+                        Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
+                        return;
+                    }
                     lock.lock();
                     if (hm.whitelist.size() == 0 || hm.whitelist.find(hostUrl) != hm.whitelist.end()){
                         hm.hosts.push_back(hostUrl);
