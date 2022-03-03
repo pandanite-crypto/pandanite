@@ -438,14 +438,7 @@ void HostManager::syncHeadersWithPeers() {
     Returns a list of all peer hosts
 */
 vector<string> HostManager::getHosts(bool includeSelf) {
-    vector<string> ret;
-    for (auto pair : this->hostPingTimes) {
-        uint64_t lastPingDelta = std::time(0) - pair.second;
-        // only return peers that have pinged in the last hour
-        if (lastPingDelta < HOST_MIN_FRESHNESS) { 
-            ret.push_back(pair.first);
-        }
-    }
+    vector<string> ret = this->hosts;
     if (includeSelf) ret.push_back(this->address);
     return ret;
 }
