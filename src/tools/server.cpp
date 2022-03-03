@@ -212,11 +212,11 @@ int main(int argc, char **argv) {
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
-            json peerInfo = json::parse(string(buffer));
-            // for handling older hosts:
-            if (!peerInfo.contains("networkName")) peerInfo["networkName"] = "mainnet";
             if (last) {
                 try {
+                    json peerInfo = json::parse(string(buffer));
+                    // for handling older hosts:
+                    if (!peerInfo.contains("networkName")) peerInfo["networkName"] = "mainnet";
                     json result = manager.addPeer(peerInfo["address"], peerInfo["time"], peerInfo["version"], peerInfo["networkName"]);
                     res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
                 }  catch(const std::exception &e) {
