@@ -300,7 +300,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 
     // check if the host is reachable:
     try {
-        string name = getName(addr);
+        json name = getName(addr);
     } catch(...) {
         // if not exit
         return;
