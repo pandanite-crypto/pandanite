@@ -77,13 +77,13 @@ json getConfig(int argc, char**argv) {
     if (it != args.end()) {
         testnet = true;
         networkName = "testnet";
+        checkpoints.push_back({2, "0E865D520237B975B8D202FABFB25607458AF4605A74361498B24AEA7BF5CB34"});
     } 
 
     it = std::find(args.begin(), args.end(), "--local");
     if (it != args.end()) {
         networkName = "localnet";
         local = true;
-        checkpoints.push_back({2, "C80BEA1DF44207E3A46456627E75E02F62087DE8AAD5AFD58DD58689396C2396"});
     }
 
     if (!local && !testnet) {
