@@ -1,10 +1,11 @@
 #pragma once
-#include "leveldb/db.h"
+#include <map>
+using namespace std;
 #include "../core/common.hpp"
 #include "../core/block.hpp"
-#include "data_store.hpp"
+#include "../core/crypto.hpp"
 
-class BlockStore : public DataStore {
+class BlockStore {
     public:
         BlockStore();
         bool hasBlock(uint32_t blockId);
@@ -16,7 +17,9 @@ class BlockStore : public DataStore {
         size_t getBlockCount();
         void setTotalWork(Bigint work);
         Bigint getTotalWork();
-        bool hasBlockCount();
     protected:
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block);
+        map<uint32_t, Block> blocks;
+        Bigint totalWork;
+        uint32_t blockCount;
 };

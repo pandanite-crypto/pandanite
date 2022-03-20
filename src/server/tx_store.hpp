@@ -1,16 +1,17 @@
 #pragma once
 #include <string>
-#include "leveldb/db.h"
+#include <map>
 #include "../core/transaction.hpp"
-#include "data_store.hpp"
 using namespace std;
 
 
-class TransactionStore : public DataStore {
+class TransactionStore {
     public:
         TransactionStore();
         bool hasTransaction(const Transaction &t);
         uint32_t blockForTransaction(Transaction &t);
         void insertTransaction(Transaction& t, uint32_t blockId);
         void removeTransaction(Transaction & t);
+    private:
+        map<SHA256Hash, uint32_t> seen;
 };

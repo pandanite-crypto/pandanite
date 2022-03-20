@@ -1,11 +1,10 @@
 #pragma once
 #include <set>
-#include "leveldb/db.h"
+#include <map>
 #include "../core/common.hpp"
-#include "data_store.hpp"
 using namespace std;
 
-class Ledger : public DataStore {
+class Ledger {
     public:
         Ledger();
         bool hasWallet(const PublicWalletAddress& wallet);
@@ -16,5 +15,6 @@ class Ledger : public DataStore {
         void revertDeposit(PublicWalletAddress to, TransactionAmount amt);
         void deposit(const PublicWalletAddress& wallet, TransactionAmount amt);
     protected:
+        map<PublicWalletAddress, TransactionAmount> ledger;
         void setWalletValue(const PublicWalletAddress& wallet, TransactionAmount amount);
 };

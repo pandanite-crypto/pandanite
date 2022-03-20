@@ -42,9 +42,6 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
     if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
     this->memPool = nullptr;
-    this->ledger.init(ledgerPath);
-    this->blockStore.init(blockPath);
-    this->txdb.init(txdbPath);
     this->initChain();
 }
 
@@ -108,19 +105,6 @@ void BlockChain::resetChain() {
     if (status != SUCCESS) {
         throw std::runtime_error("Could not load genesis block: " + executionStatusAsString(status));
     }
-}
-
-void BlockChain::closeDB() {
-    txdb.closeDB();
-    ledger.closeDB();
-    blockStore.closeDB();
-}
-
-void BlockChain::deleteDB() {
-    this->closeDB();
-    txdb.deleteDB();
-    ledger.deleteDB();
-    blockStore.deleteDB();
 }
 
 std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
