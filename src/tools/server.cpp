@@ -16,8 +16,8 @@ extern "C" {
 // and pass them through this function, replying with response
 EMSCRIPTEN_KEEPALIVE const char* sendRequest(char* st) {
     string str = string(st);
-    json data = json::parse(str);
-    string endpoint = data["endpoint"];
+    // json data = json::parse(str);
+    // string endpoint = data["endpoint"];
     // TODO: support these end points
     // .get("/block_count", blockCountHandler)
     // .get("/block/:b", blockHandler)
@@ -36,7 +36,7 @@ EMSCRIPTEN_KEEPALIVE const char* sendRequest(char* st) {
     // .post("/add_transaction", addTransactionHandler)
     // .post("/add_transaction_json", addTransactionJSONHandler)
     // .post("/verify_transaction", verifyTransactionHandler)
-    return cstr(t.toJson().dump());
+    return 0;
 }
 
 
