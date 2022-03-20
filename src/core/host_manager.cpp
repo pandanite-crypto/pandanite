@@ -354,66 +354,68 @@ bool HostManager::isDisabled() {
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     
-    Logger::logStatus("Finding peers...");
+    // TODO: This logic will be replaced with getPeers();
 
-    set<string> fullHostList;
+    // Logger::logStatus("Finding peers...");
 
-    // Iterate through all host sources merging into a combined peer list
-    for (int i = 0; i < this->hostSources.size(); i++) {
-        try {
-            string hostUrl = this->hostSources[i];
-            http::Request request{hostUrl};
-            const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-            json hostList = json::parse(std::string{response.body.begin(), response.body.end()});
-            for(auto host : hostList) {
-                fullHostList.insert(string(host));
-            }
-        } catch (...) {
-            continue;
-        }
-    }
+    // set<string> fullHostList;
 
-    if (fullHostList.size() == 0) return;
+    // // Iterate through all host sources merging into a combined peer list
+    // for (int i = 0; i < this->hostSources.size(); i++) {
+    //     try {
+    //         string hostUrl = this->hostSources[i];
+    //         http::Request request{hostUrl};
+    //         const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
+    //         json hostList = json::parse(std::string{response.body.begin(), response.body.end()});
+    //         for(auto host : hostList) {
+    //             fullHostList.insert(string(host));
+    //         }
+    //     } catch (...) {
+    //         continue;
+    //     }
+    // }
 
-    // iterate through all listed peer hosts
-    vector<std::thread> threads;
-    std::mutex lock;
-    for(auto hostJson : fullHostList) {
-        // if we've already added this host skip
-        string hostUrl = string(hostJson);
-        auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
-        if (existing != this->hosts.end()) continue;
+    // if (fullHostList.size() == 0) return;
 
-        // if host is in blacklist skip:
-        if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
+    // // iterate through all listed peer hosts
+    // vector<std::thread> threads;
+    // std::mutex lock;
+    // for(auto hostJson : fullHostList) {
+    //     // if we've already added this host skip
+    //     string hostUrl = string(hostJson);
+    //     auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
+    //     if (existing != this->hosts.end()) continue;
 
-        // otherwise try connecting to the host to confirm it's up
-        HostManager & hm = *this;
-        threads.emplace_back(
-            std::thread([hostUrl, &hm, &lock](){
-                try {
-                    json hostInfo = getName(hostUrl);
-                    if (hostInfo["version"] < hm.minHostVersion) {
-                        Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
-                        return;
-                    }
-                    lock.lock();
-                    if (hm.whitelist.size() == 0 || hm.whitelist.find(hostUrl) != hm.whitelist.end()){
-                        hm.hosts.push_back(hostUrl);
-                        Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
-                        hm.hostPingTimes[hostUrl] = std::time(0);
-                    }
-                    lock.unlock();
+    //     // if host is in blacklist skip:
+    //     if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
+
+    //     // otherwise try connecting to the host to confirm it's up
+    //     HostManager & hm = *this;
+    //     threads.emplace_back(
+    //         std::thread([hostUrl, &hm, &lock](){
+    //             try {
+    //                 json hostInfo = getName(hostUrl);
+    //                 if (hostInfo["version"] < hm.minHostVersion) {
+    //                     Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
+    //                     return;
+    //                 }
+    //                 lock.lock();
+    //                 if (hm.whitelist.size() == 0 || hm.whitelist.find(hostUrl) != hm.whitelist.end()){
+    //                     hm.hosts.push_back(hostUrl);
+    //                     Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
+    //                     hm.hostPingTimes[hostUrl] = std::time(0);
+    //                 }
+    //                 lock.unlock();
                     
-                } catch (...) {
-                    Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
-                }
-            })
-        );
-    }
-    for (auto& th : threads) th.join();
+    //             } catch (...) {
+    //                 Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
+    //             }
+    //         })
+    //     );
+    // }
+    // for (auto& th : threads) th.join();
 
-    this->syncHeadersWithPeers();
+    // this->syncHeadersWithPeers();
 }
 
 void HostManager::syncHeadersWithPeers() {

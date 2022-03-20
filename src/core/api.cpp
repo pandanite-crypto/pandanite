@@ -1,8 +1,8 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
+#include <emscripten/fetch.h>
 #include "api.hpp"
-#include "../external/http.hpp"
 #include "constants.hpp"
 #include "helpers.hpp"
 using namespace std;
