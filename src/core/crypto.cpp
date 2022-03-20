@@ -5,7 +5,6 @@
 #include <thread>
 #include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
-#include "../external/sha256/sha2.hpp" 
 #include "../core/logger.hpp"
 using namespace std;
 
@@ -20,14 +19,6 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
     return ret;
 }
 
-std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
-    std::array<uint8_t, 32> ret;
-    sha256_ctx sha256;
-    sha256_init(&sha256);
-    sha256_update(&sha256, (const unsigned char*) buffer, len);
-    sha256_final(&sha256, ret.data());
-    return ret;
-}
 
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
     RIPEMD160Hash ret;

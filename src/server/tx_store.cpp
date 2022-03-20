@@ -15,6 +15,10 @@ uint32_t TransactionStore::blockForTransaction(Transaction &t) {
     return seen[txHash];
 }
 
+void TransactionStore::clear() {
+    this->seen = map<SHA256Hash, uint32_t>();
+}
+
 void TransactionStore::insertTransaction(Transaction& t, uint32_t blockId) {
     SHA256Hash txHash = t.hashContents();
     seen[txHash] = blockId;

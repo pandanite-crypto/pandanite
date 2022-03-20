@@ -17,6 +17,7 @@ class BlockStore {
         size_t getBlockCount();
         void setTotalWork(Bigint work);
         Bigint getTotalWork();
+        void clear();
     protected:
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block);
         map<uint32_t, Block> blocks;

@@ -24,7 +24,12 @@ void Ledger::setWalletValue(const PublicWalletAddress& wallet, TransactionAmount
 }
 
 TransactionAmount Ledger::getWalletValue(const PublicWalletAddress& wallet) {
+    if (!this->hasWallet(wallet)) throw std::runtime_error("Wallet does not exist");
     return ledger[wallet];
+}
+
+void Ledger::clear() {
+    this->ledger = map<PublicWalletAddress,TransactionAmount>();
 }
 
 void Ledger::withdraw(const PublicWalletAddress& wallet, TransactionAmount amt) {

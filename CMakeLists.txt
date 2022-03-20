@@ -21,5 +21,7 @@ file(GLOB CORE_SOURCES "src/core/*.cpp")
 file(GLOB SERVER_SOURCES "src/server/*.cpp")
 file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/bigint/*.cpp")
 add_executable(server ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tools/server.cpp)
-
+add_executable(tests ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tests/tests.cpp)
+target_link_libraries(tests ${CONAN_LIBS})
+target_link_libraries(server ${CONAN_LIBS})
 

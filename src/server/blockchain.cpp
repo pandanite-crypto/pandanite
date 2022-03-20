@@ -46,18 +46,7 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
 }
 
 void BlockChain::initChain() {
-    if (blockStore.hasBlockCount()) {
-        Logger::logStatus("BlockStore exists, loading from disk");
-        size_t count = blockStore.getBlockCount();
-        this->numBlocks = count;
-        this->targetBlockCount = count;
-        Block lastBlock = blockStore.getBlock(count);
-        this->totalWork = blockStore.getTotalWork();
-        this->difficulty = lastBlock.getDifficulty();
-        this->lastHash = lastBlock.getHash();
-    } else {
-        this->resetChain();
-    }
+    this->resetChain();
 }
 
 void BlockChain::resetChain() {
@@ -155,6 +144,12 @@ uint32_t BlockChain::getCurrentMiningFee() {
 
 Bigint BlockChain::getTotalWork() {
     return this->totalWork;
+}
+
+void BlockChain::deleteDB() {
+    this->txdb.clear();
+    this->ledger.clear();
+    this->blockStore.clear();
 }
 
 Block BlockChain::getBlock(uint32_t blockId) {

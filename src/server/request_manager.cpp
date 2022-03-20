@@ -39,7 +39,6 @@ void RequestManager::enableRateLimiting(bool enabled) {
 }
 
 void RequestManager::exit() {
-    this->blockchain->closeDB();
 }
 
 RequestManager::~RequestManager() {

@@ -42,7 +42,6 @@ class BlockChain {
         void resetChain();
         void popBlock();
         void deleteDB();
-        void closeDB();
     protected:
         HostManager& hosts;
         MemPool * memPool;

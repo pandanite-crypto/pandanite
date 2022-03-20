@@ -24,6 +24,12 @@ Bigint BlockStore::getTotalWork() {
     return this->totalWork;
 }
 
+void BlockStore::clear() {
+    this->blocks = map<uint32_t, Block>();
+    this->totalWork = 0;
+    this->blockCount = 0;
+}
+
 bool BlockStore::hasBlock(uint32_t blockId) {
     return this->blocks.find(blockId) != this->blocks.end();
 }

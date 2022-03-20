@@ -12,6 +12,7 @@ class TransactionStore {
         uint32_t blockForTransaction(Transaction &t);
         void insertTransaction(Transaction& t, uint32_t blockId);
         void removeTransaction(Transaction & t);
+        void clear();
     private:
         map<SHA256Hash, uint32_t> seen;
 };
