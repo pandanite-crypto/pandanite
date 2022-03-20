@@ -1,34 +1,31 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
-#include <emscripten/fetch.h>
 #include "api.hpp"
 #include "constants.hpp"
 #include "helpers.hpp"
+#include "request.hpp"
 using namespace std;
 
 uint32_t getCurrentBlockCount(string host_url) {
-    http::Request request{host_url + "/block_count"};
-    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return std::stoi(std::string{response.body.begin(), response.body.end()});
+    const auto response = sendGetRequest(host_url + "/block_count", TIMEOUT_MS);
+    return std::stoi(std::string{response.begin(), response.end()});
 }
 
 Bigint getTotalWork(string host_url) {
-    http::Request request{host_url + "/total_work"};
-    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return Bigint(std::string{response.body.begin(), response.body.end()});
+    const auto response = sendGetRequest(host_url + "/total_work", TIMEOUT_MS);
+    return Bigint(std::string{response.begin(), response.end()});
 }
 
 json getName(string host_url) {
-    http::Request request{host_url + "/name"};
-    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    const auto response = sendGetRequest(host_url + "/name", TIMEOUT_MS);
+    return json::parse(std::string{response.begin(), response.end()});
 }
 
 json getBlockData(string host_url, int idx) {
-    http::Request request{host_url + "/block/" + std::to_string(idx)};
-    const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    string responseStr = std::string{response.body.begin(), response.body.end()};
+    string url = host_url + "/block/" + std::to_string(idx);
+    const auto response = sendGetRequest(url, TIMEOUT_MS);
+    string responseStr = std::string{response.begin(), response.end()};
     return json::parse(responseStr);  
 }
 
@@ -38,11 +35,10 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
     info["networkName"] = networkName;
     info["time"] = networkTime;
     info["version"] = version;
-    http::Request request{host_url + "/add_peer"};
-    const auto response = request.send("POST", info.dump(), {
-        "Content-Type: text/plain"
-    },std::chrono::milliseconds{TIMEOUT_MS});
-    string responseStr = std::string{response.body.begin(), response.body.end()};
+    string data = info.dump();
+    vector<uint8_t> content(data.begin(), data.end());
+    auto response = sendPostRequest(host_url + "/add_peer", TIMEOUT_MS, content);
+    string responseStr = std::string{response.begin(), response.end()};
     return json::parse(responseStr);  
 }
 
@@ -59,74 +55,22 @@ json submitBlock(string host_url, Block& block) {
         transactionInfoToBuffer(tx, ptr);
         ptr += TRANSACTIONINFO_BUFFER_SIZE;
     }
-    http::Request request(host_url + "/submit");
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
-    }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
-}
-
-json getMiningProblem(string host_url) {
-    string url = host_url + "/mine";
-    http::Request request(url);
-    const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    auto response = sendPostRequest(host_url + "/submit", TIMEOUT_SUBMIT_MS, bytes);
+    return json::parse(std::string{response.begin(), response.end()});
 }
 
 json sendTransaction(string host_url, Transaction& t) {
-    http::Request request(host_url + "/add_transaction");
-
     TransactionInfo info = t.serialize();
     vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE);
     transactionInfoToBuffer(info, (char*)bytes.data());
-    
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS * 3});
-    std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);
-}
-
-json sendTransactions(string host_url, vector<Transaction>& transactionList) {
-    http::Request request(host_url + "/add_transaction");
-
-    vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE * transactionList.size());
-    for(int i = 0; i < transactionList.size(); i++) {
-        TransactionInfo tx = transactionList[i].serialize();
-        transactionInfoToBuffer(tx, (char*)bytes.data() + i*TRANSACTIONINFO_BUFFER_SIZE);
-    }
-
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS * 3});
-    std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);
-}
-
-json verifyTransaction(string host_url, Transaction& t) {
-    http::Request request(host_url + "/verify_transaction");
-    TransactionInfo info = t.serialize();
-    vector<uint8_t> bytes;
-    char * ptr = (char*)&info;
-    for(int i = 0; i < sizeof(TransactionInfo); i++) {
-        bytes.push_back(*ptr);
-        ptr++;
-    }
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
-    std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    cout<<"|"<<responseStr<<"|"<<endl;
+    auto response = sendPostRequest(host_url + "/add_transaction", TIMEOUT_MS * 3, bytes);
+    std::string responseStr = std::string{response.begin(), response.end()};
     return json::parse(responseStr);
 }
 
 void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>& blockHeaders) {
-    http::Request request(host_url + "/block_headers/" + std::to_string(startId) + "/" +  std::to_string(endId) );
-    const auto response = request.send("GET", "", {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_BLOCKHEADERS_MS});
-
-    std::vector<char> bytes(response.body.begin(), response.body.end());
+    auto response = sendGetRequest(host_url + "/block_headers/" + std::to_string(startId) + "/" +  std::to_string(endId), TIMEOUT_BLOCKHEADERS_MS);
+    std::vector<char> bytes(response.begin(), response.end());
     uint8_t* curr = (uint8_t*)bytes.data();
     int numBlocks = bytes.size() / BLOCKHEADER_BUFFER_SIZE;
     for(int i =0; i < numBlocks; i++){
@@ -136,11 +80,8 @@ void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>
 }
 
 void readRawBlocks(string host_url, int startId, int endId, vector<Block>& blocks) {
-    http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
-    const auto response = request.send("GET", "", {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_BLOCK_MS});
-    std::vector<char> bytes(response.body.begin(), response.body.end());
+    auto response = sendGetRequest(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId), TIMEOUT_BLOCK_MS );
+    std::vector<char> bytes(response.begin(), response.end());
     uint8_t* buffer = (uint8_t*)bytes.data();
     uint8_t* currPtr = buffer;
     int bytesRead = 0;
@@ -164,12 +105,8 @@ void readRawBlocks(string host_url, int startId, int endId, vector<Block>& block
 }
 
 void readRawTransactions(string host_url, vector<Transaction>& transactions) {
-    http::Request request(host_url + "/gettx");
-    const auto response = request.send("GET", "", {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS});
-    
-    std::vector<char> bytes(response.body.begin(), response.body.end());
+    auto response = sendGetRequest(host_url + "/gettx", TIMEOUT_MS);
+    std::vector<char> bytes(response.begin(), response.end());
     uint8_t* curr = (uint8_t*)bytes.data();
     int numTx = bytes.size() / TRANSACTIONINFO_BUFFER_SIZE;
     for(int i =0; i < numTx; i++){
