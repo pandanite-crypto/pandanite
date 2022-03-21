@@ -1,0 +1,39 @@
+
+
+<!DOCTYPE html>
+<html>
+	<head><script src="https://unpkg.com/httprelay@0.0.44/lib/non-mod/httprelay.js"></script></head>
+	<body>
+		<script>
+
+            // Creating a random name server and get proxy communication method instance
+            let proxy = new HttpRelay(new URL('https://demo.httprelay.io')).proxy()
+
+            // Registering Time API endpoint
+            proxy.routes.addGet('/time-remaining', 'time', ctx => {
+                let until = parseInt(ctx.request.url.searchParams.get('until'), 10)
+                let delta = until - Math.round(Date.now() / 1000)
+                let days = Math.floor(delta / 86400)
+                delta -= days * 86400
+                let hours = Math.floor(delta / 3600) % 24
+                delta -= hours * 3600
+                let minutes = Math.floor(delta / 60) % 60
+                delta -= minutes * 60
+                let seconds = delta % 60
+
+                return {
+                    day: days,
+                    hour: hours,
+                    minute: minutes,
+                    second: seconds
+                }
+            })
+
+            // Starting server
+            proxy.start()
+
+            console.log(proxy.routes.get('time').url());
+
+		</script>
+	</body>
+</html>

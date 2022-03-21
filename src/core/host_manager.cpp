@@ -21,33 +21,9 @@ using namespace std;
     Fetches the public IP of the node
 */
 
-bool isValidIPv4(string & ip) {
-   unsigned int a,b,c,d;
-   return sscanf(ip.c_str(),"%d.%d.%d.%d", &a, &b, &c, &d) == 4;
-}
 
 string HostManager::computeAddress() {
-    if (this->ip == "") {
-        bool found = false;
-        vector<string> lookupServices = { "checkip.amazonaws.com", "icanhazip.com", "ifconfig.co", "wtfismyip.com/text", "ifconfig.io" };
-
-        for(auto& lookupService : lookupServices) {
-            string cmd = "curl -s4 " + lookupService;
-            string rawUrl = exec(cmd.c_str());
-            string ip = rawUrl.substr(0, rawUrl.size() - 1);
-            if (isValidIPv4(ip)) {
-                this->address = "http://" + ip  + ":" + to_string(this->port);
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            Logger::logError("IP discovery", "Could not determine current IP address");
-        }
-    } else {
-        this->address = this->ip + ":" + to_string(this->port);
-    }
+    // TODO: This will be set at startup by javascript
     return this->address;
 }
 
