@@ -18,6 +18,12 @@
 using namespace std;
 
 
+void sendCorsHeaders(uWS::HttpResponse<false>* ptr) {
+    ptr->writeHeader("Access-Control-Allow-Origin", "*");
+    ptr->writeHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    ptr->writeHeader("Access-Control-Allow-Headers", "origin, content-type, accept, x-requested-with");
+    ptr->writeHeader("Access-Control-Max-Age", "3600");
+}
 
 void checkBuffer(string& buf, uWS::HttpResponse<false>* ptr, uint64_t maxSize=8000000) {
     if (buf.size() > maxSize) ptr->end("Buffer Overflow");
@@ -63,9 +69,15 @@ int main(int argc, char **argv) {
     Logger::logStatus("RequestManager ready...");
 
     Logger::logStatus("Server Ready.");
+
+    auto corsHandler = [&manager](auto *res, auto *req) {
+        sendCorsHeaders(res);
+        res->end("");
+    };
     
     auto logsHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             string s = "";
             for(auto str : Logger::buffer) {
@@ -81,6 +93,7 @@ int main(int argc, char **argv) {
 
     auto statsHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             json stats = manager.getStats();
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(stats.dump());
@@ -93,6 +106,7 @@ int main(int argc, char **argv) {
 
     auto totalWorkHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             std::string count = manager.getTotalWork();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
@@ -103,7 +117,9 @@ int main(int argc, char **argv) {
         }
     };
 
-    auto nameHandler = [&config](auto *res, auto *req) {
+    auto nameHandler = [&manager, &config](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
         json response;
         response["name"] = string(config["name"]);
         response["version"] = BUILD_VERSION;
@@ -113,12 +129,14 @@ int main(int argc, char **argv) {
 
     auto peerHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         json response = manager.getPeers();
         res->end(response.dump());
     };
 
     auto blockCountHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             std::string count = manager.getBlockCount();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
@@ -131,6 +149,7 @@ int main(int argc, char **argv) {
 
     auto txJsonHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         json result;
         try {
             json result = manager.getTransactionQueue();
@@ -147,6 +166,7 @@ int main(int argc, char **argv) {
 
     auto blockHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         json result;
         try {
             int blockId= std::stoi(string(req->getParameter(0)));
@@ -169,6 +189,7 @@ int main(int argc, char **argv) {
 
     auto mineStatusHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         json result;
         try {
             int blockId = std::stoi(string(req->getParameter(0)));
@@ -191,6 +212,7 @@ int main(int argc, char **argv) {
 
     auto ledgerHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             PublicWalletAddress w = stringToWalletAddress(string(req->getParameter(0)));
             json ledger = manager.getLedger(w);
@@ -205,6 +227,7 @@ int main(int argc, char **argv) {
 
     auto addPeerHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -233,6 +256,7 @@ int main(int argc, char **argv) {
 
     auto submitHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -295,6 +319,7 @@ int main(int argc, char **argv) {
 
     auto getTxHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             res->writeHeader("Content-Type", "application/octet-stream");
             std::pair<char*, size_t> buffer = manager.getRawTransactionData();
@@ -314,6 +339,7 @@ int main(int argc, char **argv) {
 
     auto mineHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             json response = manager.getProofOfWork();
             res->end(response.dump());
@@ -326,6 +352,7 @@ int main(int argc, char **argv) {
 
     auto syncHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
@@ -353,6 +380,7 @@ int main(int argc, char **argv) {
 
     auto blockHeaderHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         try {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
@@ -381,6 +409,7 @@ int main(int argc, char **argv) {
 
     auto addTransactionHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -417,6 +446,7 @@ int main(int argc, char **argv) {
 
     auto addTransactionJSONHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
@@ -451,6 +481,7 @@ int main(int argc, char **argv) {
 
     auto verifyTransactionHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
+        sendCorsHeaders(res);
         /* Allocate automatic, stack, variable as usual */
         std::string buffer;
         /* Move it to storage of lambda */
@@ -499,6 +530,28 @@ int main(int argc, char **argv) {
         .post("/add_transaction", addTransactionHandler)
         .post("/add_transaction_json", addTransactionJSONHandler)
         .post("/verify_transaction", verifyTransactionHandler)
+        .options("/name", corsHandler)
+        .options("/total_work", corsHandler)
+        .options("/peers", corsHandler)
+        .options("/block_count", corsHandler)
+        .options("/logs", corsHandler)
+        .options("/stats", corsHandler)
+        .options("/block/:b", corsHandler)
+        .options("/tx_json", corsHandler)
+        .options("/mine_status/:b", corsHandler)
+        .options("/ledger/:user", corsHandler)
+        .options("/mine", corsHandler)
+        .options("/add_peer", corsHandler)
+        .options("/submit", corsHandler)
+        .options("/gettx/:blockId", corsHandler)
+        .options("/gettx", corsHandler)
+        .options("/sync/:start/:end", corsHandler)
+        .options("/block_headers/:start/:end", corsHandler)
+        .options("/synctx", corsHandler)
+        .options("/add_transaction", corsHandler)
+        .options("/add_transaction_json", corsHandler)
+        .options("/verify_transaction", corsHandler)
+        
         .listen((int)config["port"], [&hosts](auto *token) {
             Logger::logStatus("==========================================");
             Logger::logStatus("Started server: " + hosts.getAddress());
