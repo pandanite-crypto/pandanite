@@ -12,5 +12,5 @@ file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/bigint/*.cpp
 
 add_executable(a ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} src/tools/server.cpp )
 
-target_link_libraries(a ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcrypto.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/libssl.a -sPTHREAD_POOL_SIZE=8 -sUSE_PTHREADS -sFETCH)
+target_link_libraries(a ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcrypto.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/libssl.a -sPROXY_TO_PTHREAD -sPTHREAD_POOL_SIZE=8 -sUSE_PTHREADS -sFETCH)
 

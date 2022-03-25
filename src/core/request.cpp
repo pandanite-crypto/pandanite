@@ -7,29 +7,28 @@ using namespace std;
     and will send back the data
 */
 
-void downloadSucceeded(emscripten_fetch_t *fetch) {
-	printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-	string buf(fetch->data, fetch->numBytes);
-	cout<<"Received buffer: " << buf <<endl;
-	emscripten_fetch_close(fetch);
-}
-
-void downloadFailed(emscripten_fetch_t *fetch) {
-	emscripten_fetch_close(fetch);
-}
 
 vector<uint8_t> sendGetRequest(string url, uint32_t timeout) {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
-    attr.timeoutMSecs = timeout;
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_WAITABLE;
-    attr.onsuccess = downloadSucceeded;
-    attr.onerror = downloadFailed;
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS| EMSCRIPTEN_FETCH_REPLACE ;
     emscripten_fetch_t * fetch = emscripten_fetch(&attr, url.c_str());
-	emscripten_fetch_wait(fetch, timeout);
+	
+	EMSCRIPTEN_RESULT ret = EMSCRIPTEN_RESULT_TIMED_OUT;
+  	while(ret == EMSCRIPTEN_RESULT_TIMED_OUT) {
+		ret = emscripten_fetch_wait(fetch, 0);
+	}
+	if (fetch->status == 200) {
+		printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+		// The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
+	} else {
+		printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+	}
+	cout<<fetch->numBytes<<endl;
 	string buf(fetch->data, fetch->numBytes);
 	cout<<"Received buffer: " << buf <<endl;
+	emscripten_fetch_close(fetch);
     return vector<uint8_t>(buf.begin(), buf.end());
 }
 vector<uint8_t> sendPostRequest(string url, uint32_t timeout, vector<uint8_t>& content) {

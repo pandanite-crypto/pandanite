@@ -2217,12 +2217,6 @@ var ASM_CONSTS = {
         PThread.unusedWorkers.push(new Worker(pthreadMainJs));
       },getNewWorker:function() {
         if (PThread.unusedWorkers.length == 0) {
-          err('Tried to spawn a new thread, but the thread pool is exhausted.\n' +
-          'This might result in a deadlock unless some threads eventually exit or the code explicitly breaks out to the event loop.\n' +
-          'If you want to increase the pool size, use setting `-s PTHREAD_POOL_SIZE=...`.'
-          + '\nIf you want to throw an explicit error instead of the risk of deadlocking in those cases, use setting `-s PTHREAD_POOL_SIZE_STRICT=2`.'
-          );
-  
           PThread.allocateUnusedWorker();
           PThread.loadWasmModuleToWorker(PThread.unusedWorkers[0]);
         }
@@ -2314,6 +2308,11 @@ var ASM_CONSTS = {
 
   function ___assert_fail(condition, filename, line, func) {
       abort('Assertion failed: ' + UTF8ToString(condition) + ', at: ' + [filename ? UTF8ToString(filename) : 'unknown filename', line, func ? UTF8ToString(func) : 'unknown function']);
+    }
+
+  function ___call_main(argc, argv) {
+      var returnCode = _main(argc, argv);
+      // EXIT_RUNTIME==0 set on command line, keeping main thread alive.
     }
 
   var _emscripten_get_now;if (ENVIRONMENT_IS_NODE) {
@@ -2983,6 +2982,9 @@ var ASM_CONSTS = {
   function _emscripten_set_current_thread_status_js(newStatus) {
     }
   function _emscripten_set_current_thread_status(newStatus) {
+    }
+
+  function _emscripten_set_thread_name(threadId, name) {
     }
 
   function maybeExit() {
@@ -6696,6 +6698,7 @@ function intArrayToString(array) {
 
 var asmLibraryArg = {
   "__assert_fail": ___assert_fail,
+  "__call_main": ___call_main,
   "__clock_gettime": ___clock_gettime,
   "__cxa_allocate_exception": ___cxa_allocate_exception,
   "__cxa_atexit": ___cxa_atexit,
@@ -6719,6 +6722,7 @@ var asmLibraryArg = {
   "emscripten_resize_heap": _emscripten_resize_heap,
   "emscripten_set_canvas_element_size": _emscripten_set_canvas_element_size,
   "emscripten_set_current_thread_status": _emscripten_set_current_thread_status,
+  "emscripten_set_thread_name": _emscripten_set_thread_name,
   "emscripten_set_timeout": _emscripten_set_timeout,
   "emscripten_start_fetch": _emscripten_start_fetch,
   "emscripten_unwind_to_js_event_loop": _emscripten_unwind_to_js_event_loop,
@@ -6807,6 +6811,9 @@ var __emscripten_thread_init = Module["__emscripten_thread_init"] = createExport
 var _pthread_testcancel = Module["_pthread_testcancel"] = createExportWrapper("pthread_testcancel");
 
 /** @type {function(...*):?} */
+var _emscripten_proxy_main = Module["_emscripten_proxy_main"] = createExportWrapper("emscripten_proxy_main");
+
+/** @type {function(...*):?} */
 var _htonl = Module["_htonl"] = createExportWrapper("htonl");
 
 /** @type {function(...*):?} */
@@ -6866,8 +6873,8 @@ var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall
 /** @type {function(...*):?} */
 var dynCall_viijii = Module["dynCall_viijii"] = createExportWrapper("dynCall_viijii");
 
-var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 15852;
-var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 16680;
+var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 15916;
+var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 16744;
 
 
 
@@ -7148,7 +7155,9 @@ function callMain(args) {
   assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
   assert(__ATPRERUN__.length == 0, 'cannot call main when preRun functions remain to be called');
 
-  var entryFunction = Module['_main'];
+  // User requested the PROXY_TO_PTHREAD option, so call a stub main which pthread_create()s a new thread
+  // that will call the user's real main() for the application.
+  var entryFunction = Module['_emscripten_proxy_main'];
 
   args = args || [];
 
@@ -7166,12 +7175,7 @@ function callMain(args) {
 
     // In PROXY_TO_PTHREAD builds, we should never exit the runtime below, as
     // execution is asynchronously handed off to a pthread.
-    // if we're not running an evented main loop, it's time to exit
-    exit(ret, /* implicit = */ true);
-    return ret;
-  }
-  catch (e) {
-    return handleException(e);
+    assert(ret == 0, '_emscripten_proxy_main failed to start proxy thread: ' + ret);
   } finally {
     calledMain = true;
 

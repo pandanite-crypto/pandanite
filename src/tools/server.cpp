@@ -53,7 +53,6 @@ void task1() {
 }
 
 int main(int argc, char** argv) {
-    cout<<"HELLO"<<endl;
     std::thread* t1 = new std::thread(task1);
     t1->join();
     return 0;
