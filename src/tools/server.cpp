@@ -1,5 +1,7 @@
 #include <map>
+#include <thread>
 #include <iostream>
+#include "../core/request.hpp"
 #include <emscripten/emscripten.h>
 using namespace std;
 
@@ -23,18 +25,19 @@ EMSCRIPTEN_KEEPALIVE const char* sendRequest(char* st) {
     // .get("/block/:b", blockHandler)
     // .get("/ledger/:user", ledgerHandler)
     // .get("/total_work", totalWorkHandler)
-    // .post("/add_peer", addPeerHandler)
+    // .post("/add_peer", addPeerHandler) --> GET
     // .get("/tx_json", txJsonHandler)
     // .get("/mine_status/:b", mineStatusHandler)
     // .get("/mine", mineHandler)
-    // .post("/submit", submitHandler)
     // .get("/gettx/:blockId", getTxHandler)
     // .get("/gettx", getTxHandler)
     // .get("/sync/:start/:end", syncHandler)
     // .get("/block_headers/:start/:end", blockHeaderHandler)
+    // .post("/add_transaction_json", addTransactionJSONHandler)  --> GET
     // .get("/synctx", getTxHandler)
+    // UNSUPPORTED:
+    // .post("/submit", submitHandler)
     // .post("/add_transaction", addTransactionHandler)
-    // .post("/add_transaction_json", addTransactionJSONHandler)
     // .post("/verify_transaction", verifyTransactionHandler)
     return 0;
 }
@@ -44,6 +47,14 @@ EMSCRIPTEN_KEEPALIVE const char* sendRequest(char* st) {
 }
 #endif
 
+void task1() {
+    string url = "http://54.189.82.240:3000/block_count";
+    sendGetRequest(url, 5000);
+}
+
 int main(int argc, char** argv) {
+    cout<<"HELLO"<<endl;
+    std::thread* t1 = new std::thread(task1);
+    t1->join();
     return 0;
 }

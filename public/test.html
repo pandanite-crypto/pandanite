@@ -10,29 +10,22 @@
             let proxy = new HttpRelay(new URL('https://demo.httprelay.io')).proxy()
 
             // Registering Time API endpoint
-            proxy.routes.addGet('/time-remaining', 'time', ctx => {
-                let until = parseInt(ctx.request.url.searchParams.get('until'), 10)
-                let delta = until - Math.round(Date.now() / 1000)
-                let days = Math.floor(delta / 86400)
-                delta -= days * 86400
-                let hours = Math.floor(delta / 3600) % 24
-                delta -= hours * 3600
-                let minutes = Math.floor(delta / 60) % 60
-                delta -= minutes * 60
-                let seconds = delta % 60
-
-                return {
-                    day: days,
-                    hour: hours,
-                    minute: minutes,
-                    second: seconds
-                }
-            })
-
-            // Starting server
+            proxy.routes.addGet('/block_count', 'block_count', ctx => {});
+            proxy.routes.addGet('/block', 'block', ctx => {});
+            proxy.routes.addGet('/ledger', 'ledger', ctx => {});
+            proxy.routes.addGet('/total_work', 'total_work', ctx => {});
+            proxy.routes.addGet('/add_peer', 'add_peer', ctx => {});
+            proxy.routes.addGet('/mine_status', 'mine_status', ctx => {});
+            proxy.routes.addGet('/mine', 'mine', ctx => {});
+            proxy.routes.addGet('/gettx', 'gettx', ctx => {});
+            proxy.routes.addGet('/sync', 'sync', ctx => {});
+            proxy.routes.addGet('/block_headers', 'block_headers', ctx => {});
+            proxy.routes.addGet('/add_transaction', 'add_transaction', ctx => {});
+            proxy.routes.addGet('/synctx', 'synctx', ctx => {});
+            
             proxy.start()
 
-            console.log(proxy.routes.get('time').url());
+            console.log(proxy.routes.get('test').url().href);
 
 		</script>
 	</body>
