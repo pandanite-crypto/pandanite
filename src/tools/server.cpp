@@ -350,6 +350,65 @@ int main(int argc, char **argv) {
         }
     };
 
+
+    auto syncV2Handler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            int start = std::stoi(string(req->getQuery("start")));
+            int end = std::stoi(string(req->getQuery("end")));
+            if ((end-start) > BLOCKS_PER_FETCH) {
+                Logger::logError("/v2/sync", "invalid range requested");
+                res->end("");
+            }
+            res->writeHeader("Content-Type", "application/octet-stream");
+            for (int i = start; i <=end; i++) {
+                std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i);
+                std::string_view str((char*)buffer.first, buffer.second);
+                res->write(str);
+                delete buffer.first;
+            }
+            res->end("");
+        } catch(const std::exception &e) {
+            Logger::logError("/v2/sync", e.what());
+        } catch(...) {
+            Logger::logError("/v2/sync", "unknown");
+        }
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+    };
+
+    auto blockHeaderV2Handler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            int start = std::stoi(string(req->getQuery("start")));
+            int end = std::stoi(string(req->getQuery("end")));
+            if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
+                Logger::logError("/v2/block_headers", "invalid range requested");
+                res->end("");
+            }
+            res->writeHeader("Content-Type", "application/octet-stream");
+            for (int i = start; i <=end; i++) {
+                BlockHeader b = manager.getBlockHeader(i);
+                char bhBytes[BLOCKHEADER_BUFFER_SIZE];
+                blockHeaderToBuffer(b, bhBytes);
+                std::string_view str(bhBytes, BLOCKHEADER_BUFFER_SIZE);
+                res->write(str);
+            }
+            res->end("");
+        } catch(const std::exception &e) {
+            Logger::logError("/v2/block_headers", e.what());
+        } catch(...) {
+            Logger::logError("/v2/block_headers", "unknown");
+        }
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+    };
+
+
     auto syncHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
@@ -530,6 +589,10 @@ int main(int argc, char **argv) {
         .post("/add_transaction", addTransactionHandler)
         .post("/add_transaction_json", addTransactionJSONHandler)
         .post("/verify_transaction", verifyTransactionHandler)
+        .get("/v2/sync", syncV2Handler)
+        .get("/v2/block_headers", blockHeaderV2Handler)
+        .options("/v2/sync", corsHandler)
+        .options("/v2/block_headers", corsHandler)
         .options("/name", corsHandler)
         .options("/total_work", corsHandler)
         .options("/peers", corsHandler)
