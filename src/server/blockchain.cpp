@@ -87,7 +87,8 @@ void BlockChain::resetChain() {
 
     // writeJsonToFile(genesis.toJson(), "genesis.json");
 
-    json genesisJson = readJsonFromFile("genesis.json");
+    // TODO: fetch from random host
+    json genesisJson = getBlockData("http://54.189.82.240:3000", 1);
     Block genesis(genesisJson);
 
     ExecutionStatus status = this->addBlock(genesis);

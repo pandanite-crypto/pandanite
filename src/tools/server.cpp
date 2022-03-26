@@ -1,6 +1,16 @@
-#include <map>
+#include <functional>
+#include <string>
+#include <mutex>
 #include <thread>
-#include <iostream>
+#include <atomic>
+#include "../core/logger.hpp"
+#include "../core/crypto.hpp"
+#include "../core/host_manager.hpp"
+#include "../core/helpers.hpp"
+#include "../core/api.hpp"
+#include "../core/crypto.hpp"
+#include "../core/config.hpp"
+#include "../server/request_manager.hpp"
 #include "../core/request.hpp"
 #include <emscripten/emscripten.h>
 using namespace std;
@@ -8,52 +18,109 @@ using namespace std;
 
 // https://gist.github.com/WesThorburn/00c47b267a0e8c8431e06b14997778e4
 
+RequestManager* GLOBAL_REQUEST_MANAGER;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+ inline const char* cstr(const std::string& message) {
+    char * cstr = new char [message.length()+1];
+    std::strcpy (cstr, message.c_str());
+    return cstr;
+}
 
-// Websocket in JS will receive requests from other nodes
-// and pass them through this function, replying with response
-EMSCRIPTEN_KEEPALIVE const char* sendRequest(char* st) {
+EMSCRIPTEN_KEEPALIVE const char* block_count(char* st) {
+    string result = to_string(GLOBAL_REQUEST_MANAGER->getBlockCount());
+    return cstr(result);
+}
+EMSCRIPTEN_KEEPALIVE const char* block(char* st) {
+    uint32_t block = std::stoi(string(st));
+    string result = GLOBAL_REQUEST_MANAGER->getBlock(block).dump();
+    return cstr(result);
+}
+
+EMSCRIPTEN_KEEPALIVE const char* ledger(char* st) {
+    string wallet = string(st);
+    PublicWalletAddress w = stringToWalletAddress(wallet);
+    json ledger = GLOBAL_REQUEST_MANAGER->getLedger(w);
+    return cstr(ledger.dump());
+}
+
+EMSCRIPTEN_KEEPALIVE const char* total_work(char* st) {
+    std::string totalWork = GLOBAL_REQUEST_MANAGER->getTotalWork();
+    return cstr(totalWork);
+}
+
+EMSCRIPTEN_KEEPALIVE const char* add_peer(char* st) {
     string str = string(st);
-    // json data = json::parse(str);
-    // string endpoint = data["endpoint"];
-    // TODO: support these end points
-    // .get("/block_count", blockCountHandler)
-    // .get("/block/:b", blockHandler)
-    // .get("/ledger/:user", ledgerHandler)
-    // .get("/total_work", totalWorkHandler)
-    // .post("/add_peer", addPeerHandler) --> GET
-    // .get("/tx_json", txJsonHandler)
-    // .get("/mine_status/:b", mineStatusHandler)
-    // .get("/mine", mineHandler)
-    // .get("/gettx/:blockId", getTxHandler)
-    // .get("/gettx", getTxHandler)
-    // .get("/sync/:start/:end", syncHandler)
-    // .get("/block_headers/:start/:end", blockHeaderHandler)
-    // .post("/add_transaction_json", addTransactionJSONHandler)  --> GET
-    // .get("/synctx", getTxHandler)
-    // UNSUPPORTED:
-    // .post("/submit", submitHandler)
-    // .post("/add_transaction", addTransactionHandler)
-    // .post("/verify_transaction", verifyTransactionHandler)
+    json peerInfo = json::parse(str);
+    json result = GLOBAL_REQUEST_MANAGER->addPeer(peerInfo["address"], peerInfo["time"], peerInfo["version"], peerInfo["networkName"]);
+    return cstr(result.dump());
+}
+
+EMSCRIPTEN_KEEPALIVE const char* mine_status(char* st) {
+    string str = string(st);
+
     return 0;
 }
 
+EMSCRIPTEN_KEEPALIVE const char* mine(char* st) {
+    string str = string(st);
+
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* gettx(char* st) {
+    string str = string(st);
+
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* sync(char* st) {
+    string str = string(st);
+
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* block_headers(char* st) {
+    string str = string(st);
+
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* add_transaction_json(char* st) {
+    string str = string(st);
+
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* synctx(char* st) {
+    string str = string(st);
+
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE const char* submit(char* st) {
+    string str = string(st);
+
+    return 0;
+}
 
 #ifdef __cplusplus
 }
 #endif
 
-void task1() {
-    string url = "http://54.189.82.240:3000/block_count";
-    sendGetRequest(url, 5000);
-}
 
 int main(int argc, char** argv) {
-    std::thread* t1 = new std::thread(task1);
-    t1->join();
+    json config = getConfig(argc, argv);
+    Logger::logStatus("Starting server...");
+    HostManager hosts(config);
+    hosts.startPingingPeers();
+    Logger::logStatus("HostManager ready...");
+    GLOBAL_REQUEST_MANAGER = new RequestManager(hosts);
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
     return 0;
 }

@@ -2,15 +2,15 @@
 
 <!DOCTYPE html>
 <html>
-	<head><script src="https://unpkg.com/httprelay@0.0.44/lib/non-mod/httprelay.js"></script></head>
+	<head><script src="https://unpkg.com/httprelay@0.0.44/lib/non-mod/httprelay.js" crossorigin></script></head>
 	<body>
 		<script>
 
             // Creating a random name server and get proxy communication method instance
-            let proxy = new HttpRelay(new URL('https://demo.httprelay.io')).proxy()
+            let proxy = new HttpRelay(new URL('http://ec2-54-189-82-240.us-west-2.compute.amazonaws.com')).proxy()
 
             // Registering Time API endpoint
-            proxy.routes.addGet('/block_count', 'block_count', ctx => {});
+            proxy.routes.addPost('/block_count/:a/:b', 'block_count', ctx => { return 'hello world';});
             proxy.routes.addGet('/block', 'block', ctx => {});
             proxy.routes.addGet('/ledger', 'ledger', ctx => {});
             proxy.routes.addGet('/total_work', 'total_work', ctx => {});
@@ -25,7 +25,7 @@
             
             proxy.start()
 
-            console.log(proxy.routes.get('test').url().href);
+            console.log(proxy.routes.get('block_count').url().href);
 
 		</script>
 	</body>
