@@ -108,6 +108,21 @@ json hashTreeToJson(shared_ptr<HashTree> root) {
     return ret;
 }
 
+json RequestManager::getTransactionStatus(Transaction& t) {
+    json response;
+    Block b;
+    try {
+        uint32_t blockId = this->blockchain->findBlockForTransaction(t);
+        b = this->blockchain->getBlock(blockId);
+        response["status"] = "IN_CHAIN";
+        response["blockId"] = b.getId();
+    } catch(...) {
+        response["status"] = "NOT_IN_CHAIN";
+        response["blockId"] = -1;
+    }
+    return response;  
+}
+
 json RequestManager::verifyTransaction(Transaction& t) {
     json response;
     Block b;

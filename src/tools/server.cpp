@@ -224,6 +224,63 @@ int main(int argc, char **argv) {
         }
     };
 
+    auto createWalletHandler = [&manager](auto *res, auto* readJsonFromFile) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            std::pair<PublicKey,PrivateKey> pair = generateKeyPair();
+            PublicKey publicKey = pair.first;
+            PrivateKey privateKey = pair.second;
+            PublicWalletAddress w = walletAddressFromPublicKey(publicKey);
+            string wallet = walletAddressToString(walletAddressFromPublicKey(publicKey));
+            string pubKey = publicKeyToString(publicKey);
+            string privKey = privateKeyToString(privateKey);
+            json key;
+            key["wallet"] = wallet;
+            key["publicKey"] = pubKey;
+            key["privateKey"] = privKey;
+            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(key.dump());
+        } catch (const std::exception& e) {
+            Logger::logError("/create_wallet", e.what());
+        } catch(...) {
+            Logger::logError("/create_wallet", "unknown");
+        }
+    };
+
+    auto createTransactionHandler = [&manager](auto *res, auto* readJsonFromFile) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+        std::string buffer;
+        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
+            json txInfo;
+            if (last) {
+                try {
+                    txInfo = json::parse(string(buffer));
+                    PublicKey publicKey = stringToPublicKey(txInfo["publicKey"]);
+                    PrivateKey privateKey = stringToPrivateKey(txInfo["privateKey"]);    
+                    PublicWalletAddress toAddress = stringToWalletAddress(txInfo["to"]);
+                    PublicWalletAddress fromAddress = walletAddressFromPublicKey(publicKey);
+                    TransactionAmount amount = txInfo["amount"];
+                    TransactionAmount fee = txInfo["fee"];
+                    uint64_t nonce = txInfo["nonce"];
+                    Transaction t(fromAddress, toAddress,amount, publicKey, fee, nonce);
+                    t.sign(publicKey, privateKey);
+                    json result = t.toJson();
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/create_transaction", e.what());
+                } catch(...) {
+                    Logger::logError("/create_transaction", "unknown");
+                }
+            }
+        });
+    };
+
 
     auto addPeerHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
@@ -541,28 +598,35 @@ int main(int argc, char **argv) {
     auto verifyTransactionHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
-        /* Allocate automatic, stack, variable as usual */
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
         std::string buffer;
-        /* Move it to storage of lambda */
         res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             if (last) {
-                if (buffer.length() < TRANSACTIONINFO_BUFFER_SIZE) {
-                    json response;
-                    response["error"] = "Malformed transaction";
+                try {
+                    json parsed = json::parse(string(buffer));
+                    json response = json::array();
+                    if (parsed.is_array()) {
+                        for (auto& item : parsed) {
+                            Transaction tx(item);
+                            response.push_back(manager.getTransactionStatus(tx));
+                            // only add a maximum of 100 transactions per request
+                            if (response.size() > 100) break;
+                        }
+                    } else {
+                        Transaction tx(parsed);
+                        response.push_back(manager.getTransactionStatus(tx));
+                    }
                     res->end(response.dump());
-                    Logger::logError("/verify_transaction","Malformed transaction");
-                    return;
+                }  catch(const std::exception &e) {
+                    Logger::logError("/add_transaction", e.what());
+                } catch(...) {
+                    Logger::logError("/add_transaction", "unknown");
                 }
-                TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
-                Transaction tx(t);
-                json response = manager.verifyTransaction(tx);
-                res->end(response.dump());
             }
-        });
-        res->onAborted([res]() {
-            res->end("ABORTED");
         });
     };
 
@@ -586,6 +650,8 @@ int main(int argc, char **argv) {
         .get("/sync/:start/:end", syncHandler)
         .get("/block_headers/:start/:end", blockHeaderHandler)
         .get("/synctx", getTxHandler)
+        .get("/create_wallet", createWalletHandler)
+        .post("/create_transaction", createTransactionHandler)
         .post("/add_transaction", addTransactionHandler)
         .post("/add_transaction_json", addTransactionJSONHandler)
         .post("/verify_transaction", verifyTransactionHandler)
@@ -614,6 +680,7 @@ int main(int argc, char **argv) {
         .options("/add_transaction", corsHandler)
         .options("/add_transaction_json", corsHandler)
         .options("/verify_transaction", corsHandler)
+        
         
         .listen((int)config["port"], [&hosts](auto *token) {
             Logger::logStatus("==========================================");

@@ -25,6 +25,7 @@ class RequestManager {
         json getLedger(PublicWalletAddress w);
         json getStats();
         json verifyTransaction(Transaction& t);
+        json getTransactionStatus(Transaction& t);
         json getPeers();
         json getMineStatus(uint32_t blockId);
         json addPeer(string address, uint64_t time, string version, string network);
