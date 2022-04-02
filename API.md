@@ -126,4 +126,20 @@ Status may be any of the following strings:
 * `QUEUE_FULL`: The node has reached max capacity of transactions
 
 
-## Get transaction status
+## `POST` /verify_transaction
+Get status of one or more transactions in JSON format
+Example request:
+```
+curl -X POST -H "Content-Type: application/json" -d  '[{"amount":1,"fee":1,"from":"004AE69674A9747B462D348DB7188EF284A1157641335B2D1B","signature":"CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F","signingKey":"3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A","timestamp":"0","to":"006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"}]' http://localhost:3000/add_transaction_json
+```
+
+Example response:
+```
+[{"status":"IN_CHAIN", "blockId": 33}]
+```
+
+Status may be any of the following strings:
+* `IN_CHAIN` : The transaction is written to the chain
+* `NOT_IN_CHAIN`: The transaction has not been written to the chain
+
+If the transaction is in the chain then the blockId will specify the ID of the block it was written to.
