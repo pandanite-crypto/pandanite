@@ -14,3 +14,13 @@ add_executable(a ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} src/tools
 
 target_link_libraries(a ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcrypto.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/libssl.a  -fexceptions -sNO_DISABLE_EXCEPTION_CATCHING -sINITIAL_MEMORY=167772160 -sPROXY_TO_PTHREAD -sPTHREAD_POOL_SIZE=8 -sUSE_PTHREADS -sFETCH)
 
+if(JS_ONLY)
+	message(STATUS "Setting compilation target to native JavaScript")
+	set(CMAKE_EXECUTABLE_SUFFIX ".js")
+	set_target_properties(a PROPERTIES LINK_FLAGS "-s 'EXPORTED_RUNTIME_METHODS=[\"ccall\", \"cwrap\", \"intArrayFromString\", \"allocate\"]' -s WASM=0 -s EXPORTED_FUNCTIONS='[_main]'")
+else(JS_ONLY)
+	message(STATUS "Setting compilation target to WASM")
+	set(CMAKE_EXECUTABLE_SUFFIX ".wasm.js")
+	set_target_properties(a PROPERTIES LINK_FLAGS "-s 'EXPORTED_RUNTIME_METHODS=[\"ccall\", \"cwrap\", \"intArrayFromString\", \"allocate\"]' -s WASM=1 -s EXPORTED_FUNCTIONS='[_main]'")
+endif(JS_ONLY)
+

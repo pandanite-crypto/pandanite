@@ -22,24 +22,27 @@ using namespace std;
     Fetches the public IP of the node
 */
 
-
 string HostManager::computeAddress() {
-    // TODO: This will be set at startup by javascript
-    return "FOOBAR"; //this->address;
+    return this->address;
 }
 
 /*
     This thread periodically updates all neighboring hosts with the 
     nodes current IP 
 */  
-void peer_sync(HostManager& hm) {
+void peer_sync(HostManager* hm) {
     while(true) {
-        for(auto host : hm.hosts) {
+        Logger::logStatus("My address: " + hm->address + " host size = " + to_string(hm->hosts.size()));
+        printf("Address of x is in thread is %p\n", (void *)hm);  
+        for(auto host : hm->hosts) {
             try {
-                pingPeer(host, hm.computeAddress(), std::time(0), hm.version, hm.networkName);
+                if (hm->address != "") {
+                    Logger::logStatus("Pinging peer: " + host);
+                    pingPeer(host, hm->computeAddress(), std::time(0), hm->version, hm->networkName);
+                }
             } catch (...) { }
         }
-        std::this_thread::sleep_for(std::chrono::minutes(5));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
@@ -49,7 +52,7 @@ HostManager::HostManager(json config) {
     this->ip = config["ip"];
     this->version = BUILD_VERSION;
     this->networkName = config["networkName"];
-    this->computeAddress();
+    this->address = "";
 
     // parse checkpoints
     for(auto checkpoint : config["checkpoints"]) {
@@ -95,21 +98,19 @@ HostManager::HostManager(json config) {
     for(auto h : config["hostSources"]) {
         this->hostSources.push_back(h);
     }
-    if (this->hostSources.size() == 0) {
-        string localhost = "http://localhost:3000";
-        this->hosts.push_back(localhost);
-        this->hostPingTimes[localhost] = std::time(0);
-        this->peerClockDeltas[localhost] = 0;
-        this->syncHeadersWithPeers();
-    } else {
-        this->refreshHostList();
-    }
-    
+    this->refreshHostList();
 }
 
 void HostManager::startPingingPeers() {
     if (this->syncThread.size() > 0) throw std::runtime_error("Peer ping thread exists.");
-    this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
+    printf("Address of x is in calling thread is %p\n", (void *)this);  
+    this->syncThread.push_back(std::thread(peer_sync, this));
+}
+
+void HostManager::setAddress(string addr) {
+    Logger::logStatus("Set node address to: " + addr);
+    this->address = addr;
+    this->startPingingPeers();
 }
 
 string HostManager::getAddress() {
@@ -389,7 +390,7 @@ void HostManager::refreshHostList() {
         );
     }
     for (auto& th : threads) th.join();
-
+    Logger::logStatus("Peer list size = " + to_string(this->hosts.size()));
     this->syncHeadersWithPeers();
 }
 

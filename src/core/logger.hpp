@@ -1,4 +1,5 @@
 #pragma once
+#include <emscripten/emscripten.h>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -50,10 +51,10 @@ class Logger {
             auto t = std::time(0);
             auto tm = *std::localtime(&t);
             stringstream s;
-            s<<"[STATUS] "<<std::put_time(&tm, TIME_FORMAT)<<": "<<message<<endl;
+            s<<"[STATUS] "<<std::put_time(&tm, TIME_FORMAT)<<": "<<message;
             if (!file.is_open()) {
                 Logger::console_lock.lock();
-                cout << s.str();
+                cout<<s.str()<<endl;
                 Logger::console_lock.unlock();
             } else {
                 file<<s.str();

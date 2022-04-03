@@ -12,6 +12,7 @@ class HostManager {
         HostManager(); // only used for  mocks
         size_t size();
         string computeAddress();
+        void setAddress(string address);
         void refreshHostList();
         void startPingingPeers();
 
@@ -32,10 +33,9 @@ class HostManager {
         
         void acquire();
         void release();
-    protected:
         void syncHeadersWithPeers();
         vector<HeaderChain*> currPeers;
-
+    //protected:
         std::mutex lock;
         bool disabled;
         string ip;

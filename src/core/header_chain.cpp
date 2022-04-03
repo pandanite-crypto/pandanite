@@ -124,7 +124,7 @@ void HeaderChain::load() {
     this->totalWork = totalWork;
     this->failed = false;
     if (numBlocks != startBlocks) {
-        //Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
+        Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
     }
 }
 
