@@ -13,7 +13,7 @@ curl http://54.189.82.240:3000/ledger/0095557B94A368FE2529D3EB33E6BF1276D175D27A
 ```
 
 Example response:
-```
+```json
 {"balance":1575762342}
 ```
 
@@ -40,7 +40,7 @@ curl http://54.189.82.240:3000/block/2
 ```
 
 Example response:
-```
+```json
 {
   "difficulty": 16,
   "id": 2,
@@ -72,7 +72,7 @@ curl http://54.189.82.240:3000/create_wallet
 ```
 
 Example response:
-```
+```json
 {
   "privateKey": "581E2584D2979E0986FC42256588DDDE6CDF9D1A3526E3006F127557DF14EE4DFBCBAE1A08997F3B140A927505255647D4856639971EF879AAEB991BF11C98BE",
   "publicKey": "0010F5BDAA6DEC4539E388C615C76B78F9A8ECD1F71C8EAAA92120329B2B41E5",
@@ -99,7 +99,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 ```
 
 Example response:
-```
+```json
 {
   "amount": 1,
   "fee": 1,
@@ -130,7 +130,7 @@ curl -X POST -H "Content-Type: application/json" -d  '[
 ```
 
 Example response:
-```
+```json
 [{"status":"SENDER_DOES_NOT_EXIST"}]
 ```
 
@@ -160,7 +160,7 @@ curl -X POST -H "Content-Type: application/json" -d  '[
 ```
 
 Example response:
-```
+```json
 [{"status":"IN_CHAIN", "blockId": 33}]
 ```
 
