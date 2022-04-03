@@ -62,7 +62,9 @@ Example response:
 ```
 
 ## `GET` /create_wallet
-Returns a new public key, private key, wallet address. NOTE: keypairs generated on untrusted nodes are not secure. Only use this if you are running your own node.
+Returns a new public key, private key, wallet address. 
+
+NOTE: keypairs generated on untrusted nodes are not secure. Only use this if you are running your own node behind a firewall.
 
 Example request:
 ```
@@ -80,6 +82,9 @@ Example response:
 
 ## `GET` /create_transaction
 Creates a new signed transaction given privateKey, publicKey, to, amount, fee and a nonce. The nonce can be any random 64bit number.
+
+NOTE: transactions generated on untrusted nodes may leak private keys. Only use this if you are running your own node behind a firewall.
+
 Example request:
 ```
 curl -X POST -H "Content-Type: application/json" -d '{
