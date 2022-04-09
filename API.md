@@ -13,7 +13,7 @@ curl http://54.189.82.240:3000/ledger?wallet=0095557B94A368FE2529D3EB33E6BF1276D
 ```
 
 Example response:
-```
+```json
 {"balance":1575762342}
 ```
 
@@ -40,7 +40,7 @@ curl http://54.189.82.240:3000/block?blockId=2
 ```
 
 Example response:
-```
+```json
 {
   "difficulty": 16,
   "id": 2,
@@ -62,7 +62,9 @@ Example response:
 ```
 
 ## `GET` /create_wallet
-Returns a new public key, private key, wallet address. NOTE: keypairs generated on untrusted nodes are not secure. Only use this if you are running your own node.
+Returns a new public key, private key, wallet address. 
+
+NOTE: keypairs generated on untrusted nodes are not secure. Only use this if you are running your own node behind a firewall.
 
 Example request:
 ```
@@ -70,7 +72,7 @@ curl http://54.189.82.240:3000/create_wallet
 ```
 
 Example response:
-```
+```json
 {
   "privateKey": "581E2584D2979E0986FC42256588DDDE6CDF9D1A3526E3006F127557DF14EE4DFBCBAE1A08997F3B140A927505255647D4856639971EF879AAEB991BF11C98BE",
   "publicKey": "0010F5BDAA6DEC4539E388C615C76B78F9A8ECD1F71C8EAAA92120329B2B41E5",
@@ -80,6 +82,9 @@ Example response:
 
 ## `GET` /create_transaction
 Creates a new signed transaction given privateKey, publicKey, to, amount, fee and a nonce. The nonce can be any random 64bit number.
+
+NOTE: transactions generated on untrusted nodes may leak private keys. Only use this if you are running your own node behind a firewall.
+
 Example request:
 ```
 curl -X POST -H "Content-Type: application/json" -d '{
@@ -94,7 +99,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 ```
 
 Example response:
-```
+```json
 {
   "amount": 1,
   "fee": 1,
@@ -110,11 +115,22 @@ Example response:
 Submit one or more transactions in JSON format
 Example request:
 ```
-curl -X POST -H "Content-Type: application/json" -d  '[{"amount":1,"fee":1,"from":"004AE69674A9747B462D348DB7188EF284A1157641335B2D1B","signature":"CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F","signingKey":"3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A","timestamp":"0","to":"006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"}]' http://localhost:3000/add_transaction_json
+curl -X POST -H "Content-Type: application/json" -d  '[
+  {
+    "amount": 1,
+    "fee": 1,
+    "from": "004AE69674A9747B462D348DB7188EF284A1157641335B2D1B",
+    "signature": "CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F",
+    "signingKey": "3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A",
+    "timestamp": "0",
+    "to": "006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"
+  }
+]
+' http://localhost:3000/add_transaction_json
 ```
 
 Example response:
-```
+```json
 [{"status":"SENDER_DOES_NOT_EXIST"}]
 ```
 
@@ -130,11 +146,21 @@ Status may be any of the following strings:
 Get status of one or more transactions in JSON format
 Example request:
 ```
-curl -X POST -H "Content-Type: application/json" -d  '[{"amount":1,"fee":1,"from":"004AE69674A9747B462D348DB7188EF284A1157641335B2D1B","signature":"CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F","signingKey":"3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A","timestamp":"0","to":"006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"}]' http://localhost:3000/add_transaction_json
+curl -X POST -H "Content-Type: application/json" -d  '[
+  {
+    "amount": 1,
+    "fee": 1,
+    "from": "004AE69674A9747B462D348DB7188EF284A1157641335B2D1B",
+    "signature": "CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F",
+    "signingKey": "3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A",
+    "timestamp": "0",
+    "to": "006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"
+  }
+]' http://localhost:3000/add_transaction_json
 ```
 
 Example response:
-```
+```json
 [{"status":"IN_CHAIN", "blockId": 33}]
 ```
 
