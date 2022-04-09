@@ -11,15 +11,31 @@ using namespace std;
 #define MIN_FEE_TO_ENTER_MEMPOOL 1
 
 MemPool::MemPool(HostManager& h, BlockChain &b) : hosts(h), blockchain(b) {
+    this->shutdown = false;
+}
+
+MemPool::~MemPool() {
+    this->shutdown = true;
+}
+
+void MemPool::acquire() {
+    this->shutdownLock.lock();
+}
+
+void MemPool::release() {
+    this->shutdownLock.unlock();
 }
 
 void mempool_sync(MemPool& mempool) {
     while(true) {
+        if (mempool.shutdown) break;
+        mempool.acquire();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         Transaction t;
         mempool.sendLock.lock();
         if (mempool.toSend.size() == 0) {
             mempool.sendLock.unlock();
+            mempool.release();
             continue;
         } else {
             t = mempool.toSend.front();
@@ -41,6 +57,7 @@ void mempool_sync(MemPool& mempool) {
         for(int i =0 ; i < reqs.size(); i++) {
             reqs[i].get();
         }
+        mempool.release();
     }
 }
 

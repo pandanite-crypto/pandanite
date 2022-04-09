@@ -21,6 +21,7 @@ class MemPool;
 class BlockChain {
     public:
         BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
+        ~BlockChain();
         void sync();
         void acquire();
         void release();
@@ -44,6 +45,7 @@ class BlockChain {
         void deleteDB();
         void closeDB();
     protected:
+        bool shutdown;
         HostManager& hosts;
         MemPool * memPool;
         int numBlocks;

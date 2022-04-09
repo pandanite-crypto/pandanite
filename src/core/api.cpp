@@ -26,7 +26,7 @@ json getName(string host_url) {
 }
 
 json getBlockData(string host_url, int idx) {
-    http::Request request{host_url + "/block/" + std::to_string(idx)};
+    http::Request request{host_url + "/block?blockId=" + std::to_string(idx)};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
     string responseStr = std::string{response.body.begin(), response.body.end()};
     return json::parse(responseStr);  
@@ -121,7 +121,7 @@ json verifyTransaction(string host_url, Transaction& t) {
 }
 
 void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>& blockHeaders) {
-    http::Request request(host_url + "/block_headers/" + std::to_string(startId) + "/" +  std::to_string(endId) );
+    http::Request request(host_url + "/block_headers?start=" + std::to_string(startId) + "&end=" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_BLOCKHEADERS_MS});
@@ -136,7 +136,7 @@ void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>
 }
 
 void readRawBlocks(string host_url, int startId, int endId, vector<Block>& blocks) {
-    http::Request request(host_url + "/sync/" + std::to_string(startId) + "/" +  std::to_string(endId) );
+    http::Request request(host_url + "/sync?start=" + std::to_string(startId) + "&end=" +  std::to_string(endId) );
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_BLOCK_MS});

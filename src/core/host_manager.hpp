@@ -10,6 +10,7 @@ class HostManager {
     public:
         HostManager(json config);
         HostManager(); // only used for  mocks
+        ~HostManager();
         size_t size();
         string computeAddress();
         void refreshHostList();

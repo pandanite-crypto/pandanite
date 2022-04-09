@@ -10,12 +10,12 @@ using namespace std;
 TEST(test_accepts_proof_of_work) {
     HostManager hosts;
     RequestManager r(hosts, "./test-data/tmpdb1", "./test-data/tmpdb2", "./test-data/tmpdb3");
-
     json pow = r.getProofOfWork();
     string lastHashStr = pow["lastHash"];
     SHA256Hash lastHash = stringToSHA256(lastHashStr);
     int challengeSize = pow["challengeSize"];
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    
     User miner;
     // have miner mine the next block
     Transaction fee = miner.mine();
@@ -56,6 +56,6 @@ TEST(test_fails_when_missing_merkle_root) {
     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
     newBlock.setNonce(solution);
     json result = r.submitProofOfWork(newBlock);
-    r.deleteDB();
+ //   r.deleteDB();
     ASSERT_EQUAL(result["status"], "INVALID_MERKLE_ROOT");
 }

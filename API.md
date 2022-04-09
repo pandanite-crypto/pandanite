@@ -3,13 +3,13 @@ General notes:
 All transaction amounts, balances, and fees are represented in leaves (1 leaf = 1/10,000 BMB).
 All wallet addresses, keys, and block hashes are represented as hexadecimal strings.
 
-#### `GET` /ledger/{string:walletAddress}
+#### `GET` /ledger?wallet={string:walletAddress}
 Returns the total balance of the wallet in leaves 
 
 Example request:
 
 ```
-curl http://54.189.82.240:3000/ledger/0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249
+curl http://54.189.82.240:3000/ledger?wallet=0095557B94A368FE2529D3EB33E6BF1276D175D27A4E876249
 ```
 
 Example response:
@@ -31,12 +31,12 @@ Example response:
 47853
 ```
 
-## `GET` /block/{int:blockID}
+## `GET` /block?blockId={int:blockID}
 Get data for block. Returns `{"error":"Invalid Block"}` if the block does not exist.
 
 Example request:
 ```
-curl http://54.189.82.240:3000/block/2
+curl http://54.189.82.240:3000/block?blockId=2
 ```
 
 Example response:
@@ -143,3 +143,4 @@ Status may be any of the following strings:
 * `NOT_IN_CHAIN`: The transaction has not been written to the chain
 
 If the transaction is in the chain then the blockId will specify the ID of the block it was written to.
+

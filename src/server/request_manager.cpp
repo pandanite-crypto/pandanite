@@ -43,9 +43,11 @@ void RequestManager::exit() {
 }
 
 RequestManager::~RequestManager() {
-    delete blockchain;
-    delete mempool;
+    this->mempool->acquire();
+    //delete mempool; TODO: figure out why this destructor causes segfault
     delete rateLimiter;
+    this->blockchain->acquire();
+    delete blockchain;
 }
 
 void RequestManager::deleteDB() {

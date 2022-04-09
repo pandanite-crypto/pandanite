@@ -31,6 +31,7 @@ using namespace std;
 void chain_sync(BlockChain& blockchain) {
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        if (blockchain.shutdown) break;
         blockchain.acquire();
         blockchain.startChainSync();
         blockchain.release();
@@ -42,10 +43,15 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     if (blockPath == "") blockPath = BLOCK_STORE_FILE_PATH;
     if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
     this->memPool = nullptr;
+    this->shutdown = false;
     this->ledger.init(ledgerPath);
     this->blockStore.init(blockPath);
     this->txdb.init(txdbPath);
     this->initChain();
+}
+
+BlockChain::~BlockChain() {
+    this->shutdown = true;
 }
 
 void BlockChain::initChain() {

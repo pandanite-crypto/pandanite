@@ -130,6 +130,15 @@ HostManager::HostManager(json config) {
     
 }
 
+HostManager::~HostManager() {
+    // free existing peers
+    this->lock.lock();
+    for(auto peer : this->currPeers) {
+        delete peer;
+    }
+    this->currPeers.empty();
+}
+
 void HostManager::startPingingPeers() {
     if (this->syncThread.size() > 0) throw std::runtime_error("Peer ping thread exists.");
     this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
