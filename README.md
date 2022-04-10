@@ -33,12 +33,7 @@ pip3 install conan
 *Linux* install pre-requirements
 ```
 sudo apt-get update
-sudo apt-get -y install make  
-sudo apt-get -y install cmake  
-sudo apt-get -y install automake
-sudo apt-get -y install libtool
-sudo apt-get -y install python3-pip
-sudo apt-get -y install libleveldb-dev
+sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6
 sudo pip3 install conan
 ```
