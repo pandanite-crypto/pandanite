@@ -38,7 +38,7 @@ void peer_sync(HostManager* hm) {
                 }
             } catch (...) { }
         }
-        std::this_thread::sleep_for(std::chrono::minutes(5));
+        std::this_thread::sleep_for(std::chrono::seconds(120));
     }
 }
 
@@ -99,7 +99,6 @@ HostManager::HostManager(json config) {
 
 void HostManager::startPingingPeers() {
     if (this->syncThread.size() > 0) throw std::runtime_error("Peer ping thread exists.");
-    printf("Address of x is in calling thread is %p\n", (void *)this);  
     this->syncThread.push_back(std::thread(peer_sync, this));
 }
 
@@ -362,7 +361,6 @@ void HostManager::refreshHostList() {
         if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
 
         if (hostUrl.find("proxy") != std::string::npos) {
-            cout<<"SKIPPING : "<<hostUrl    <<endl;
             continue;
         }
         // otherwise try connecting to the host to confirm it's up

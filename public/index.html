@@ -31,6 +31,10 @@
           term.write(message + '\r\n');
         };
 
+        function hexDecode(hexString) {
+          return new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        }
+
         window.receiveResult = function(taskId, result) {
             let _receiveResult = Module.cwrap('receive_result', 'string', ['array'])
             const encoder = new TextEncoder();
@@ -40,7 +44,13 @@
             return _receiveResult(data, data.length);
         }
 
-        //let peer = new Peer();
+        window.setAddress = function(address) {
+            let _setAddress = Module.cwrap('set_address', 'string', ['array'])
+            const encoder = new TextEncoder();
+            const view = encoder.encode(address);
+            return _setAddress(view, view.length);
+        }
+        
 
         window.sendTask = (task) => {
             task = JSON.parse(task);
@@ -48,7 +58,11 @@
                 let xhr = new XMLHttpRequest();
                 xhr.overrideMimeType("text/plain; charset=x-user-defined");
                 xhr.responseType = "arraybuffer";
-                xhr.open("GET", task.url);
+                if (task.data.length == 0)
+                  xhr.open("GET", task.url);
+                else
+                  xhr.open("POST", task.url, true);
+                xhr.timeout = task.timeout;
                 xhr.onload = (e) => {
                     let buf = xhr.response;
                     // todo concat taskId to buf
@@ -57,13 +71,20 @@
                 xhr.onerror = (e) => {
                     window.receiveResult(task.taskId);
                 }
-                xhr.send();
+                if (task.data.length == 0) {
+                  xhr.send();
+                } else {
+                  xhr.send(hexDecode(task.data));
+                }
+                
             } else {
-                // fetch data via PeerJS
-                var conn = peer.connect(task.url);
-                conn.on('open', function(){
-                    conn.send('REQ:' + peerId + ':' + task.taskId + task.data);
-                });
+              window.receiveResult(task.taskId);
+                // // fetch data via PeerJS
+                // // figure out endpoint from url: e.g peer://<peerID>/block?blockId=1
+                // var conn = peer.connect(task.url);
+                // conn.on('open', function(){
+                //     conn.send('REQ:' + task.taskId + ':' + endpoint + ':' + task.data);
+                // });
             }
         }
 
@@ -77,6 +98,11 @@
         // });
         function checkNodeStatus() {
           if (window.nodeReady) {
+            let peer = new Peer();
+            peer.on('open', function(id) {
+              const peerUrl = 'peer://' + id;
+              window.setAddress(peerUrl);
+            });
           } else {
             setTimeout(checkNodeStatus, 100);
           }

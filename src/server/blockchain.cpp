@@ -314,10 +314,10 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty();
-        //if (block.getId() % 1000 == 0){
+        if (block.getId() % 1000 == 0){
             Logger::logStatus("Added block " + to_string(block.getId()));
             Logger::logStatus("difficulty= " + to_string(block.getDifficulty()));
-        //}
+        }
     }
     return status;
 }

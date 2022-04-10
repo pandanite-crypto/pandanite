@@ -46,8 +46,8 @@ EMSCRIPTEN_KEEPALIVE const char* receive_result(char* data, uint64_t sz) {
     return cstr("");
 }
 
-EMSCRIPTEN_KEEPALIVE const char* set_address(char* st) {
-    string addr = string(st);
+EMSCRIPTEN_KEEPALIVE const char* set_address(char* st, uint64_t sz) {
+    string addr = string(st, sz);
     GLOBAL_HOST_MANAGER->setAddress(addr);
     string result = addr;
     return cstr(result);
