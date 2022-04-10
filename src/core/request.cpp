@@ -62,7 +62,6 @@ vector<uint8_t> sendGetRequest(string url, uint32_t timeout) {
     return std::move(v);
 }
 vector<uint8_t> sendPostRequest(string url, uint32_t timeout, vector<uint8_t>& content) {
-    Logger::logStatus("Sending POST " + url);
     string requestId = sendRequest(url, content, timeout);
     while (!isReady(requestId)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

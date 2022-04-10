@@ -25,8 +25,11 @@
 	<body style="margin:0px; background-color: black">
 		<script>
       $(document).ready(()=> {
+        let PEER = null;
+
         var term = new Terminal({rows: Math.round($(window).height()/20), cols: Math.round($(window).width()/12) });
         term.open(document.getElementById('terminal'));
+        
         window.logMessage = (message) => {
           term.write(message + '\r\n');
         };
@@ -50,7 +53,6 @@
             const view = encoder.encode(address);
             return _setAddress(view, view.length);
         }
-        
 
         window.sendTask = (task) => {
             task = JSON.parse(task);
@@ -76,8 +78,8 @@
                 } else {
                   xhr.send(hexDecode(task.data));
                 }
-                
             } else {
+              // peerjs not yet supported
               window.receiveResult(task.taskId);
                 // // fetch data via PeerJS
                 // // figure out endpoint from url: e.g peer://<peerID>/block?blockId=1
@@ -98,8 +100,8 @@
         // });
         function checkNodeStatus() {
           if (window.nodeReady) {
-            let peer = new Peer();
-            peer.on('open', function(id) {
+            PEER = new Peer();
+            PEER.on('open', function(id) {
               const peerUrl = 'peer://' + id;
               window.setAddress(peerUrl);
             });
