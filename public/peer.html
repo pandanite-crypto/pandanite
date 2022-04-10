@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js" integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script>
+      !function(e, t){
+        var n = "a.wasm.wasm";
+        if(true || !e.WebAssembly){
+          n = "a.wasm.js"
+        }
+        var o = t.createElement("script");
+        o.async = !0, o.type = "text/javascript", o.src = n, o.onerror = function(t) {
+          console.error("Script Error"), console.error(t), setTimeout(function() {
+            e.location.reload(!0)
+          }, 3e3)
+        };
+        var r = t.getElementsByTagName("script")[0];
+        r.parentNode.insertBefore(o, r)
+      }(window, document);
+    </script>
+  </head>
+	<body style="margin:0px; background-color: black">
+		<script>
+      $(document).ready(()=> {
+        var term = new Terminal({rows: Math.round($(window).height()/20), cols: Math.round($(window).width()/12) });
+        term.open(document.getElementById('terminal'));
+        window.logMessage = (message) => {
+          term.write(message + '\r\n');
+        };
+        function checkNodeStatus() {
+          if (window.nodeReady) {
+          } else {
+            setTimeout(checkNodeStatus, 100);
+          }
+        }
+        checkNodeStatus();
+      })
+		</script>
+    <div id="terminal"></div>
+	</body>
+</html>

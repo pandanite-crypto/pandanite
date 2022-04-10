@@ -9,7 +9,7 @@ using namespace std;
 
 
 vector<uint8_t> sendSocketGetRequest(string url, uint32_t timeout) {
-        emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS| EMSCRIPTEN_FETCH_REPLACE ;
@@ -20,7 +20,6 @@ vector<uint8_t> sendSocketGetRequest(string url, uint32_t timeout) {
 		ret = emscripten_fetch_wait(fetch, 0);
 	}
 
-    
     if (fetch->status == 200) {
 	    string buf(fetch->data, fetch->numBytes);
         emscripten_fetch_close(fetch);
