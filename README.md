@@ -47,7 +47,7 @@ sudo pip3 install conan
 ```
 git clone https://github.com/mr-pandabear/bamboo.git
 cd bamboo
-git checkout master
+git checkout release
 mkdir build
 cd build
 conan install ..
