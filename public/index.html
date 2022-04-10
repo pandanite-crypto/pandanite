@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+    <script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js" crossorigin></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js" integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -29,6 +30,51 @@
         window.logMessage = (message) => {
           term.write(message + '\r\n');
         };
+
+        window.receiveResult = function(taskId, result) {
+            let _receiveResult = Module.cwrap('receive_result', 'string', ['array'])
+            const encoder = new TextEncoder();
+            const view = encoder.encode(taskId);
+            if (!result) return _receiveResult(view, view.length);
+            const data = new Uint8Array([...view, ...new Uint8Array(result)]);
+            return _receiveResult(data, data.length);
+        }
+
+        //let peer = new Peer();
+
+        window.sendTask = (task) => {
+            task = JSON.parse(task);
+            if (task.url.indexOf("http://") == 0) {
+                let xhr = new XMLHttpRequest();
+                xhr.overrideMimeType("text/plain; charset=x-user-defined");
+                xhr.responseType = "arraybuffer";
+                xhr.open("GET", task.url);
+                xhr.onload = (e) => {
+                    let buf = xhr.response;
+                    // todo concat taskId to buf
+                    window.receiveResult(task.taskId, buf);
+                }
+                xhr.onerror = (e) => {
+                    window.receiveResult(task.taskId);
+                }
+                xhr.send();
+            } else {
+                // fetch data via PeerJS
+                var conn = peer.connect(task.url);
+                conn.on('open', function(){
+                    conn.send('REQ:' + peerId + ':' + task.taskId + task.data);
+                });
+            }
+        }
+
+        // peer.on('connection', function(conn) {
+        //     conn.on('data', function(data){
+        //          if data.slice(3) == 'REQ' 
+        //              figure out which endpoint this is, call wasm and send back data
+        //          else {}
+        //              call window.receiveResult to pass data to wasm
+        //     });
+        // });
         function checkNodeStatus() {
           if (window.nodeReady) {
           } else {

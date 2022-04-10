@@ -33,6 +33,19 @@ inline const char* cstr(const std::string& message) {
     return cstr;
 }
 
+EMSCRIPTEN_KEEPALIVE const char* receive_result(char* data, uint64_t sz) {
+    string s(data);
+    string requestId = s.substr(0, REQUEST_ID_LENGTH);
+    if (sz != REQUEST_ID_LENGTH) {
+        string rawData = string(data+4, sz - REQUEST_ID_LENGTH);
+        vector<uint8_t> dataVec(rawData.begin(), rawData.end());
+        setResult(requestId, dataVec);
+    } else {
+        endRequest(requestId);
+    }
+    return cstr("");
+}
+
 EMSCRIPTEN_KEEPALIVE const char* set_address(char* st) {
     string addr = string(st);
     GLOBAL_HOST_MANAGER->setAddress(addr);
