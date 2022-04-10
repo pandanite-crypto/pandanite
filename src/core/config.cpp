@@ -1,6 +1,7 @@
 #include "config.hpp"
 #include "helpers.hpp"
 #include "crypto.hpp"
+#include "logger.hpp"
 #include <vector>
 #include <map>
 #include <string>
@@ -9,18 +10,18 @@
 using namespace std;
 
 json getConfig(int argc, char**argv) {
-    cout<<"░░░░░░░░▄██▄░░░░░░▄▄░░"<<endl;
-    cout<<"░░░░░░░▐███▀░░░░░▄███▌"<<endl;
-    cout<<"░░▄▀░░▄█▀▀░░░░░░░░▀██░"<<endl;
-    cout<<"░█░░░██░░░░░░░░░░░░░░░"<<endl;
-    cout<<"█▌░░▐██░░▄██▌░░▄▄▄░░░▄"<<endl;
-    cout<<"██░░▐██▄░▀█▀░░░▀██░░▐▌"<<endl;
-    cout<<"██▄░▐███▄▄░░▄▄▄░▀▀░▄██"<<endl;
-    cout<<"▐███▄██████▄░▀░▄█████▌"<<endl;
-    cout<<"▐████████████▀▀██████░"<<endl;
-    cout<<"░▐████▀██████░░█████░░"<<endl;
-    cout<<"░░░▀▀▀░░█████▌░████▀░░"<<endl;
-    cout<<"░░░░░░░░░▀▀███░▀▀▀░░░░"<<endl;
+    Logger::logStatus("░░░░░░░░▄██▄░░░░░░▄▄░░");
+    Logger::logStatus("░░░░░░░▐███▀░░░░░▄███▌");
+    Logger::logStatus("░░▄▀░░▄█▀▀░░░░░░░░▀██░");
+    Logger::logStatus("░█░░░██░░░░░░░░░░░░░░░");
+    Logger::logStatus("█▌░░▐██░░▄██▌░░▄▄▄░░░▄");
+    Logger::logStatus("██░░▐██▄░▀█▀░░░▀██░░▐▌");
+    Logger::logStatus("██▄░▐███▄▄░░▄▄▄░▀▀░▄██");
+    Logger::logStatus("▐███▄██████▄░▀░▄█████▌");
+    Logger::logStatus("▐████████████▀▀██████░");
+    Logger::logStatus("░▐████▀██████░░█████░░");
+    Logger::logStatus("░░░▀▀▀░░█████▌░████▀░░");
+    Logger::logStatus("░░░░░░░░░▀▀███░▀▀▀░░░░");
 
 
     std::vector<std::string> args(argv, argv + argc);  

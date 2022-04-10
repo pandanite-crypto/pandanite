@@ -54,7 +54,8 @@ class Logger {
             s<<"[STATUS] "<<std::put_time(&tm, TIME_FORMAT)<<": "<<message;
             if (!file.is_open()) {
                 Logger::console_lock.lock();
-                cout<<s.str()<<endl;
+                // cout<<s.str()<<endl;
+                MAIN_THREAD_EM_ASM("window.logMessage(UTF8ToString($0))", s.str().c_str());
                 Logger::console_lock.unlock();
             } else {
                 file<<s.str();

@@ -28,6 +28,7 @@ extern "C" {
 
 inline const char* cstr(const std::string& message) {
     char * cstr = new char [message.length()+1];
+    cstr[message.length()] = 0;
     std::strcpy (cstr, message.c_str());
     return cstr;
 }
@@ -77,9 +78,15 @@ EMSCRIPTEN_KEEPALIVE const char* add_peer(char* st) {
     return cstr(result.dump());
 }
 
+EMSCRIPTEN_KEEPALIVE const char* stats(char* st) {
+    json result = GLOBAL_REQUEST_MANAGER->getStats();
+    return cstr(result.dump());
+}
+
 EMSCRIPTEN_KEEPALIVE const char* mine_status(char* st) {
-    string str = string(st);
-    return 0;
+    uint32_t blockId = std::stoi(string(st));
+    json result = GLOBAL_REQUEST_MANAGER->getMineStatus(blockId);
+    return cstr(result.dump());
 }
 
 EMSCRIPTEN_KEEPALIVE const char* mine(char* st) {
@@ -134,8 +141,8 @@ int main(int argc, char** argv) {
     Logger::logStatus("Starting server...");
     GLOBAL_HOST_MANAGER = new HostManager(config);
     Logger::logStatus("HostManager ready...");
-    printf("Address of x is at startup is %p\n", (void *)GLOBAL_HOST_MANAGER);  
     GLOBAL_REQUEST_MANAGER = new RequestManager(*GLOBAL_HOST_MANAGER);
+    MAIN_THREAD_ASYNC_EM_ASM("window.nodeReady=true");
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }

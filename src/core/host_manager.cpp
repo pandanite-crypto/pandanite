@@ -14,8 +14,7 @@
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
-#define HEADER_VALIDATION_HOST_COUNT 8
-#define RANDOM_GOOD_HOST_COUNT 9
+#define RANDOM_GOOD_HOST_COUNT 1
 #define HOST_MIN_FRESHNESS 180 * 60 // 3 hours
 
 /*
@@ -32,17 +31,14 @@ string HostManager::computeAddress() {
 */  
 void peer_sync(HostManager* hm) {
     while(true) {
-        Logger::logStatus("My address: " + hm->address + " host size = " + to_string(hm->hosts.size()));
-        printf("Address of x is in thread is %p\n", (void *)hm);  
         for(auto host : hm->hosts) {
             try {
                 if (hm->address != "") {
-                    Logger::logStatus("Pinging peer: " + host);
                     pingPeer(host, hm->computeAddress(), std::time(0), hm->version, hm->networkName);
                 }
             } catch (...) { }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::minutes(5));
     }
 }
 
@@ -365,6 +361,10 @@ void HostManager::refreshHostList() {
         // if host is in blacklist skip:
         if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
 
+        if (hostUrl.find("proxy") != std::string::npos) {
+            cout<<"SKIPPING : "<<hostUrl    <<endl;
+            continue;
+        }
         // otherwise try connecting to the host to confirm it's up
         HostManager& hm = *this;
         threads.emplace_back(
