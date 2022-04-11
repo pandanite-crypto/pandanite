@@ -69,7 +69,7 @@ json sendTransaction(string host_url, Transaction& t) {
 }
 
 void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>& blockHeaders) {
-    auto response = sendGetRequest(host_url + "/v2/block_headers?start=" + std::to_string(startId) + "&end=" +  std::to_string(endId), TIMEOUT_BLOCKHEADERS_MS);
+    auto response = sendGetRequest(host_url + "/block_headers?start=" + std::to_string(startId) + "&end=" +  std::to_string(endId), TIMEOUT_BLOCKHEADERS_MS);
     std::vector<char> bytes(response.begin(), response.end());
     uint8_t* curr = (uint8_t*)bytes.data();
     int numBlocks = bytes.size() / BLOCKHEADER_BUFFER_SIZE;
@@ -80,7 +80,7 @@ void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>
 }
 
 void readRawBlocks(string host_url, int startId, int endId, vector<Block>& blocks) {
-    auto response = sendGetRequest(host_url + "/v2/sync?start=" + std::to_string(startId) + "&end=" +  std::to_string(endId), TIMEOUT_BLOCK_MS );
+    auto response = sendGetRequest(host_url + "/sync?start=" + std::to_string(startId) + "&end=" +  std::to_string(endId), TIMEOUT_BLOCK_MS );
     std::vector<char> bytes(response.begin(), response.end());
     uint8_t* buffer = (uint8_t*)bytes.data();
     uint8_t* currPtr = buffer;
