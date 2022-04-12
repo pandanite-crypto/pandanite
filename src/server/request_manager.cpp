@@ -18,7 +18,7 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
         this->blockchain->sync();
      
         // initialize the mempool with a random peers transactions:
-        auto randomHost = hosts.sampleAllHosts(1);
+        auto randomHost = hosts.sampleFreshHosts(1);
         if (randomHost.size() > 0) {
             try {
                 string host = *randomHost.begin();

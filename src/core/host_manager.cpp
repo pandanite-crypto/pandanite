@@ -21,9 +21,13 @@ using namespace std;
     Fetches the public IP of the node
 */
 
-bool isValidIPv4(string & ip) {
+bool isValidIPv4(string& ip) {
    unsigned int a,b,c,d;
    return sscanf(ip.c_str(),"%d.%d.%d.%d", &a, &b, &c, &d) == 4;
+}
+
+bool isJsHost(const string& addr) {
+    return addr.find("peer://") != std::string::npos;
 }
 
 string HostManager::computeAddress() {
@@ -258,11 +262,12 @@ set<string> HostManager::sampleFreshHosts(int count) {
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged
-        if (lastPingAge < HOST_MIN_FRESHNESS) { 
+        if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first)) { 
             freshHosts.push_back(pair.first);
         }
     }
 
+    // TODO: do this more efficiently
     int numToPick = min(count, (int)freshHosts.size());
     set<string> sampledHosts;
     while(sampledHosts.size() < numToPick) {
@@ -271,22 +276,6 @@ set<string> HostManager::sampleFreshHosts(int count) {
     }
     return sampledHosts;
 }
-
-
-/*
-    Returns any N unique random hosts. 
-    Used when hosts don't ping us (Miner)
-*/
-set<string> HostManager::sampleAllHosts(int count) {
-    int numToPick = min(count, (int)this->hosts.size());
-    set<string> sampledHosts;
-    while(sampledHosts.size() < numToPick) {
-        string host = this->hosts[rand()%this->hosts.size()];
-        sampledHosts.insert(host);
-    }
-    return sampledHosts;
-}
-
 
 /*
     Adds a peer to the host list, 
@@ -308,13 +297,15 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     } 
 
     // check if the host is reachable:
-    try {
-        json name = getName(addr);
-    } catch(...) {
-        // if not exit
-        return;
+    if (!isJsHost(addr)) {
+        try {
+            json name = getName(addr);
+        } catch(...) {
+            // if not exit
+            return;
+        }
     }
-    
+
     // add to our host list
     if (this->whitelist.size() == 0 || this->whitelist.find(addr) != this->whitelist.end()){
         Logger::logStatus("Added new peer: " + addr);
@@ -434,7 +425,7 @@ void HostManager::syncHeadersWithPeers() {
     this->currPeers.empty();
     
     // pick N random peers
-    set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
+    set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
         this->currPeers.push_back(new HeaderChain(h, this->checkpoints));
@@ -447,8 +438,17 @@ void HostManager::syncHeadersWithPeers() {
     Returns a list of all peer hosts
 */
 vector<string> HostManager::getHosts(bool includeSelf) {
-    vector<string> ret = this->hosts;
-    if (includeSelf) ret.push_back(this->address);
+    vector<string> ret;
+    for (auto pair : this->hostPingTimes) {
+        uint64_t lastPingAge = std::time(0) - pair.second;
+        // only return peers that have pinged
+        if (lastPingAge < HOST_MIN_FRESHNESS) { 
+            ret.push_back(pair.first);
+        }
+    }
+    if (includeSelf) {
+        ret.push_back(this->address);
+    }
     return ret;
 }
 
