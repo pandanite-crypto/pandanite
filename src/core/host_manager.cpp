@@ -31,9 +31,11 @@ string HostManager::computeAddress() {
 */  
 void peer_sync(HostManager* hm) {
     while(true) {
+        cout<<"HM PTR: " <<hm->hosts.size()<<endl;
         for(auto host : hm->hosts) {
             try {
                 if (hm->address != "") {
+                    Logger::logStatus("Pinging peer " + host);
                     pingPeer(host, hm->computeAddress(), std::time(0), hm->version, hm->networkName);
                 }
             } catch (...) { }
@@ -99,7 +101,8 @@ HostManager::HostManager(json config) {
 
 void HostManager::startPingingPeers() {
     if (this->syncThread.size() > 0) throw std::runtime_error("Peer ping thread exists.");
-    this->syncThread.push_back(std::thread(peer_sync, this));
+    HostManager* ptr = this;
+    this->syncThread.push_back(std::thread(peer_sync, ptr));
 }
 
 void HostManager::setAddress(string addr) {
@@ -353,16 +356,13 @@ void HostManager::refreshHostList() {
     for(auto hostJson : fullHostList) {
         // if we've already added this host skip
         string hostUrl = string(hostJson);
-
+        Logger::logStatus("Connecting to " + hostUrl);
         auto existing = std::find(this->hosts.begin(), this->hosts.end(), hostUrl);
         if (existing != this->hosts.end()) continue;
 
         // if host is in blacklist skip:
         if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
 
-        if (hostUrl.find("proxy") != std::string::npos) {
-            continue;
-        }
         // otherwise try connecting to the host to confirm it's up
         HostManager& hm = *this;
         threads.emplace_back(

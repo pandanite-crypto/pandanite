@@ -1895,9 +1895,9 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  38432: function($0) {window.logMessage(UTF8ToString($0))},  
- 38470: function($0) {window.sendTask(UTF8ToString($0))},  
- 38506: function() {window.nodeReady=true}
+  38048: function($0) {window.logMessage(UTF8ToString($0))},  
+ 38086: function($0) {window.sendTask(UTF8ToString($0))},  
+ 38122: function() {window.nodeReady=true}
 };
 
 
@@ -6947,7 +6947,6 @@ var asmLibraryArg = {
   "invoke_viiiiiiiiiiiiiii": invoke_viiiiiiiiiiiiiii,
   "invoke_viiij": invoke_viiij,
   "invoke_viiijii": invoke_viiijii,
-  "invoke_viijii": invoke_viijii,
   "invoke_vij": invoke_vij,
   "llvm_eh_typeid_for": _llvm_eh_typeid_for,
   "memory": wasmMemory,
@@ -6969,52 +6968,10 @@ var _malloc = Module["_malloc"] = createExportWrapper("malloc");
 var _receive_result = Module["_receive_result"] = createExportWrapper("receive_result");
 
 /** @type {function(...*):?} */
+var _serve_result = Module["_serve_result"] = createExportWrapper("serve_result");
+
+/** @type {function(...*):?} */
 var _set_address = Module["_set_address"] = createExportWrapper("set_address");
-
-/** @type {function(...*):?} */
-var _block_count = Module["_block_count"] = createExportWrapper("block_count");
-
-/** @type {function(...*):?} */
-var _block = Module["_block"] = createExportWrapper("block");
-
-/** @type {function(...*):?} */
-var _name = Module["_name"] = createExportWrapper("name");
-
-/** @type {function(...*):?} */
-var _ledger = Module["_ledger"] = createExportWrapper("ledger");
-
-/** @type {function(...*):?} */
-var _total_work = Module["_total_work"] = createExportWrapper("total_work");
-
-/** @type {function(...*):?} */
-var _add_peer = Module["_add_peer"] = createExportWrapper("add_peer");
-
-/** @type {function(...*):?} */
-var _stats = Module["_stats"] = createExportWrapper("stats");
-
-/** @type {function(...*):?} */
-var _mine_status = Module["_mine_status"] = createExportWrapper("mine_status");
-
-/** @type {function(...*):?} */
-var _mine = Module["_mine"] = createExportWrapper("mine");
-
-/** @type {function(...*):?} */
-var _gettx = Module["_gettx"] = createExportWrapper("gettx");
-
-/** @type {function(...*):?} */
-var _sync = Module["_sync"] = createExportWrapper("sync");
-
-/** @type {function(...*):?} */
-var _block_headers = Module["_block_headers"] = createExportWrapper("block_headers");
-
-/** @type {function(...*):?} */
-var _add_transaction_json = Module["_add_transaction_json"] = createExportWrapper("add_transaction_json");
-
-/** @type {function(...*):?} */
-var _synctx = Module["_synctx"] = createExportWrapper("synctx");
-
-/** @type {function(...*):?} */
-var _submit = Module["_submit"] = createExportWrapper("submit");
 
 /** @type {function(...*):?} */
 var _main = Module["_main"] = createExportWrapper("main");
@@ -7154,9 +7111,6 @@ var dynCall_viiij = Module["dynCall_viiij"] = createExportWrapper("dynCall_viiij
 var dynCall_iiiiij = Module["dynCall_iiiiij"] = createExportWrapper("dynCall_iiiiij");
 
 /** @type {function(...*):?} */
-var dynCall_viijii = Module["dynCall_viijii"] = createExportWrapper("dynCall_viijii");
-
-/** @type {function(...*):?} */
 var dynCall_jii = Module["dynCall_jii"] = createExportWrapper("dynCall_jii");
 
 /** @type {function(...*):?} */
@@ -7171,8 +7125,11 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 /** @type {function(...*):?} */
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 37948;
-var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 39204;
+/** @type {function(...*):?} */
+var dynCall_viijii = Module["dynCall_viijii"] = createExportWrapper("dynCall_viijii");
+
+var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 37564;
+var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 38820;
 function invoke_viii(index,a1,a2,a3) {
   var sp = stackSave();
   try {
@@ -7529,17 +7486,6 @@ function invoke_iiiiij(index,a1,a2,a3,a4,a5,a6) {
   var sp = stackSave();
   try {
     return dynCall_iiiiij(index,a1,a2,a3,a4,a5,a6);
-  } catch(e) {
-    stackRestore(sp);
-    if (e !== e+0 && e !== 'longjmp') throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_viijii(index,a1,a2,a3,a4,a5,a6) {
-  var sp = stackSave();
-  try {
-    dynCall_viijii(index,a1,a2,a3,a4,a5,a6);
   } catch(e) {
     stackRestore(sp);
     if (e !== e+0 && e !== 'longjmp') throw e;

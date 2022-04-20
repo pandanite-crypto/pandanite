@@ -5,27 +5,30 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js" integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script>
-      !function(e, t){
-        var n = "a.wasm.wasm";
-        if(true || !e.WebAssembly){
-          n = "a.wasm.js"
-        }
-        var o = t.createElement("script");
-        o.async = !0, o.type = "text/javascript", o.src = n, o.onerror = function(t) {
-          console.error("Script Error"), console.error(t), setTimeout(function() {
-            e.location.reload(!0)
-          }, 3e3)
-        };
-        var r = t.getElementsByTagName("script")[0];
-        r.parentNode.insertBefore(o, r)
-      }(window, document);
-    </script>
   </head>
 	<body style="margin:0px; background-color: black">
 		<script>
+      function loadWasm() {
+        !function(e, t){
+          var n = "a.wasm.wasm";
+          if(true || !e.WebAssembly){
+            n = "a.wasm.js"
+          }
+          var o = t.createElement("script");
+          o.async = !0, o.type = "text/javascript", o.src = n, o.onerror = function(t) {
+            console.error("Script Error"), console.error(t), setTimeout(function() {
+              e.location.reload(!0)
+            }, 3e3)
+          };
+          var r = t.getElementsByTagName("script")[0];
+          r.parentNode.insertBefore(o, r)
+        }(window, document);
+      }
+
       $(document).ready(()=> {
         let PEER = null;
+        let PEER_URL = null;
+        let RESULTS = {};
 
         var term = new Terminal({rows: Math.round($(window).height()/20), cols: Math.round($(window).width()/12) });
         term.open(document.getElementById('terminal'));
@@ -54,62 +57,125 @@
             return _setAddress(view, view.length);
         }
 
-        window.sendTask = (task) => {
-            task = JSON.parse(task);
-            if (task.url.indexOf("http://") == 0) {
-                let xhr = new XMLHttpRequest();
-                xhr.overrideMimeType("text/plain; charset=x-user-defined");
-                xhr.responseType = "arraybuffer";
-                if (task.data.length == 0)
-                  xhr.open("GET", task.url);
-                else
-                  xhr.open("POST", task.url, true);
-                xhr.timeout = task.timeout;
-                xhr.onload = (e) => {
-                    let buf = xhr.response;
-                    // todo concat taskId to buf
-                    window.receiveResult(task.taskId, buf);
-                }
-                xhr.onerror = (e) => {
-                    window.receiveResult(task.taskId);
-                }
-                if (task.data.length == 0) {
-                  xhr.send();
-                } else {
-                  xhr.send(hexDecode(task.data));
-                }
-            } else {
-              // peerjs not yet supported
-              window.receiveResult(task.taskId);
-                // // fetch data via PeerJS
-                // // figure out endpoint from url: e.g peer://<peerID>/block?blockId=1
-                // var conn = peer.connect(task.url);
-                // conn.on('open', function(){
-                //     conn.send('REQ:' + task.taskId + ':' + endpoint + ':' + task.data);
-                // });
-            }
+        window.serveResult = function(request) {
+            let _serveResult = Module.cwrap('serve_result', 'string', ['array'])
+            const encoder = new TextEncoder();
+            const view = encoder.encode(request);
+            return _serveResult(view, request.length);
         }
 
-        // peer.on('connection', function(conn) {
-        //     conn.on('data', function(data){
-        //          if data.slice(3) == 'REQ' 
-        //              figure out which endpoint this is, call wasm and send back data
-        //          else {}
-        //              call window.receiveResult to pass data to wasm
-        //     });
-        // });
+        function initPeer(onConnect) {
+          PEER = new Peer();
+          PEER.on('open', function(id) {
+            const peerUrl = 'peer://' + id;
+            PEER_URL = peerUrl;
+            onConnect();
+          });
+        }
+
+        window.sendTask = (task) => {
+          task = JSON.parse(task);
+          if (task.url.indexOf("http://") == 0) {
+              let xhr = new XMLHttpRequest();
+              xhr.overrideMimeType("text/plain; charset=x-user-defined");
+              xhr.responseType = "arraybuffer";
+              if (task.data.length == 0)
+                xhr.open("GET", task.url);
+              else
+                xhr.open("POST", task.url, true);
+              xhr.timeout = task.timeout;
+              xhr.onload = (e) => {
+                  let buf = xhr.response;
+                  // todo concat taskId to buf
+                  window.receiveResult(task.taskId, buf);
+              }
+              xhr.onerror = (e) => {
+                  window.receiveResult(task.taskId);
+              }
+              if (task.data.length == 0) {
+                xhr.send();
+              } else {
+                xhr.send(hexDecode(task.data));
+              }
+          } else {
+            const fetch = () => {
+              const url = task.url;
+              let peerId = url.slice(7, 7 + 36)
+              let endpoint = url.slice(7 + 36)
+              var conn = PEER.connect(peerId);
+              conn.on('open', () => {
+                  window.logMessage('Sending request to ' + peerId + ' ' + JSON.stringify(task))
+                  conn.send('REQ:' + task.taskId + ':' + endpoint + ':' + task.data);
+                  conn.on('data', (data) => {
+                    window.logMessage('Parsing response: ' + JSON.stringify(data));
+                      let taskData = data.split(':');
+                      taskId = taskData[1]; 
+                      taskResponse = taskData[2];
+                      if (!RESULTS[task.taskId]) {
+                        RESULTS[task.taskId] = true;
+                        if (taskResponse.length == 0) {
+                          window.receiveResult(taskId);
+                        } else {
+                          window.receiveResult(taskId, hexDecode(taskResponse));
+                        }
+                      }
+                  })
+                  
+              });
+              setTimeout(()=> {
+                RESULTS[task.taskId] = true;
+                window.receiveResult(task.taskId);
+              }, task.timeout);
+            }
+            if (!PEER) {
+              initPeer(fetch);
+            } else {
+              fetch();
+            }
+          }
+        }
+
+        function setupPeerHandlers() {
+          window.setAddress(PEER_URL);
+          PEER.on('connection', function(conn) {
+            conn.on('open', () => {
+              conn.on('error', function(err) {
+                console.log(err);
+              })
+              conn.on('data', function(data){
+                  window.logMessage('Received data: ' + JSON.stringify(data))
+                  let taskData = data.split(':');
+                  if(taskData[0] == 'REQ' ) {
+                    window.logMessage('Parsing request');
+                    taskId = taskData[1];
+                    taskPath = taskData[2];
+                    taskParams = taskData[3];
+                    result = window.serveResult(taskPath + ':' + taskParams)
+                    response = 'RES:'+ taskId + ':' + result;
+                    window.logMessage('Sending response: ' + response);
+                    conn.send(response);
+                    
+                    // let sendConn = PEER.connect(conn.peer);
+                    // sendConn.on('open', () => {
+                    //   window.logMessage("Sender: " + conn.peer);
+                    //   window.logMessage("Returning response: " + response);
+                    //   sendConn.send(response);
+                    // });
+                  }
+              });
+            })
+          });
+        }
         function checkNodeStatus() {
           if (window.nodeReady) {
-            PEER = new Peer();
-            PEER.on('open', function(id) {
-              const peerUrl = 'peer://' + id;
-              window.setAddress(peerUrl);
-            });
+            if (!PEER) initPeer(setupPeerHandlers);
+            else setupPeerHandlers();
           } else {
             setTimeout(checkNodeStatus, 100);
           }
         }
         checkNodeStatus();
+        initPeer(loadWasm);
       })
 		</script>
     <div id="terminal"></div>
