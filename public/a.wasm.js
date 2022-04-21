@@ -1895,9 +1895,9 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  38048: function($0) {window.logMessage(UTF8ToString($0))},  
- 38086: function($0) {window.sendTask(UTF8ToString($0))},  
- 38122: function() {window.nodeReady=true}
+  38560: function($0) {window.logMessage(UTF8ToString($0))},  
+ 38598: function($0) {window.sendTask(UTF8ToString($0))},  
+ 38634: function() {window.nodeReady=true}
 };
 
 
@@ -6947,6 +6947,7 @@ var asmLibraryArg = {
   "invoke_viiiiiiiiiiiiiii": invoke_viiiiiiiiiiiiiii,
   "invoke_viiij": invoke_viiij,
   "invoke_viiijii": invoke_viiijii,
+  "invoke_viijii": invoke_viijii,
   "invoke_vij": invoke_vij,
   "llvm_eh_typeid_for": _llvm_eh_typeid_for,
   "memory": wasmMemory,
@@ -7111,6 +7112,9 @@ var dynCall_viiij = Module["dynCall_viiij"] = createExportWrapper("dynCall_viiij
 var dynCall_iiiiij = Module["dynCall_iiiiij"] = createExportWrapper("dynCall_iiiiij");
 
 /** @type {function(...*):?} */
+var dynCall_viijii = Module["dynCall_viijii"] = createExportWrapper("dynCall_viijii");
+
+/** @type {function(...*):?} */
 var dynCall_jii = Module["dynCall_jii"] = createExportWrapper("dynCall_jii");
 
 /** @type {function(...*):?} */
@@ -7125,11 +7129,8 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 /** @type {function(...*):?} */
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-/** @type {function(...*):?} */
-var dynCall_viijii = Module["dynCall_viijii"] = createExportWrapper("dynCall_viijii");
-
-var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 37564;
-var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 38820;
+var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 38076;
+var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 39332;
 function invoke_viii(index,a1,a2,a3) {
   var sp = stackSave();
   try {
@@ -7486,6 +7487,17 @@ function invoke_iiiiij(index,a1,a2,a3,a4,a5,a6) {
   var sp = stackSave();
   try {
     return dynCall_iiiiij(index,a1,a2,a3,a4,a5,a6);
+  } catch(e) {
+    stackRestore(sp);
+    if (e !== e+0 && e !== 'longjmp') throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_viijii(index,a1,a2,a3,a4,a5,a6) {
+  var sp = stackSave();
+  try {
+    dynCall_viijii(index,a1,a2,a3,a4,a5,a6);
   } catch(e) {
     stackRestore(sp);
     if (e !== e+0 && e !== 'longjmp') throw e;

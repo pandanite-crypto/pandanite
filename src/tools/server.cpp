@@ -80,8 +80,10 @@ EMSCRIPTEN_KEEPALIVE const char* serve_result(char* data, uint64_t sz) {
     // parse out any query params into dict
     json params;
     size_t paramsIdx = path.find("?");
+    bool skipHexEncode = false;
     if (paramsIdx != string::npos) {
         vector<string> components = split(path.substr(paramsIdx + 1), '&');
+        path = path.substr(0, paramsIdx);
         for(auto & pair : components) {
             vector<string> keyValue = split(pair, '=');
             params[keyValue[0]] = keyValue[1];
@@ -92,13 +94,53 @@ EMSCRIPTEN_KEEPALIVE const char* serve_result(char* data, uint64_t sz) {
             json ledger = GLOBAL_REQUEST_MANAGER->getLedger(w);
             resultStr = ledger.dump();
         } else if (path == "block_headers") {
-
+            int start = std::stoi((string)params["start"]);
+            int end = std::stoi((string)params["end"]);
+            vector<uint8_t> resultData;
+            for (int i = start; i <=end; i++) {
+                BlockHeader b = GLOBAL_REQUEST_MANAGER->getBlockHeader(i);
+                char bhBytes[BLOCKHEADER_BUFFER_SIZE];
+                blockHeaderToBuffer(b, bhBytes);
+                for(int j = 0; j < BLOCKHEADER_BUFFER_SIZE; j++) {
+                    resultData.push_back(bhBytes[j]);
+                }
+            }
+            resultStr = hexEncode((char*)resultData.data(), resultData.size());
+            skipHexEncode = true;
         } else if (path == "sync") {
-
+            int start = std::stoi((string)params["start"]);
+            int end = std::stoi((string)params["end"]);
+            if ((end-start) > BLOCKS_PER_FETCH) {
+                resultStr = "";
+            } else {
+                vector<uint8_t> resultData;
+                for (int i = start; i <= end; i++) {
+                    std::pair<uint8_t*, size_t> buffer = GLOBAL_REQUEST_MANAGER->getRawBlockData(i);
+                    resultStr += hexEncode((char*)buffer.first, buffer.second);
+                    delete buffer.first;
+                }
+                skipHexEncode = true;
+            }
         } else if (path == "block") {
-
+            json result;
+            int blockId = std::stoi(string(params["blockId"]));
+            int count = std::stoi(GLOBAL_REQUEST_MANAGER->getBlockCount());
+            if (blockId<= 0 || blockId > count) {
+                result["error"] = "Invalid Block";
+            } else {
+                result = GLOBAL_REQUEST_MANAGER->getBlock(blockId);
+            }
+            resultStr = result.dump();
         } else if (path == "mine_status") {
-
+            json result;
+            int blockId = std::stoi(string(params["blockId"]));
+            int count = std::stoi(GLOBAL_REQUEST_MANAGER->getBlockCount());
+            if (blockId <= 0 || blockId > count) {
+                result["error"] = "Invalid Block";
+            } else {
+                result = GLOBAL_REQUEST_MANAGER->getMineStatus(blockId);
+            }
+            resultStr = result.dump();
         }
     } else {
         if (path == "name") {
@@ -112,7 +154,10 @@ EMSCRIPTEN_KEEPALIVE const char* serve_result(char* data, uint64_t sz) {
         } else if (path == "total_work") {
             resultStr = GLOBAL_REQUEST_MANAGER->getTotalWork();
         } else if (path == "gettx") {
-
+            std::pair<char*, size_t> buffer = GLOBAL_REQUEST_MANAGER->getRawTransactionData();
+            resultStr = hexEncode((char*)buffer.first, buffer.second);
+            delete buffer.first;
+            skipHexEncode = true;
         } else if (path == "peers") {
             json result = GLOBAL_REQUEST_MANAGER->getPeers();
             resultStr = result.dump();
@@ -120,11 +165,60 @@ EMSCRIPTEN_KEEPALIVE const char* serve_result(char* data, uint64_t sz) {
             json result = GLOBAL_REQUEST_MANAGER->getProofOfWork();
             resultStr = result.dump();
         }  else if (path == "submit") {
+            if (payload.size() < BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE) {
+                json response;
+                response["error"] = "Malformed block";
+                resultStr = response.dump();
+            } else {
+                char * ptr = (char*)payload.data();
+                BlockHeader blockH = blockHeaderFromBuffer(ptr);
+                ptr += BLOCKHEADER_BUFFER_SIZE;
+                if (payload.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
+                    json response;
+                    response["error"] = "Malformed block";
+                    resultStr = response.dump();
+                    
+                } else {
+                    vector<Transaction> transactions;
+                    if (blockH.numTransactions > MAX_TRANSACTIONS_PER_BLOCK) {
+                        json response;
+                        response["error"] = "Too many transactions";
+                        resultStr = response.dump();
+                    } else {
+                        for(int j = 0; j < blockH.numTransactions; j++) {
+                            TransactionInfo t = transactionInfoFromBuffer(ptr);
+                            ptr += TRANSACTIONINFO_BUFFER_SIZE;
+                            Transaction tx(t);
+                            transactions.push_back(tx);
+                        }
+                        Block block(blockH, transactions);
+                        json response = GLOBAL_REQUEST_MANAGER->submitProofOfWork(block);
+                        resultStr = response.dump();
+                    }
+                }
+            }
         } else if (path == "add_peer") {
+            json peerInfo = json::parse(string((char*)payload.data(), payload.size()));
+            json result = GLOBAL_REQUEST_MANAGER->addPeer(peerInfo["address"], peerInfo["time"], peerInfo["version"], peerInfo["networkName"]);
+            resultStr = result.dump();
         } else if (path == "add_transaction_json") {
+            json parsed = json::parse(string((char*)payload.data(), payload.size()));
+            json response = json::array();
+            if (parsed.is_array()) {
+                for (auto& item : parsed) {
+                    Transaction tx(item);
+                    response.push_back(GLOBAL_REQUEST_MANAGER->addTransaction(tx));
+                    // only add a maximum of 100 transactions per request
+                    if (response.size() > 100) break;
+                }
+            } else {
+                Transaction tx(parsed);
+                response.push_back(GLOBAL_REQUEST_MANAGER->addTransaction(tx));
+            }
+            resultStr = response.dump();
         }
     }
-    Logger::logStatus("Returning: " + resultStr);
+    if (skipHexEncode) return cstr(resultStr);
     return cstr(hexEncode(resultStr.c_str(), resultStr.size()));
 }
 

@@ -14,7 +14,7 @@
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
-#define RANDOM_GOOD_HOST_COUNT 1
+#define RANDOM_GOOD_HOST_COUNT 8
 #define HOST_MIN_FRESHNESS 180 * 60 // 3 hours
 
 /*
