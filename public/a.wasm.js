@@ -1895,9 +1895,9 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  38560: function($0) {window.logMessage(UTF8ToString($0))},  
- 38598: function($0) {window.sendTask(UTF8ToString($0))},  
- 38634: function() {window.nodeReady=true}
+  100024: function($0) {window.logMessage(UTF8ToString($0))},  
+ 100062: function($0) {window.sendTask(UTF8ToString($0))},  
+ 100098: function() {window.nodeReady=true}
 };
 
 
@@ -7129,8 +7129,8 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 /** @type {function(...*):?} */
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 38076;
-var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 39332;
+var __emscripten_allow_main_runtime_queued_calls = Module['__emscripten_allow_main_runtime_queued_calls'] = 99536;
+var __emscripten_main_thread_futex = Module['__emscripten_main_thread_futex'] = 100788;
 function invoke_viii(index,a1,a2,a3) {
   var sp = stackSave();
   try {

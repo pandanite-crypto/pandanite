@@ -5,7 +5,6 @@
 #include "request.hpp"
 #include "logger.hpp"
 #include "header_chain.hpp"
-#include "../external/http.hpp"
 #include <iostream>
 #include <thread>
 #include <mutex>
@@ -31,7 +30,6 @@ string HostManager::computeAddress() {
 */  
 void peer_sync(HostManager* hm) {
     while(true) {
-        cout<<"HM PTR: " <<hm->hosts.size()<<endl;
         for(auto host : hm->hosts) {
             try {
                 if (hm->address != "") {
@@ -347,7 +345,7 @@ void HostManager::refreshHostList() {
             continue;
         }
     }
-
+    Logger::logStatus("Found " + to_string(fullHostList.size()) + " peers");
     if (fullHostList.size() == 0) return;
 
     // iterate through all listed peer hosts

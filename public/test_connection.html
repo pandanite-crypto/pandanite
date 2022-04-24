@@ -8,7 +8,6 @@
   </head>
 	<body style="margin:0px; background-color: black">
 		<script>
-
       $(document).ready(()=> {
         let PEER = null;
         let PEER_URL = null;
@@ -59,8 +58,7 @@
 
         window.sendTask = (task) => {
           task = JSON.parse(task);
-          console.log(task);
-          if (task.url.indexOf("http") == 0) {
+          if (task.url.indexOf("http://") == 0) {
               let xhr = new XMLHttpRequest();
               xhr.overrideMimeType("text/plain; charset=x-user-defined");
               xhr.responseType = "arraybuffer";
@@ -145,34 +143,25 @@
           });
         }
 
-
-        function loadWasm() {
-          !function(e, t){
-            var n = "a.wasm.wasm";
-            if(true || !e.WebAssembly){
-              n = "a.wasm.js"
-            }
-            var o = t.createElement("script");
-            o.async = !0, o.type = "text/javascript", o.src = n, o.onerror = function(t) {
-              console.error("Script Error"), console.error(t), setTimeout(function() {
-                e.location.reload(!0)
-              }, 3e3)
-            };
-            var r = t.getElementsByTagName("script")[0];
-            r.parentNode.insertBefore(o, r)
-          }(window, document);
-          
-        }
-        function checkNodeStatus() {
-          if (window.nodeReady) {
-            if (!PEER) initPeer(setupPeerHandlers);
-            else setupPeerHandlers();
-          } else {
-            setTimeout(checkNodeStatus, 100);
-          }
-        }
-        checkNodeStatus();
-        initPeer(loadWasm);
+        initPeer(()=> {
+            const url = 'peer://46c97717-4b14-4e47-ab72-06ba29b9f676/peers';
+            let peerId = url.slice(7, 7 + 36)
+            let endpoint = url.slice(7 + 36);
+            var conn = PEER.connect(peerId);
+            conn.on('open', () => {
+                const task = {
+                    taskId: 'xxxx',
+                    endpoint: endpoint,
+                    data: '',
+                }
+                window.logMessage('Sending request to ' + peerId + ' ' + JSON.stringify(task))
+                conn.send('REQ:' + task.taskId + ':' + endpoint + ':' + task.data);
+                conn.on('data', (data) => {
+                    window.logMessage('Received response: ' + JSON.stringify(data));
+                })
+                
+            });
+        })
       })
 		</script>
     <div id="terminal"></div>

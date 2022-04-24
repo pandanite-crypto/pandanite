@@ -120,6 +120,8 @@ json getConfig(int argc, char**argv) {
         config["hostSources"].push_back("http://ec2-35-84-249-159.us-west-2.compute.amazonaws.com:3000/peers");
         config["hostSources"].push_back("http://ec2-44-227-179-62.us-west-2.compute.amazonaws.com:3000/peers");
         config["hostSources"].push_back("http://ec2-54-189-82-240.us-west-2.compute.amazonaws.com:3000/peers");
+        config["hostSources"].push_back("https://www.mrpandabear.org/peers.txt");
+        config["hostSources"].push_back("https://mrpandabear.org/node/peers");
     }
     return config;
 }

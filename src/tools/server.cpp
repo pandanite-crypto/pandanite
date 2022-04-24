@@ -48,8 +48,6 @@ std::vector<std::string> split(const std::string &s, char delim) {
     return elems;
 }
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -238,7 +236,6 @@ int main(int argc, char** argv) {
     json config = getConfig(argc, argv);
     Logger::logStatus("Starting server...");
     GLOBAL_HOST_MANAGER = new HostManager(config);
-    cout<<"HM AT START " <<GLOBAL_HOST_MANAGER<<endl;
     Logger::logStatus("HostManager ready...");
     GLOBAL_REQUEST_MANAGER = new RequestManager(*GLOBAL_HOST_MANAGER);
     MAIN_THREAD_ASYNC_EM_ASM("window.nodeReady=true");

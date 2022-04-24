@@ -1,4 +1,3 @@
-#include "../external/http.hpp"
 #include <map>
 #include <iostream>
 #include <stdexcept>
@@ -25,6 +24,8 @@
 #define FORK_RESET_RETRIES 3
 #define MAX_DISCONNECTS_BEFORE_RESET 10
 #define FAILURES_BEFORE_POP_ATTEMPT 1
+
+
 
 using namespace std;
 
@@ -88,7 +89,7 @@ void BlockChain::resetChain() {
     // writeJsonToFile(genesis.toJson(), "genesis.json");
 
     // TODO: fetch from random host
-    json genesisJson = getBlockData("http://54.189.82.240:3000", 1);
+    json genesisJson = json::parse(string(GENESIS_BLOCK));
     Block genesis(genesisJson);
 
     ExecutionStatus status = this->addBlock(genesis);

@@ -3,8 +3,7 @@
 	<head>
     <script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js" crossorigin></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js" integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   </head>
 	<body style="margin:0px; background-color: black">
 		<script>
@@ -14,11 +13,8 @@
         let PEER_URL = null;
         let RESULTS = {};
 
-        var term = new Terminal({rows: Math.round($(window).height()/20), cols: Math.round($(window).width()/12) });
-        term.open(document.getElementById('terminal'));
-        
         window.logMessage = (message) => {
-          term.write(message + '\r\n');
+          console.log(message);
         };
 
         function hexDecode(hexString) {
@@ -59,8 +55,7 @@
 
         window.sendTask = (task) => {
           task = JSON.parse(task);
-          console.log(task);
-          if (task.url.indexOf("http") == 0) {
+          if (task.url.indexOf("http://") == 0) {
               let xhr = new XMLHttpRequest();
               xhr.overrideMimeType("text/plain; charset=x-user-defined");
               xhr.responseType = "arraybuffer";

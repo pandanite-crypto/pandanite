@@ -23,7 +23,7 @@ json getName(string host_url) {
 }
 
 json getBlockData(string host_url, int idx) {
-    string url = host_url + "/block/" + std::to_string(idx);
+    string url = host_url + "/block?blockId=" + std::to_string(idx);
     const auto response = sendGetRequest(url, TIMEOUT_MS);
     string responseStr = std::string{response.begin(), response.end()};
     return json::parse(responseStr);  
