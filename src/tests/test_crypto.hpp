@@ -70,11 +70,11 @@ TEST(total_work) {
 
 TEST(mine_hash) {
     SHA256Hash hash = SHA256("Hello World");
-    SHA256Hash answer = mineHash(hash, 16);
+    SHA256Hash answer = mineHash(hash, 6);
     SHA256Hash newHash = concatHashes(hash, answer);
     const char * a = (const char*) newHash.data();
-    // check first 2 bytes (16 bits)
-    ASSERT_TRUE(a[0] == 0 && a[1] == 0);
+    // check first 6 bits are 0
+    ASSERT_TRUE(a[0] < 63);
 }
 
 TEST(sha256_to_string) {

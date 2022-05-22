@@ -84,31 +84,31 @@ void BlockChain::resetChain() {
     
     
     // User miner;
-    // Transaction fee(stringToWalletAddress("006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"), BMB(50));
-    // fee.setTimestamp(0);
-    // vector<Transaction> transactions;
-    // Block genesis;
-    // genesis.setTimestamp(0);
-    // genesis.setId(1);
-    // genesis.addTransaction(fee);
-    // genesis.setLastBlockHash(NULL_SHA256_HASH);
+    Transaction fee(stringToWalletAddress("006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"), BMB(50));
+    fee.setTimestamp(0);
+    vector<Transaction> transactions;
+    Block genesis;
+    genesis.setTimestamp(0);
+    genesis.setId(1);
+    genesis.addTransaction(fee);
+    genesis.setLastBlockHash(NULL_SHA256_HASH);
     // addGenesisTransactions(genesis);
 
-    // // compute merkle tree
-    // MerkleTree m;
-    // m.setItems(genesis.getTransactions());
-    // SHA256Hash computedRoot = m.getRootHash();
-    // genesis.setMerkleRoot(m.getRootHash());
+    // compute merkle tree
+    MerkleTree m;
+    m.setItems(genesis.getTransactions());
+    SHA256Hash computedRoot = m.getRootHash();
+    genesis.setMerkleRoot(m.getRootHash());
 
-    // SHA256Hash hash = genesis.getHash();
+    SHA256Hash hash = genesis.getHash();
 
-    // SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
-    // genesis.setNonce(solution);
+    SHA256Hash solution = mineHash(hash, genesis.getDifficulty());
+    genesis.setNonce(solution);
 
     // writeJsonToFile(genesis.toJson(), "genesis.json");
 
-    json genesisJson = readJsonFromFile("genesis.json");
-    Block genesis(genesisJson);
+    // json genesisJson = readJsonFromFile("genesis.json");
+    // Block genesis(genesisJson);
 
     ExecutionStatus status = this->addBlock(genesis);
     if (status != SUCCESS) {
@@ -216,7 +216,7 @@ uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32
     if (elapsedTime > expectedTime) {
         int k = 2;
         int lastK = 1;
-        while(newDifficulty > 16) {
+        while(newDifficulty > MIN_DIFFICULTY) {
                 if(abs(elapsedTime/k - expectedTime) > abs(elapsedTime/lastK - expectedTime) ) {
                     break;
                 }

@@ -152,7 +152,7 @@ TEST(check_sending_transaction_updates_ledger) {
     double otherTotal = ledger.getWalletValue(other.getAddress());
     Bigint totalWork = blockchain->getTotalWork();
     Bigint base = 2;
-    Bigint work = base.pow(16);
+    Bigint work = base.pow(MIN_DIFFICULTY);
     Bigint num = 3;
     Bigint total = num * work;
     ASSERT_EQUAL(totalWork, total);

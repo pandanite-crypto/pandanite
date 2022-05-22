@@ -5,13 +5,24 @@
 #include <thread>
 #include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
+#include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
 #include "../external/sha256/sha2.hpp" 
 #include "../core/logger.hpp"
 using namespace std;
 
-#define SLOPPY_TASK_CYCLE 1000
 
-SHA256Hash SHA256(const char* buffer, size_t len) {
+SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
+    char hash[PF_HASHSPACE];
+    int ret = 0;
+    if ((ret = pf_newhash((const void*) buffer, len, 1, 8, hash)) != 0) {
+        Logger::logStatus("PUFFERFISH failed to compute hash");
+    }
+    size_t sz = PF_HASHSPACE;
+    return SHA256(hash, sz);
+}
+
+SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish) {
+    if (usePufferFish) return PUFFERFISH(buffer, len);
     std::array<uint8_t, 32> ret;
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -19,6 +30,7 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
     SHA256_Final(ret.data(), &sha256);
     return ret;
 }
+
 
 std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
     std::array<uint8_t, 32> ret;
@@ -177,7 +189,7 @@ bool checkSignature(const char* bytes, size_t len, TransactionSignature signatur
     return status == 1;
 }
 
-SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b) {
+SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish) {
     char data[64];
     memcpy(data, (char*)a.data(), 32);
     memcpy(&data[32], (char*)b.data(), 32);
@@ -186,7 +198,6 @@ SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b) {
 }
 
 bool checkLeadingZeroBits(SHA256Hash& hash, uint8_t challengeSize) {
-    // NOTE: challengeSize >= 16
     int bytes = challengeSize / 8; 
     const uint8_t * a = hash.data();
     for (int i = 0; i < bytes; i++) {
@@ -203,13 +214,13 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
     return previousWork;
 }
 
-bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize) {
-    SHA256Hash fullHash  = concatHashes(target, nonce);
+bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish) {
+    SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish);
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
 
-SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
+SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePufferFish) {
     // By @Shifu!
     vector<uint8_t> concat;
     SHA256Hash solution;
@@ -224,22 +235,13 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::functio
     while(true) {
         ++i;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
-        SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
+        memcpy(solution.data(), concat.data() + 32, 32);
+        SHA256Hash fullHash = concatHashes(target, solution, usePufferFish);
         bool found = checkLeadingZeroBits(fullHash, challengeSize);
 
         if (found) {
             memcpy(solution.data(), concat.data() + 32, 32);
             break;
-        }
-
-        if (i == SLOPPY_TASK_CYCLE) {
-            i = 0;
-            incrementHashCount(SLOPPY_TASK_CYCLE);
-
-            if (stop()) {
-                solution = NULL_SHA256_HASH;
-                break;
-            }
         }
     };
 
