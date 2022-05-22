@@ -282,7 +282,6 @@ void BlockChain::popBlock() {
     } else {
         this->resetChain();
     }
-    
 }
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
