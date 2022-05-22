@@ -18,10 +18,8 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
     if ((ret = pf_newhash((const void*) buffer, len, 1, 8, hash)) != 0) {
         Logger::logStatus("PUFFERFISH failed to compute hash");
     }
-    cout<<"HASH: " << hash <<endl;
     size_t sz = PF_HASHSPACE;
-    SHA256Hash h = SHA256(hash, sz);
-    return h;
+    return SHA256(hash, sz);
 }
 
 SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish) {
@@ -219,9 +217,6 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
 
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish) {
     SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish);
-        Logger::logStatus("Target: " + SHA256toString(target));
-        Logger::logStatus("Nonce Solution: " + SHA256toString(nonce));
-        Logger::logStatus("Total Hash: " + SHA256toString(fullHash));
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
@@ -247,10 +242,6 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
         bool found = checkLeadingZeroBits(fullHash, challengeSize);
 
         if (found) {
-            Logger::logStatus("Target: " + SHA256toString(target));
-            Logger::logStatus("Solution: " + SHA256toString(solution));
-            Logger::logStatus("Total Hash: " + SHA256toString(fullHash));
-            Logger::logStatus("Solution found!^^");
             break;
         }
     };
