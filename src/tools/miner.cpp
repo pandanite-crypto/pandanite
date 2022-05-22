@@ -97,7 +97,8 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
 
             SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, true);
             newBlock.setNonce(solution);
-            auto result = submitBlock(customHostIp, newBlock);
+            Logger::logStatus("Submitting block...");
+            auto result = submitBlock(host, newBlock);
             if (result.contains("status") && string(result["status"]) == "SUCCESS")  {
                 Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET );
             } else {
@@ -105,7 +106,10 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
                 Logger::logStatus(result.dump(4));
             }
 
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
         } catch (const std::exception& e) {
+            Logger::logStatus("Exception");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
