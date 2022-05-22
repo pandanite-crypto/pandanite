@@ -349,26 +349,27 @@ int pf_mksalt(const void *salt_r, const size_t salt_sz, const uint8_t cost_t, co
     FILE *fp;
     size_t bytes = 0;
     pf_salt settings;
+    memset(&settings, 0, sizeof(pf_salt));
 
     settings.cost_t = cost_t;
     settings.cost_m = cost_m;
-    memset(settings.salt, 0, PF_SALT_SZ);
 
-    if (!salt_r)
-    {
-        if ((fp = fopen("/dev/urandom", "r")) == NULL)
-            return errno;
 
-        bytes = fread(&settings.salt, sizeof(uint8_t), PF_SALT_SZ, fp);
-        fclose(fp);
+    // if (!salt_r)
+    // {
+    //     if ((fp = fopen("/dev/urandom", "r")) == NULL)
+    //         return errno;
 
-        if (bytes != PF_SALT_SZ)
-            return ENODATA;
-    }
-    else
-    {
-        memcpy(settings.salt, salt_r, (salt_sz > PF_SALT_SZ) ? PF_SALT_SZ : salt_sz);
-    }
+    //     bytes = fread(&settings.salt, sizeof(uint8_t), PF_SALT_SZ, fp);
+    //     fclose(fp);
+
+    //     if (bytes != PF_SALT_SZ)
+    //         return ENODATA;
+    // }
+    // else
+    // {
+    //     memcpy(settings.salt, salt_r, (salt_sz > PF_SALT_SZ) ? PF_SALT_SZ : salt_sz);
+    // }
 
     memset(salt, 0, PF_SALTSPACE);
     memmove(salt, PF_ID, PF_ID_SZ);
@@ -412,7 +413,7 @@ int pf_newhash(const void *pass, const size_t pass_sz, const size_t cost_t, cons
     if (cost_t > 63 || cost_m > 53)
         return EOVERFLOW;
 
-    if ((ret = pf_mksalt(NULL, 0, cost_t, cost_m, salt)) != 0)
+    if ((ret = pf_mksalt("foobar", 5, cost_t, cost_m, salt)) != 0)
         return ret;
 
     if ((ret = pf_crypt(salt, pass, pass_sz, hash)) != 0)

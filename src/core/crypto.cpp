@@ -13,12 +13,15 @@ using namespace std;
 
 SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
     char hash[PF_HASHSPACE];
+    memset(hash, 0, PF_HASHSPACE);
     int ret = 0;
     if ((ret = pf_newhash((const void*) buffer, len, 1, 8, hash)) != 0) {
         Logger::logStatus("PUFFERFISH failed to compute hash");
     }
+    cout<<"HASH: " << hash <<endl;
     size_t sz = PF_HASHSPACE;
-    return SHA256(hash, sz);
+    SHA256Hash h = SHA256(hash, sz);
+    return h;
 }
 
 SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish) {
@@ -193,7 +196,7 @@ SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish) {
     char data[64];
     memcpy(data, (char*)a.data(), 32);
     memcpy(&data[32], (char*)b.data(), 32);
-    SHA256Hash fullHash  = SHA256((const char*)data, 64);
+    SHA256Hash fullHash  = SHA256((const char*)data, 64, usePufferFish);
     return fullHash;
 }
 
@@ -216,6 +219,9 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
 
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish) {
     SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish);
+        Logger::logStatus("Target: " + SHA256toString(target));
+        Logger::logStatus("Nonce Solution: " + SHA256toString(nonce));
+        Logger::logStatus("Total Hash: " + SHA256toString(fullHash));
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 
@@ -237,10 +243,14 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
         memcpy(solution.data(), concat.data() + 32, 32);
         SHA256Hash fullHash = concatHashes(target, solution, usePufferFish);
+
         bool found = checkLeadingZeroBits(fullHash, challengeSize);
 
         if (found) {
-            memcpy(solution.data(), concat.data() + 32, 32);
+            Logger::logStatus("Target: " + SHA256toString(target));
+            Logger::logStatus("Solution: " + SHA256toString(solution));
+            Logger::logStatus("Total Hash: " + SHA256toString(fullHash));
+            Logger::logStatus("Solution found!^^");
             break;
         }
     };

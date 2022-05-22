@@ -150,7 +150,6 @@ vector<Transaction>& Block::getTransactions() {
 }
 
 bool Block::verifyNonce() {
-    if (this->lastBlockHash == NULL_SHA256_HASH) return true;
     SHA256Hash target = this->getHash();
     return verifyHash(target, this->nonce, this->difficulty);
 }
