@@ -44,10 +44,11 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
                 return;
             }
 
-            int nextBlock = currCount + 1;
+            
             
             json problem = getMiningProblem(host);
-        
+            int nextBlock = problem["chainLength"];
+            nextBlock++;
             // download transactions
             vector<Transaction> transactions;
             readRawTransactions(host, transactions);
@@ -95,7 +96,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             last_block_id = currCount;
             blockstart = std::time(0);
 
-            SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, true);
+            SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, newBlock.getId() > PUFFERFISH_START_BLOCK);
             newBlock.setNonce(solution);
             Logger::logStatus("Submitting block...");
             auto result = submitBlock(host, newBlock);
@@ -104,7 +105,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             } else {
                 Logger::logStatus(RED + "[ REJECTED ] " + RESET);
                 Logger::logStatus(result.dump(4));
-            }
+            }          
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 

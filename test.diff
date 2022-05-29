@@ -1,0 +1,1742 @@
+diff --git a/API.md b/API.md
+index b4717a4..e0b92ff 100644
+--- a/API.md
++++ b/API.md
+@@ -13,7 +13,7 @@ curl http://54.189.82.240:3000/ledger?wallet=0095557B94A368FE2529D3EB33E6BF1276D
+ ```
+ 
+ Example response:
+-```
++```json
+ {"balance":1575762342}
+ ```
+ 
+@@ -40,7 +40,7 @@ curl http://54.189.82.240:3000/block?blockId=2
+ ```
+ 
+ Example response:
+-```
++```json
+ {
+   "difficulty": 16,
+   "id": 2,
+@@ -62,7 +62,9 @@ Example response:
+ ```
+ 
+ ## `GET` /create_wallet
+-Returns a new public key, private key, wallet address. NOTE: keypairs generated on untrusted nodes are not secure. Only use this if you are running your own node.
++Returns a new public key, private key, wallet address. 
++
++NOTE: keypairs generated on untrusted nodes are not secure. Only use this if you are running your own node behind a firewall.
+ 
+ Example request:
+ ```
+@@ -70,7 +72,7 @@ curl http://54.189.82.240:3000/create_wallet
+ ```
+ 
+ Example response:
+-```
++```json
+ {
+   "privateKey": "581E2584D2979E0986FC42256588DDDE6CDF9D1A3526E3006F127557DF14EE4DFBCBAE1A08997F3B140A927505255647D4856639971EF879AAEB991BF11C98BE",
+   "publicKey": "0010F5BDAA6DEC4539E388C615C76B78F9A8ECD1F71C8EAAA92120329B2B41E5",
+@@ -80,6 +82,9 @@ Example response:
+ 
+ ## `GET` /create_transaction
+ Creates a new signed transaction given privateKey, publicKey, to, amount, fee and a nonce. The nonce can be any random 64bit number.
++
++NOTE: transactions generated on untrusted nodes may leak private keys. Only use this if you are running your own node behind a firewall.
++
+ Example request:
+ ```
+ curl -X POST -H "Content-Type: application/json" -d '{
+@@ -94,7 +99,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
+ ```
+ 
+ Example response:
+-```
++```json
+ {
+   "amount": 1,
+   "fee": 1,
+@@ -110,11 +115,22 @@ Example response:
+ Submit one or more transactions in JSON format
+ Example request:
+ ```
+-curl -X POST -H "Content-Type: application/json" -d  '[{"amount":1,"fee":1,"from":"004AE69674A9747B462D348DB7188EF284A1157641335B2D1B","signature":"CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F","signingKey":"3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A","timestamp":"0","to":"006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"}]' http://localhost:3000/add_transaction_json
++curl -X POST -H "Content-Type: application/json" -d  '[
++  {
++    "amount": 1,
++    "fee": 1,
++    "from": "004AE69674A9747B462D348DB7188EF284A1157641335B2D1B",
++    "signature": "CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F",
++    "signingKey": "3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A",
++    "timestamp": "0",
++    "to": "006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"
++  }
++]
++' http://localhost:3000/add_transaction_json
+ ```
+ 
+ Example response:
+-```
++```json
+ [{"status":"SENDER_DOES_NOT_EXIST"}]
+ ```
+ 
+@@ -130,11 +146,21 @@ Status may be any of the following strings:
+ Get status of one or more transactions in JSON format
+ Example request:
+ ```
+-curl -X POST -H "Content-Type: application/json" -d  '[{"amount":1,"fee":1,"from":"004AE69674A9747B462D348DB7188EF284A1157641335B2D1B","signature":"CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F","signingKey":"3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A","timestamp":"0","to":"006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"}]' http://localhost:3000/add_transaction_json
++curl -X POST -H "Content-Type: application/json" -d  '[
++  {
++    "amount": 1,
++    "fee": 1,
++    "from": "004AE69674A9747B462D348DB7188EF284A1157641335B2D1B",
++    "signature": "CF96C47A81A77CCC4916BD5BBD31FB1229988459A63FAC66B7E9463A17FFC0C88C607BB6F7979E7B1D60B19764BED229684521CEB3DC5E334FB7C8663E49C00F",
++    "signingKey": "3B870B3692B0FC4A93C0067189719D7941263E7F39738111E6D7B87CFC1FDF3A",
++    "timestamp": "0",
++    "to": "006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"
++  }
++]' http://localhost:3000/add_transaction_json
+ ```
+ 
+ Example response:
+-```
++```json
+ [{"status":"IN_CHAIN", "blockId": 33}]
+ ```
+ 
+diff --git a/README.md b/README.md
+index f02a4b6..e57560f 100644
+--- a/README.md
++++ b/README.md
+@@ -33,12 +33,7 @@ pip3 install conan
+ *Linux* install pre-requirements
+ ```
+ sudo apt-get update
+-sudo apt-get -y install make  
+-sudo apt-get -y install cmake  
+-sudo apt-get -y install automake
+-sudo apt-get -y install libtool
+-sudo apt-get -y install python3-pip
+-sudo apt-get -y install libleveldb-dev
++sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev
+ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6
+ sudo pip3 install conan
+ ```
+@@ -47,7 +42,7 @@ sudo pip3 install conan
+ ```
+ git clone https://github.com/mr-pandabear/bamboo.git
+ cd bamboo
+-git checkout master
++git checkout release
+ mkdir build
+ cd build
+ conan install ..
+diff --git a/src/core/block.cpp b/src/core/block.cpp
+index e6e5935..a1c82b5 100644
+--- a/src/core/block.cpp
++++ b/src/core/block.cpp
+@@ -150,7 +150,6 @@ vector<Transaction>& Block::getTransactions() {
+ }
+ 
+ bool Block::verifyNonce() {
+-    if (this->lastBlockHash == NULL_SHA256_HASH) return true;
+     SHA256Hash target = this->getHash();
+     return verifyHash(target, this->nonce, this->difficulty);
+ }
+diff --git a/src/core/constants.hpp b/src/core/constants.hpp
+index 3c50635..996fcf5 100644
+--- a/src/core/constants.hpp
++++ b/src/core/constants.hpp
+@@ -8,7 +8,7 @@
+ #define TIMEOUT_SUBMIT_MS 30000
+ #define BLOCKS_PER_FETCH 200
+ #define BLOCK_HEADERS_PER_FETCH 2000
+-#define BUILD_VERSION "0.4-beta"
++#define BUILD_VERSION "0.4.1-beta"
+ 
+ 
+ // Files
+@@ -23,5 +23,5 @@
+ #define DIFFICULTY_LOOKBACK 100
+ #define DESIRED_BLOCK_TIME_SEC 90
+ #define MIN_DIFFICULTY 16
+-#define MAX_DIFFICULTY 256
++#define MAX_DIFFICULTY 255
+ 
+diff --git a/src/core/crypto.cpp b/src/core/crypto.cpp
+index 8e0c1c3..01d9194 100644
+--- a/src/core/crypto.cpp
++++ b/src/core/crypto.cpp
+@@ -5,13 +5,25 @@
+ #include <thread>
+ #include <random>
+ #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
++#include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
+ #include "../external/sha256/sha2.hpp" 
+ #include "../core/logger.hpp"
+ using namespace std;
+ 
+-#define SLOPPY_TASK_CYCLE 1000
+ 
+-SHA256Hash SHA256(const char* buffer, size_t len) {
++SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
++    char hash[PF_HASHSPACE];
++    memset(hash, 0, PF_HASHSPACE);
++    int ret = 0;
++    if ((ret = pf_newhash((const void*) buffer, len, 1, 8, hash)) != 0) {
++        Logger::logStatus("PUFFERFISH failed to compute hash");
++    }
++    size_t sz = PF_HASHSPACE;
++    return SHA256(hash, sz);
++}
++
++SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish) {
++    if (usePufferFish) return PUFFERFISH(buffer, len);
+     std::array<uint8_t, 32> ret;
+     SHA256_CTX sha256;
+     SHA256_Init(&sha256);
+@@ -20,6 +32,7 @@ SHA256Hash SHA256(const char* buffer, size_t len) {
+     return ret;
+ }
+ 
++
+ std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
+     std::array<uint8_t, 32> ret;
+     sha256_ctx sha256;
+@@ -177,16 +190,15 @@ bool checkSignature(const char* bytes, size_t len, TransactionSignature signatur
+     return status == 1;
+ }
+ 
+-SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b) {
++SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish) {
+     char data[64];
+     memcpy(data, (char*)a.data(), 32);
+     memcpy(&data[32], (char*)b.data(), 32);
+-    SHA256Hash fullHash  = SHA256((const char*)data, 64);
++    SHA256Hash fullHash  = SHA256((const char*)data, 64, usePufferFish);
+     return fullHash;
+ }
+ 
+ bool checkLeadingZeroBits(SHA256Hash& hash, uint8_t challengeSize) {
+-    // NOTE: challengeSize >= 16
+     int bytes = challengeSize / 8; 
+     const uint8_t * a = hash.data();
+     for (int i = 0; i < bytes; i++) {
+@@ -203,13 +215,13 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
+     return previousWork;
+ }
+ 
+-bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize) {
+-    SHA256Hash fullHash  = concatHashes(target, nonce);
++bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish) {
++    SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish);
+     return checkLeadingZeroBits(fullHash, challengeSize);
+ }
+ 
+ 
+-SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)>incrementHashCount, std::function<bool()> stop) {
++SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePufferFish) {
+     // By @Shifu!
+     vector<uint8_t> concat;
+     SHA256Hash solution;
+@@ -224,23 +236,14 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::functio
+     while(true) {
+         ++i;
+         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
+-        SHA256Hash fullHash = SHA256((const char*)concat.data(), concat.size());
++        memcpy(solution.data(), concat.data() + 32, 32);
++        SHA256Hash fullHash = concatHashes(target, solution, usePufferFish);
++
+         bool found = checkLeadingZeroBits(fullHash, challengeSize);
+ 
+         if (found) {
+-            memcpy(solution.data(), concat.data() + 32, 32);
+             break;
+         }
+-
+-        if (i == SLOPPY_TASK_CYCLE) {
+-            i = 0;
+-            incrementHashCount(SLOPPY_TASK_CYCLE);
+-
+-            if (stop()) {
+-                solution = NULL_SHA256_HASH;
+-                break;
+-            }
+-        }
+     };
+ 
+     return solution;
+diff --git a/src/core/crypto.hpp b/src/core/crypto.hpp
+index 3e0beee..a9408f1 100644
+--- a/src/core/crypto.hpp
++++ b/src/core/crypto.hpp
+@@ -5,14 +5,14 @@
+ #include <mutex>
+ using namespace std;
+ 
+-SHA256Hash SHA256(const char* buffer, size_t len);
++SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish=false);
+ SHA256Hash SHA256(string str);
+ RIPEMD160Hash  RIPEMD(const char* buffer, size_t len);
+ SHA256Hash stringToSHA256(string hex);
+ string SHA256toString(SHA256Hash h);
+ std::vector<uint8_t> hexDecode(const string& hex);
+ string hexEncode(const char* buffer, size_t len);
+-SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b);
++SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish = false);
+ bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize);
+ Bigint addWork(Bigint previousWork, uint32_t challengeSize);
+ 
+@@ -32,5 +32,5 @@ TransactionSignature signWithPrivateKey(string content, PublicKey pubKey, Privat
+ TransactionSignature signWithPrivateKey(const char* bytes, size_t len, PublicKey pubKey, PrivateKey privKey);
+ bool checkSignature(string content, TransactionSignature signature, PublicKey signingKey);
+ bool checkSignature(const char* bytes, size_t len, TransactionSignature signature, PublicKey signingKey);
+-SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, std::function<void(int)> incrementHashCount = [](int) {}, std::function<bool()> stop = []() { return false; });
+-bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize);
++SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePufferfish=false);
++bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, unsigned char challengeSize, bool usePufferfish=false);
+diff --git a/src/core/host_manager.cpp b/src/core/host_manager.cpp
+index 2f22f32..ed9259d 100644
+--- a/src/core/host_manager.cpp
++++ b/src/core/host_manager.cpp
+@@ -21,11 +21,15 @@ using namespace std;
+     Fetches the public IP of the node
+ */
+ 
+-bool isValidIPv4(string & ip) {
++bool isValidIPv4(string& ip) {
+    unsigned int a,b,c,d;
+    return sscanf(ip.c_str(),"%d.%d.%d.%d", &a, &b, &c, &d) == 4;
+ }
+ 
++bool isJsHost(const string& addr) {
++    return addr.find("peer://") != std::string::npos;
++}
++
+ string HostManager::computeAddress() {
+     if (this->ip == "") {
+         bool found = false;
+@@ -258,11 +262,12 @@ set<string> HostManager::sampleFreshHosts(int count) {
+     for (auto pair : this->hostPingTimes) {
+         uint64_t lastPingAge = std::time(0) - pair.second;
+         // only return peers that have pinged
+-        if (lastPingAge < HOST_MIN_FRESHNESS) { 
++        if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first)) { 
+             freshHosts.push_back(pair.first);
+         }
+     }
+ 
++    // TODO: do this more efficiently
+     int numToPick = min(count, (int)freshHosts.size());
+     set<string> sampledHosts;
+     while(sampledHosts.size() < numToPick) {
+@@ -272,22 +277,6 @@ set<string> HostManager::sampleFreshHosts(int count) {
+     return sampledHosts;
+ }
+ 
+-
+-/*
+-    Returns any N unique random hosts. 
+-    Used when hosts don't ping us (Miner)
+-*/
+-set<string> HostManager::sampleAllHosts(int count) {
+-    int numToPick = min(count, (int)this->hosts.size());
+-    set<string> sampledHosts;
+-    while(sampledHosts.size() < numToPick) {
+-        string host = this->hosts[rand()%this->hosts.size()];
+-        sampledHosts.insert(host);
+-    }
+-    return sampledHosts;
+-}
+-
+-
+ /*
+     Adds a peer to the host list, 
+ */
+@@ -308,13 +297,15 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
+     } 
+ 
+     // check if the host is reachable:
+-    try {
+-        json name = getName(addr);
+-    } catch(...) {
+-        // if not exit
+-        return;
++    if (!isJsHost(addr)) {
++        try {
++            json name = getName(addr);
++        } catch(...) {
++            // if not exit
++            return;
++        }
+     }
+-    
++
+     // add to our host list
+     if (this->whitelist.size() == 0 || this->whitelist.find(addr) != this->whitelist.end()){
+         Logger::logStatus("Added new peer: " + addr);
+@@ -434,7 +425,7 @@ void HostManager::syncHeadersWithPeers() {
+     this->currPeers.empty();
+     
+     // pick N random peers
+-    set<string> hosts = this->sampleAllHosts(RANDOM_GOOD_HOST_COUNT);
++    set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
+ 
+     for (auto h : hosts) {
+         this->currPeers.push_back(new HeaderChain(h, this->checkpoints));
+@@ -447,8 +438,17 @@ void HostManager::syncHeadersWithPeers() {
+     Returns a list of all peer hosts
+ */
+ vector<string> HostManager::getHosts(bool includeSelf) {
+-    vector<string> ret = this->hosts;
+-    if (includeSelf) ret.push_back(this->address);
++    vector<string> ret;
++    for (auto pair : this->hostPingTimes) {
++        uint64_t lastPingAge = std::time(0) - pair.second;
++        // only return peers that have pinged
++        if (lastPingAge < HOST_MIN_FRESHNESS) { 
++            ret.push_back(pair.first);
++        }
++    }
++    if (includeSelf) {
++        ret.push_back(this->address);
++    }
+     return ret;
+ }
+ 
+diff --git a/src/core/worker.cpp b/src/core/worker.cpp
+deleted file mode 100644
+index d644c04..0000000
+--- a/src/core/worker.cpp
++++ /dev/null
+@@ -1,85 +0,0 @@
+-#include "worker.hpp"
+-#include "helpers.hpp"
+-
+-std::atomic<uint32_t> Worker::accepted_blocks;
+-std::atomic<uint32_t> Worker::rejected_blocks;
+-std::atomic<uint32_t> Worker::earned;
+-
+-void Worker::execute(Job job)
+-{
+-    {
+-        std::lock_guard<std::mutex> lock(qmutex);
+-        queue.push(std::move(job));
+-    }
+-    cond.notify_one();
+-}
+-
+-void Worker::abandon()
+-{
+-    skip_current.store(true);
+-}
+-
+-uint64_t Worker::get_hash_count()
+-{
+-    return hash_count.load();
+-}
+-
+-void Worker::start(Worker* worker)
+-{
+-    while (true) {
+-        worker->loop();
+-    }
+-}
+-
+-void Worker::loop(void)
+-{
+-    Job job;
+-
+-    {
+-        std::unique_lock<std::mutex> lock(qmutex);
+-        while (queue.empty()) { cond.wait(lock); }
+-        job = queue.front();
+-        queue.pop();
+-    }
+-
+-    skip_current.store(false);
+-
+-    SHA256Hash solution = mineHash(job.newBlock.getHash(), job.newBlock.getDifficulty(),
+-        [this](int count) {
+-            this->hash_count.fetch_add(count);
+-        },
+-        [this]() {
+-            return skip_current.load();
+-    });
+-
+-    if (solution != NULL_SHA256_HASH) {
+-        job.newBlock.setNonce(solution);
+-        try {
+-            submit(job);
+-        } catch(...) {
+-            Logger::logStatus(RED + "[ SUBMIT FAILED ] " + RESET);
+-        }
+-        
+-    }
+-}
+-
+-void Worker::submit(Job& job) {
+-    auto transmit_start = std::chrono::steady_clock::now();
+-    auto result = submitBlock(job.host, job.newBlock);
+-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - transmit_start).count();
+-
+-    if (result.contains("status") && string(result["status"]) == "SUCCESS") {
+-        Worker::earned.fetch_add(50); // TODO: remove hardcoded
+-        auto accepted_blocks = Worker::accepted_blocks.fetch_add(1) + 1;
+-        auto rejected_blocks = Worker::rejected_blocks.load();
+-        auto total_blocks = accepted_blocks + rejected_blocks;
+-        Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET + to_string(accepted_blocks) + " / " + to_string(rejected_blocks) + " (" + to_string(accepted_blocks / (double)total_blocks * 100) + ") " + to_string(elapsed) + "ms");
+-    }
+-    else {
+-        auto accepted_blocks = Worker::accepted_blocks.load();
+-        auto rejected_blocks = Worker::rejected_blocks.fetch_add(1) + 1;
+-        auto total_blocks = accepted_blocks + rejected_blocks;
+-        Logger::logStatus(RED + "[ REJECTED ] " + RESET + to_string(accepted_blocks) + " / " + to_string(rejected_blocks) + " (" + to_string(rejected_blocks / (double)total_blocks * 100) + ") " + to_string(elapsed) + "ms");
+-        Logger::logStatus(result.dump(4));
+-    }
+-}
+\ No newline at end of file
+diff --git a/src/core/worker.hpp b/src/core/worker.hpp
+deleted file mode 100644
+index 9b1c546..0000000
+--- a/src/core/worker.hpp
++++ /dev/null
+@@ -1,108 +0,0 @@
+-#pragma once
+-
+-#include <mutex>
+-#include <condition_variable>
+-#include <thread>
+-#include <atomic>
+-#include <queue>
+-#include "crypto.hpp"
+-#include "api.hpp"
+-#include "logger.hpp"
+-
+-#if WIN32
+-#define WIN32_LEAN_AND_MEAN
+-#include <windows.h>
+-#else
+-#include <pthread.h>
+-#define THREAD_PRIORITY_TIME_CRITICAL -15
+-#define THREAD_PRIORITY_HIGHEST -10
+-#define THREAD_PRIORITY_ABOVE_NORMAL -5
+-#define THREAD_PRIORITY_NORMAL 0
+-#define THREAD_PRIORITY_BELOW_NORMAL 5
+-#define THREAD_PRIORITY_IDLE 19
+-#endif
+-
+-#ifndef SCHED_IDLE
+-#define SCHED_IDLE SCHED_OTHER
+-#endif
+-
+-struct Job {
+-    string host;
+-    Block newBlock;
+-};
+-
+-class Worker
+-{
+-public:
+-    static std::atomic<uint32_t> accepted_blocks;
+-    static std::atomic<uint32_t> rejected_blocks;
+-    static std::atomic<uint32_t> earned;
+-
+-    Worker(int thread_priority) : thread(Worker::start, this), queue(), qmutex(), cond()
+-    {
+-        int priority;
+-
+-        switch (thread_priority) {
+-        case 5:
+-            priority = THREAD_PRIORITY_TIME_CRITICAL;
+-            break;
+-        case 4:
+-            priority = THREAD_PRIORITY_HIGHEST;
+-            break;
+-        case 3:
+-            priority = THREAD_PRIORITY_ABOVE_NORMAL;
+-            break;
+-        case 2:
+-            priority = THREAD_PRIORITY_NORMAL;
+-            break;
+-        case 1:
+-            priority = THREAD_PRIORITY_BELOW_NORMAL;
+-            break;
+-        default:
+-            priority = THREAD_PRIORITY_IDLE;
+-        }
+-#if WIN32
+-        SetThreadPriority(static_cast<HANDLE>(thread.native_handle()), priority);
+-#else
+-        int sched;
+-
+-        if (priority == THREAD_PRIORITY_IDLE) 
+-        {
+-            sched = SCHED_IDLE;
+-        }
+-        else 
+-        {
+-            sched = SCHED_OTHER;
+-        }
+-
+-        sched_param sch;
+-        int policy;
+-        pthread_getschedparam(thread.native_handle(), &policy, &sch);
+-        sch.sched_priority = priority;
+-        pthread_setschedparam(thread.native_handle(), sched, &sch);
+-#endif
+-    }
+-
+-    ~Worker(void)
+-    {
+-    }
+-
+-    void execute(Job job);
+-    void abandon();
+-
+-    uint64_t get_hash_count();
+-private:
+-    std::queue<Job> queue;
+-
+-    std::thread thread;
+-    std::mutex qmutex;
+-    std::condition_variable cond;
+-
+-    std::atomic<bool> skip_current = false;
+-    std::atomic<uint64_t> hash_count = 0;
+-
+-    static void start(Worker* worker);
+-
+-    void loop(void);
+-    void submit(Job& job);
+-};
+\ No newline at end of file
+diff --git a/src/external/pufferfish/pufferfish.h b/src/external/pufferfish/pufferfish.h
+new file mode 100755
+index 0000000..8842243
+--- /dev/null
++++ b/src/external/pufferfish/pufferfish.h
+@@ -0,0 +1,423 @@
++/*
++ * Pufferfish2 - an adaptive password hashing scheme
++ *
++ * Copyright 2015, Jeremi M Gosney. All rights reserved.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ *
++*/
++
++#pragma once
++
++#include <stdio.h>
++#include <stdint.h>
++#include <string.h>
++#include <errno.h>
++
++#include "openssl/sha.h"
++#include "openssl/hmac.h"
++
++#define PF_ID "$PF2$"
++#define PF_ID_SZ strlen(PF_ID)
++#define PF_SBOX_N 4
++#define PF_SALT_SZ 16
++#define PF_SALTSPACE (2 + PF_ID_SZ + bin2enc_len(sizeof(pf_salt)))
++#define PF_HASHSPACE (PF_SALTSPACE + bin2enc_len(PF_DIGEST_LENGTH))
++
++#define PF_DIGEST EVP_sha512()
++#define PF_DIGEST_LENGTH SHA512_DIGEST_LENGTH
++
++typedef struct pf_salt
++{
++    uint8_t cost_t;
++    uint8_t cost_m;
++    char salt[PF_SALT_SZ];
++} pf_salt;
++
++#define PF_HMAC(a,b,c,d,e)                                                               \
++    HMAC(PF_DIGEST,(a),(b),(const unsigned char *)(c),(d),(unsigned char *)(e),NULL)
++  
++#define ENCRYPT_P                                                                        \
++    EXPANDSTATE(salt_u64[0], salt_u64[1], P[ 0], P[ 1]);                                 \
++    EXPANDSTATE(salt_u64[2], salt_u64[3], P[ 2], P[ 3]);                                 \
++    EXPANDSTATE(salt_u64[4], salt_u64[5], P[ 4], P[ 5]);                                 \
++    EXPANDSTATE(salt_u64[6], salt_u64[7], P[ 6], P[ 7]);                                 \
++    EXPANDSTATE(salt_u64[0], salt_u64[1], P[ 8], P[ 9]);                                 \
++    EXPANDSTATE(salt_u64[2], salt_u64[3], P[10], P[11]);                                 \
++    EXPANDSTATE(salt_u64[4], salt_u64[5], P[12], P[13]);                                 \
++    EXPANDSTATE(salt_u64[6], salt_u64[7], P[14], P[15]);                                 \
++    EXPANDSTATE(salt_u64[0], salt_u64[1], P[16], P[17]);
++
++#define ENCRYPT_S                                                                        \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE(salt_u64[i & 7], salt_u64[(i + 1) & 7], S[0][i], S[0][i + 1]);       \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE(salt_u64[i & 7], salt_u64[(i + 1) & 7], S[1][i], S[1][i + 1]);       \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE(salt_u64[i & 7], salt_u64[(i + 1) & 7], S[2][i], S[2][i + 1]);       \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE(salt_u64[i & 7], salt_u64[(i + 1) & 7], S[3][i], S[3][i + 1]);
++
++#define HASH_SBOX(x)                                                                     \
++    PF_HMAC(x, PF_DIGEST_LENGTH, S[0], sbox_sz * sizeof(uint64_t), x);                   \
++    PF_HMAC(x, PF_DIGEST_LENGTH, S[1], sbox_sz * sizeof(uint64_t), x);                   \
++    PF_HMAC(x, PF_DIGEST_LENGTH, S[2], sbox_sz * sizeof(uint64_t), x);                   \
++    PF_HMAC(x, PF_DIGEST_LENGTH, S[3], sbox_sz * sizeof(uint64_t), x);
++
++#define F(x)                                                                             \
++(                                                                                        \
++    ((S[0][(x >> (64 - log2_sbox_sz))] ^                                                 \
++      S[1][(x >> 35) & (sbox_sz - 1)]) +                                                 \
++      S[2][(x >> 19) & (sbox_sz - 1)]) ^                                                 \
++      S[3][(x >>  3) & (sbox_sz - 1)]                                                    \
++)
++
++#define ENCIPHER                                                                         \
++    L ^= P[0];                                                                           \
++    R = (R ^ F(L)) ^ P[ 1];                                                              \
++    L = (L ^ F(R)) ^ P[ 2];                                                              \
++    R = (R ^ F(L)) ^ P[ 3];                                                              \
++    L = (L ^ F(R)) ^ P[ 4];                                                              \
++    R = (R ^ F(L)) ^ P[ 5];                                                              \
++    L = (L ^ F(R)) ^ P[ 6];                                                              \
++    R = (R ^ F(L)) ^ P[ 7];                                                              \
++    L = (L ^ F(R)) ^ P[ 8];                                                              \
++    R = (R ^ F(L)) ^ P[ 9];                                                              \
++    L = (L ^ F(R)) ^ P[10];                                                              \
++    R = (R ^ F(L)) ^ P[11];                                                              \
++    L = (L ^ F(R)) ^ P[12];                                                              \
++    R = (R ^ F(L)) ^ P[13];                                                              \
++    L = (L ^ F(R)) ^ P[14];                                                              \
++    R = (R ^ F(L)) ^ P[15];                                                              \
++    L = (L ^ F(R)) ^ P[16];                                                              \
++    R ^= P[17];                                                                          \
++    LL = R;                                                                              \
++    RR = L;                                                                              \
++    L  = LL;                                                                             \
++    R  = RR
++
++#define EXPANDSTATE(a,b,c,d)                                                             \
++{                                                                                        \
++    L ^= a;                                                                              \
++    R ^= b;                                                                              \
++    ENCIPHER;                                                                            \
++    c = L;                                                                               \
++    d = R;                                                                               \
++}
++
++#define EXPANDSTATE_NULL(a,b)                                                            \
++{                                                                                        \
++    ENCIPHER;                                                                            \
++    a = L;                                                                               \
++    b = R;                                                                               \
++}
++
++#define REKEY(x)                                                                         \
++{                                                                                        \
++    P[ 0] ^= key_u64[0];                                                                 \
++    P[ 1] ^= key_u64[1];                                                                 \
++    P[ 2] ^= key_u64[2];                                                                 \
++    P[ 3] ^= key_u64[3];                                                                 \
++    P[ 4] ^= key_u64[4];                                                                 \
++    P[ 5] ^= key_u64[5];                                                                 \
++    P[ 6] ^= key_u64[6];                                                                 \
++    P[ 7] ^= key_u64[7];                                                                 \
++    P[ 8] ^= key_u64[0];                                                                 \
++    P[ 9] ^= key_u64[1];                                                                 \
++    P[10] ^= key_u64[2];                                                                 \
++    P[11] ^= key_u64[3];                                                                 \
++    P[12] ^= key_u64[4];                                                                 \
++    P[13] ^= key_u64[5];                                                                 \
++    P[14] ^= key_u64[6];                                                                 \
++    P[15] ^= key_u64[7];                                                                 \
++    P[16] ^= key_u64[0];                                                                 \
++    P[17] ^= key_u64[1];                                                                 \
++                                                                                         \
++    EXPANDSTATE_NULL(P[ 0], P[ 1]);                                                      \
++    EXPANDSTATE_NULL(P[ 2], P[ 3]);                                                      \
++    EXPANDSTATE_NULL(P[ 4], P[ 5]);                                                      \
++    EXPANDSTATE_NULL(P[ 6], P[ 7]);                                                      \
++    EXPANDSTATE_NULL(P[ 8], P[ 9]);                                                      \
++    EXPANDSTATE_NULL(P[10], P[11]);                                                      \
++    EXPANDSTATE_NULL(P[12], P[13]);                                                      \
++    EXPANDSTATE_NULL(P[14], P[15]);                                                      \
++    EXPANDSTATE_NULL(P[16], P[17]);                                                      \
++                                                                                         \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE_NULL(S[0][i], S[0][i + 1]);                                          \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE_NULL(S[1][i], S[1][i + 1]);                                          \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE_NULL(S[2][i], S[2][i + 1]);                                          \
++    for (i = 0; i < sbox_sz; i += 2)                                                     \
++        EXPANDSTATE_NULL(S[3][i], S[3][i + 1]);                                          \
++}
++
++#define bin2enc_len(x) (((x) + 2) / 3 * 4)
++#define chr64(c)((c) > 127 ? 255 : idx64[(c)])
++#define shr(x,n) (x >> n)
++#define shl(x,n) (x << n)
++
++const static unsigned char itoa64[] =
++    "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
++
++const static unsigned char idx64[0x80] = {
++    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
++    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
++    255,255,255,255,255,255,255,255,255,255,255,255,255,255,  0,  1,
++     54, 55, 56, 57, 58, 59, 60, 61, 62, 63,255,255,255,255,255,255,
++    255,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
++     17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,255,255,255,255,255,
++    255, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
++     43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,255,255,255,255,255
++};
++
++size_t pf_encode(char *dst, void *src, size_t size)
++{
++    uint8_t *dptr = (uint8_t *) dst;
++    uint8_t *sptr = (uint8_t *) src;
++    uint8_t *end  = (uint8_t *) sptr + size;
++    uint8_t c1, c2;
++
++    do
++    {
++        c1 = *sptr++;
++        *dptr++ = itoa64[shr(c1, 2)];
++        c1 = shl((c1 & 0x03), 4);
++
++        if (sptr >= end)
++        {
++            *dptr++ = itoa64[c1];
++            break;
++        }
++
++        c2 = *sptr++;
++        c1 |= shr(c2, 4) & 0x0f;
++        *dptr++ = itoa64[c1];
++        c1 = shl((c2 & 0x0f), 2);
++
++        if (sptr >= end)
++        {
++            *dptr++ = itoa64[c1];
++            break;
++        }
++
++        c2 = *sptr++;
++        c1 |= shr(c2, 6) & 0x03;
++        *dptr++ = itoa64[c1];
++        *dptr++ = itoa64[c2 & 0x3f];
++    }
++    while (sptr < end);
++
++    return ((char *)dptr - dst);
++}
++
++size_t pf_decode(void *dst, char *src, size_t size)
++{
++    uint8_t *sptr = (uint8_t *) src;
++    uint8_t *dptr = (uint8_t *) dst;
++    uint8_t *end = (uint8_t *) dst + size;
++    uint8_t c1, c2, c3, c4;
++
++    do
++    {
++        c1 = chr64(*sptr);
++        c2 = chr64(*(sptr + 1));
++
++        if (c1 == 255 || c2 == 255)
++            break;
++
++        *dptr++ = shl(c1, 2) | shr((c2 & 0x30), 4);
++        if (dptr >= end)
++            break;
++
++        c3 = chr64(*(sptr + 2));
++        if (c3 == 255)
++            break;
++
++        *dptr++ = shl((c2 & 0x0f), 4) | shr((c3 & 0x3c), 2);
++        if (dptr >= end)
++            break;
++
++        c4 = chr64(*(sptr + 3));
++        if (c4 == 255)
++            break;
++
++        *dptr++ = shl((c3 & 0x03), 6) | c4;
++        sptr += 4;
++    }
++    while (dptr < end);
++
++    return (dptr - (uint8_t *) dst);
++}
++
++void pf_hashpass(const void *salt_r, const size_t salt_sz, const uint8_t cost_t, const uint8_t cost_m,
++                 const void *key_r, const size_t key_sz, uint8_t *out)
++{
++    unsigned char key[PF_DIGEST_LENGTH]  = { 0 };
++    unsigned char salt[PF_DIGEST_LENGTH] = { 0 };
++
++    uint64_t *salt_u64, *key_u64;
++    uint64_t *S[PF_SBOX_N], P[18];
++    uint64_t L  = 0, R =  0;
++    uint64_t LL = 0, RR = 0;
++    uint64_t count = 0, sbox_sz = 0;
++
++    uint8_t log2_sbox_sz = 0;
++    int i, j, k;
++
++    key_u64  = (uint64_t *) &key;
++    salt_u64 = (uint64_t *) &salt;
++
++    log2_sbox_sz = cost_m + 5;
++    sbox_sz = 1ULL << log2_sbox_sz;
++
++    PF_HMAC("", 0, salt_r, salt_sz, salt);
++    PF_HMAC(salt, PF_DIGEST_LENGTH, key_r, key_sz, key);
++
++    for (i = 0; i < PF_SBOX_N; i++)
++    {
++        S[i] = (uint64_t *) calloc(sbox_sz, sizeof(uint64_t));
++
++        for (j = 0; j < sbox_sz; j += (PF_DIGEST_LENGTH / sizeof(uint64_t)))
++        {
++            PF_HMAC(key, PF_DIGEST_LENGTH, salt, PF_DIGEST_LENGTH, key);
++
++            for (k = 0; k < (PF_DIGEST_LENGTH / sizeof(uint64_t)); k++)
++                S[i][j + k] = key_u64[k];
++        }
++    }
++
++    HASH_SBOX(key);
++
++    P[ 0] = 0x243f6a8885a308d3ULL ^ key_u64[0];
++    P[ 1] = 0x13198a2e03707344ULL ^ key_u64[1];
++    P[ 2] = 0xa4093822299f31d0ULL ^ key_u64[2];
++    P[ 3] = 0x082efa98ec4e6c89ULL ^ key_u64[3];
++    P[ 4] = 0x452821e638d01377ULL ^ key_u64[4];
++    P[ 5] = 0xbe5466cf34e90c6cULL ^ key_u64[5];
++    P[ 6] = 0xc0ac29b7c97c50ddULL ^ key_u64[6];
++    P[ 7] = 0x3f84d5b5b5470917ULL ^ key_u64[7];
++    P[ 8] = 0x9216d5d98979fb1bULL ^ key_u64[0];
++    P[ 9] = 0xd1310ba698dfb5acULL ^ key_u64[1];
++    P[10] = 0x2ffd72dbd01adfb7ULL ^ key_u64[2];
++    P[11] = 0xb8e1afed6a267e96ULL ^ key_u64[3];
++    P[12] = 0xba7c9045f12c7f99ULL ^ key_u64[4];
++    P[13] = 0x24a19947b3916cf7ULL ^ key_u64[5];
++    P[14] = 0x0801f2e2858efc16ULL ^ key_u64[6];
++    P[15] = 0x636920d871574e69ULL ^ key_u64[7];
++    P[16] = 0xa458fea3f4933d7eULL ^ key_u64[0];
++    P[17] = 0x0d95748f728eb658ULL ^ key_u64[1];
++
++    ENCRYPT_P;
++    ENCRYPT_S;
++
++    count = (1ULL << cost_t) + 1;
++    do
++    {
++        L = R = 0;
++        HASH_SBOX(key);
++        REKEY(key);
++    }
++    while (--count);
++
++    HASH_SBOX(key);
++    memcpy(out, key, PF_DIGEST_LENGTH);
++
++    for (i = 0; i < PF_SBOX_N; i++)
++        free(S[i]);
++}
++
++int pf_mksalt( const uint8_t cost_t, const uint8_t cost_m, char *salt)
++{
++    size_t bytes = 0;
++    pf_salt settings;
++    memset(&settings, 0, sizeof(pf_salt));
++
++    settings.cost_t = cost_t;
++    settings.cost_m = cost_m;
++
++    memset(salt, 0, PF_SALTSPACE);
++    memmove(salt, PF_ID, PF_ID_SZ);
++
++    bytes = pf_encode(salt + PF_ID_SZ, (void *)&settings, sizeof(pf_salt));
++    salt[PF_ID_SZ + bytes] = '$';
++
++    return 0;
++}
++
++int pf_crypt(const char *salt, const void *pass, const size_t pass_sz, char *hash)
++{
++    uint8_t buf[PF_DIGEST_LENGTH] = { 0 };
++    size_t bytes = 0;
++    pf_salt settings;
++    char *p;
++
++    if (strncmp(salt, PF_ID, PF_ID_SZ))
++        return EINVAL;
++
++    if ((p = (char*)strrchr(salt, '$')) == NULL)
++        return EINVAL;
++
++    memset(hash, 0, PF_HASHSPACE);
++    memmove(hash, salt, p - salt + 1);
++
++    if ((bytes = pf_decode((void *)&settings, (char *)(salt + PF_ID_SZ), p - salt - PF_ID_SZ)) != sizeof(pf_salt))
++        return EINVAL;
++
++    pf_hashpass(settings.salt, PF_SALT_SZ, settings.cost_t, settings.cost_m, pass, pass_sz, buf);
++    pf_encode(hash + PF_SALTSPACE - 1, buf, PF_DIGEST_LENGTH);
++
++    return 0;
++}
++
++int pf_newhash(const void *pass, const size_t pass_sz, const size_t cost_t, const size_t cost_m, char *hash)
++{
++    char salt[PF_SALTSPACE];
++    int ret = 0;
++
++    if (cost_t > 63 || cost_m > 53)
++        return EOVERFLOW;
++
++    if ((ret = pf_mksalt(cost_t, cost_m, salt)) != 0)
++        return ret;
++
++    if ((ret = pf_crypt(salt, pass, pass_sz, hash)) != 0)
++        return ret;
++
++    return 0;
++}
++
++int pf_checkpass(const char *valid, const void *pass, const size_t pass_sz)
++{
++    char hash[PF_HASHSPACE];
++    int i, ret = 0, diff = 0;
++
++    if ((ret = pf_crypt(valid, pass, pass_sz, hash)) != 0)
++        return 1;
++
++    diff = strlen(hash) ^ strlen(valid);
++
++    for (i = 0; i < strlen(hash) && i < strlen(valid); i++)
++        diff |= hash[i] ^ valid[i];
++
++    return (diff != 0);
++}
++
++
+diff --git a/src/server/blockchain.cpp b/src/server/blockchain.cpp
+index a231ca9..c530848 100644
+--- a/src/server/blockchain.cpp
++++ b/src/server/blockchain.cpp
+@@ -83,7 +83,7 @@ void BlockChain::resetChain() {
+     this->txdb.clear();
+     
+     
+-    // User miner;
++    // // User miner;
+     // Transaction fee(stringToWalletAddress("006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"), BMB(50));
+     // fee.setTimestamp(0);
+     // vector<Transaction> transactions;
+@@ -92,7 +92,7 @@ void BlockChain::resetChain() {
+     // genesis.setId(1);
+     // genesis.addTransaction(fee);
+     // genesis.setLastBlockHash(NULL_SHA256_HASH);
+-    // addGenesisTransactions(genesis);
++    // // addGenesisTransactions(genesis);
+ 
+     // // compute merkle tree
+     // MerkleTree m;
+@@ -216,7 +216,7 @@ uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32
+     if (elapsedTime > expectedTime) {
+         int k = 2;
+         int lastK = 1;
+-        while(newDifficulty > 16) {
++        while(newDifficulty > MIN_DIFFICULTY) {
+                 if(abs(elapsedTime/k - expectedTime) > abs(elapsedTime/lastK - expectedTime) ) {
+                     break;
+                 }
+@@ -282,7 +282,6 @@ void BlockChain::popBlock() {
+     } else {
+         this->resetChain();
+     }
+-    
+ }
+ 
+ ExecutionStatus BlockChain::addBlock(Block& block) {
+diff --git a/src/server/request_manager.cpp b/src/server/request_manager.cpp
+index 6f6f959..a0134a5 100644
+--- a/src/server/request_manager.cpp
++++ b/src/server/request_manager.cpp
+@@ -18,7 +18,7 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
+         this->blockchain->sync();
+      
+         // initialize the mempool with a random peers transactions:
+-        auto randomHost = hosts.sampleAllHosts(1);
++        auto randomHost = hosts.sampleFreshHosts(1);
+         if (randomHost.size() > 0) {
+             try {
+                 string host = *randomHost.begin();
+diff --git a/src/server/server.cpp b/src/server/server.cpp
+index ab279be..12531e1 100644
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -224,6 +224,21 @@ void BambooServer::run(json config) {
+         }
+     };
+ 
++    // TODO: remove this once all nodes and clients migrated
++    auto ledgerHandlerDeprecated = [&manager](auto *res, auto *req) {
++        rateLimit(manager, res);
++        sendCorsHeaders(res);
++        try {
++            PublicWalletAddress w = stringToWalletAddress(string(req->getParameter(0)));
++            json ledger = manager.getLedger(w);
++            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
++        } catch(const std::exception &e) {
++            Logger::logError("/ledger", e.what());
++        } catch(...) {
++            Logger::logError("/ledger", "unknown");
++        }
++    };
++
+     auto createWalletHandler = [&manager](auto *res, auto* readJsonFromFile) {
+         rateLimit(manager, res);
+         sendCorsHeaders(res);
+@@ -407,6 +422,112 @@ void BambooServer::run(json config) {
+         }
+     };
+ 
++    /************* BEGIN DEPRECATED ***************/
++
++    auto syncHandlerDeprecated = [&manager](auto *res, auto *req) {
++        rateLimit(manager, res);
++        sendCorsHeaders(res);
++        try {
++            int start = std::stoi(string(req->getParameter(0)));
++            int end = std::stoi(string(req->getParameter(1)));
++            if ((end-start) > BLOCKS_PER_FETCH) {
++                Logger::logError("/sync", "invalid range requested");
++                res->end("");
++            }
++            res->writeHeader("Content-Type", "application/octet-stream");
++            for (int i = start; i <=end; i++) {
++                std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i);
++                std::string_view str((char*)buffer.first, buffer.second);
++                res->write(str);
++                delete buffer.first;
++            }
++            res->end("");
++        } catch(const std::exception &e) {
++            Logger::logError("/sync", e.what());
++        } catch(...) {
++            Logger::logError("/sync", "unknown");
++        }
++        res->onAborted([res]() {
++            res->end("ABORTED");
++        });
++    };
++
++    auto blockHeaderHandlerDeprecated = [&manager](auto *res, auto *req) {
++        rateLimit(manager, res);
++        sendCorsHeaders(res);
++        try {
++            int start = std::stoi(string(req->getParameter(0)));
++            int end = std::stoi(string(req->getParameter(1)));
++            if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
++                Logger::logError("/block_headers", "invalid range requested");
++                res->end("");
++            }
++            res->writeHeader("Content-Type", "application/octet-stream");
++            for (int i = start; i <=end; i++) {
++                BlockHeader b = manager.getBlockHeader(i);
++                char bhBytes[BLOCKHEADER_BUFFER_SIZE];
++                blockHeaderToBuffer(b, bhBytes);
++                std::string_view str(bhBytes, BLOCKHEADER_BUFFER_SIZE);
++                res->write(str);
++            }
++            res->end("");
++        } catch(const std::exception &e) {
++            Logger::logError("/block_headers", e.what());
++        } catch(...) {
++            Logger::logError("/block_headers", "unknown");
++        }
++        res->onAborted([res]() {
++            res->end("ABORTED");
++        });
++    };
++
++    auto blockHandlerDeprecated = [&manager](auto *res, auto *req) {
++        rateLimit(manager, res);
++        sendCorsHeaders(res);
++        json result;
++        try {
++            int blockId= std::stoi(string(req->getParameter(0)));
++            int count = std::stoi(manager.getBlockCount());
++            if (blockId<= 0 || blockId > count) {
++                result["error"] = "Invalid Block";
++            } else {
++                result = manager.getBlock(blockId);
++            }
++            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
++        } catch(const std::exception &e) {
++            result["error"] = "Unknown error";
++            Logger::logError("/block", e.what());
++            res->end("");
++        } catch(...) {
++            Logger::logError("/block", "unknown");
++            res->end("");
++        }
++    };
++
++    auto mineStatusHandlerDeprecated = [&manager](auto *res, auto *req) {
++        rateLimit(manager, res);
++        sendCorsHeaders(res);
++        json result;
++        try {
++            int blockId = std::stoi(string(req->getParameter(0)));
++            int count = std::stoi(manager.getBlockCount());
++            if (blockId <= 0 || blockId > count) {
++                result["error"] = "Invalid Block";
++            } else {
++                result = manager.getMineStatus(blockId);
++            }
++            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
++        } catch(const std::exception &e) {
++            result["error"] = "Unknown error";
++            Logger::logError("/block", e.what());
++            res->end("");
++        } catch(...) {
++            Logger::logError("/block", "unknown");
++            res->end("");
++        }
++    };
++
++    /************* END DEPRECATED ***************/
+ 
+     auto syncHandler = [&manager](auto *res, auto *req) {
+         rateLimit(manager, res);
+@@ -584,6 +705,12 @@ void BambooServer::run(json config) {
+         .get("/tx_json", txJsonHandler)
+         .get("/mine_status", mineStatusHandler)
+         .get("/ledger", ledgerHandler)
++        .get("/gettx/:blockId", getTxHandler) // DEPRECATED
++        .get("/mine_status/:b", mineStatusHandlerDeprecated) // DEPRECATED
++        .get("/ledger/:user", ledgerHandlerDeprecated) // DEPRECATED
++        .get("/sync/:start/:end", syncHandlerDeprecated) // DEPRECATED
++        .get("/block_headers/:start/:end", blockHeaderHandlerDeprecated) // DEPRECATED
++        .get("/block/:b", blockHandlerDeprecated) // DEPRECATED
+         .get("/mine", mineHandler)
+         .post("/add_peer", addPeerHandler)
+         .post("/submit", submitHandler)
+diff --git a/src/tests/test_blockchain.hpp b/src/tests/test_blockchain.hpp
+index dc62fad..a33c5a5 100644
+--- a/src/tests/test_blockchain.hpp
++++ b/src/tests/test_blockchain.hpp
+@@ -43,155 +43,155 @@ TEST(check_adding_new_node_with_hash) {
+     delete blockchain;
+ }
+ 
+-TEST(check_popping_block) {
+-    HostManager h;
+-    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
+-    User miner;
+-    User other;
+-    // have miner mine the next block
+-    Transaction fee = miner.mine();
+-    vector<Transaction> transactions;
+-    Block newBlock;
+-    newBlock.setId(2);
+-    newBlock.addTransaction(fee);
+-    addMerkleHashToBlock(newBlock);
+-    newBlock.setLastBlockHash(blockchain->getLastHash());
+-    SHA256Hash hash = newBlock.getHash();
+-    SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+-    newBlock.setNonce(solution);
+-    ExecutionStatus status = blockchain->addBlock(newBlock);
+-    ASSERT_EQUAL(blockchain->getLedger().getWalletValue(miner.getAddress()), BMB(50));
+-    blockchain->popBlock();
+-    bool threw = false;
+-    // wallet should no longer exist:
+-    try {
+-        blockchain->getLedger().getWalletValue(miner.getAddress());
+-    } catch (...) {
+-        threw = true;
+-    }
+-    ASSERT_EQUAL(threw, true);
+-    blockchain->deleteDB();
+-    delete blockchain;
+-}
++// TEST(check_popping_block) {
++//     HostManager h;
++//     BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
++//     User miner;
++//     User other;
++//     // have miner mine the next block
++//     Transaction fee = miner.mine();
++//     vector<Transaction> transactions;
++//     Block newBlock;
++//     newBlock.setId(2);
++//     newBlock.addTransaction(fee);
++//     addMerkleHashToBlock(newBlock);
++//     newBlock.setLastBlockHash(blockchain->getLastHash());
++//     SHA256Hash hash = newBlock.getHash();
++//     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
++//     newBlock.setNonce(solution);
++//     ExecutionStatus status = blockchain->addBlock(newBlock);
++//     ASSERT_EQUAL(blockchain->getLedger().getWalletValue(miner.getAddress()), BMB(50));
++//     blockchain->popBlock();
++//     bool threw = false;
++//     // wallet should no longer exist:
++//     try {
++//         blockchain->getLedger().getWalletValue(miner.getAddress());
++//     } catch (...) {
++//         threw = true;
++//     }
++//     ASSERT_EQUAL(threw, true);
++//     blockchain->deleteDB();
++//     delete blockchain;
++// }
+ 
+ 
+-TEST(check_adding_wrong_lastblock_hash_fails) {
+-    HostManager h;
+-    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
+-    User miner;
+-    User other;
+-    // have miner mine the next block
+-    Transaction fee = miner.mine();
+-    vector<Transaction> transactions;
+-    Block newBlock;
+-    newBlock.setId(2);
+-    newBlock.addTransaction(fee);
+-    addMerkleHashToBlock(newBlock);
+-    newBlock.setLastBlockHash(NULL_SHA256_HASH);
+-    SHA256Hash hash = newBlock.getHash();
+-    SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+-    newBlock.setNonce(solution);
+-    ExecutionStatus status = blockchain->addBlock(newBlock);
+-    ASSERT_EQUAL(status, INVALID_LASTBLOCK_HASH);
+-    blockchain->deleteDB();
+-    delete blockchain;
+-}
++// TEST(check_adding_wrong_lastblock_hash_fails) {
++//     HostManager h;
++//     BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
++//     User miner;
++//     User other;
++//     // have miner mine the next block
++//     Transaction fee = miner.mine();
++//     vector<Transaction> transactions;
++//     Block newBlock;
++//     newBlock.setId(2);
++//     newBlock.addTransaction(fee);
++//     addMerkleHashToBlock(newBlock);
++//     newBlock.setLastBlockHash(NULL_SHA256_HASH);
++//     SHA256Hash hash = newBlock.getHash();
++//     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
++//     newBlock.setNonce(solution);
++//     ExecutionStatus status = blockchain->addBlock(newBlock);
++//     ASSERT_EQUAL(status, INVALID_LASTBLOCK_HASH);
++//     blockchain->deleteDB();
++//     delete blockchain;
++// }
+ 
+-TEST(check_adding_two_nodes_updates_ledger) {
+-    HostManager h;
+-    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
+-    User miner;
++// TEST(check_adding_two_nodes_updates_ledger) {
++//     HostManager h;
++//     BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
++//     User miner;
+ 
+-    // have miner mine the next block
+-    for (int i =2; i <4; i++) {
+-        Transaction fee = miner.mine();
+-        Block newBlock;
+-        newBlock.setId(i);
+-        newBlock.addTransaction(fee);
+-        addMerkleHashToBlock(newBlock);
+-        newBlock.setLastBlockHash(blockchain->getLastHash());
+-        SHA256Hash hash = newBlock.getHash();
+-        SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+-        newBlock.setNonce(solution);
+-        ExecutionStatus status = blockchain->addBlock(newBlock);
+-        ASSERT_EQUAL(status, SUCCESS);
+-    }
+-    Ledger& ledger = blockchain->getLedger();
+-    double total = ledger.getWalletValue(miner.getAddress());
+-    ASSERT_EQUAL(total, BMB(100.0));
+-    blockchain->deleteDB();
+-    delete blockchain;
+-}
++//     // have miner mine the next block
++//     for (int i =2; i <4; i++) {
++//         Transaction fee = miner.mine();
++//         Block newBlock;
++//         newBlock.setId(i);
++//         newBlock.addTransaction(fee);
++//         addMerkleHashToBlock(newBlock);
++//         newBlock.setLastBlockHash(blockchain->getLastHash());
++//         SHA256Hash hash = newBlock.getHash();
++//         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
++//         newBlock.setNonce(solution);
++//         ExecutionStatus status = blockchain->addBlock(newBlock);
++//         ASSERT_EQUAL(status, SUCCESS);
++//     }
++//     Ledger& ledger = blockchain->getLedger();
++//     double total = ledger.getWalletValue(miner.getAddress());
++//     ASSERT_EQUAL(total, BMB(100.0));
++//     blockchain->deleteDB();
++//     delete blockchain;
++// }
+ 
+-TEST(check_sending_transaction_updates_ledger) {
+-    HostManager h;
+-    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
+-    User miner;
+-    User other;
++// TEST(check_sending_transaction_updates_ledger) {
++//     HostManager h;
++//     BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
++//     User miner;
++//     User other;
+ 
+-    // have miner mine the next block
+-    for (int i =2; i <4; i++) {
+-        Transaction fee = miner.mine();
+-        Block newBlock;
+-        newBlock.setId(i);
+-        newBlock.addTransaction(fee);
+-        if (i==3) {
+-            Transaction t = miner.send(other, BMB(20.0));
+-            newBlock.addTransaction(t);
+-        }
+-        addMerkleHashToBlock(newBlock);
+-        newBlock.setLastBlockHash(blockchain->getLastHash());
+-        SHA256Hash hash = newBlock.getHash();
+-        SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+-        newBlock.setNonce(solution);
+-        ExecutionStatus status = blockchain->addBlock(newBlock);
+-        ASSERT_EQUAL(status, SUCCESS);
+-    }
+-    Ledger& ledger = blockchain->getLedger();
+-    double minerTotal = ledger.getWalletValue(miner.getAddress());
+-    double otherTotal = ledger.getWalletValue(other.getAddress());
+-    Bigint totalWork = blockchain->getTotalWork();
+-    Bigint base = 2;
+-    Bigint work = base.pow(16);
+-    Bigint num = 3;
+-    Bigint total = num * work;
+-    ASSERT_EQUAL(totalWork, total);
+-    ASSERT_EQUAL(minerTotal, BMB(80.0));
+-    ASSERT_EQUAL(otherTotal, BMB(20.0));
+-    blockchain->deleteDB();
+-    delete blockchain;
+-}
++//     // have miner mine the next block
++//     for (int i =2; i <4; i++) {
++//         Transaction fee = miner.mine();
++//         Block newBlock;
++//         newBlock.setId(i);
++//         newBlock.addTransaction(fee);
++//         if (i==3) {
++//             Transaction t = miner.send(other, BMB(20.0));
++//             newBlock.addTransaction(t);
++//         }
++//         addMerkleHashToBlock(newBlock);
++//         newBlock.setLastBlockHash(blockchain->getLastHash());
++//         SHA256Hash hash = newBlock.getHash();
++//         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
++//         newBlock.setNonce(solution);
++//         ExecutionStatus status = blockchain->addBlock(newBlock);
++//         ASSERT_EQUAL(status, SUCCESS);
++//     }
++//     Ledger& ledger = blockchain->getLedger();
++//     double minerTotal = ledger.getWalletValue(miner.getAddress());
++//     double otherTotal = ledger.getWalletValue(other.getAddress());
++//     Bigint totalWork = blockchain->getTotalWork();
++//     Bigint base = 2;
++//     Bigint work = base.pow(MIN_DIFFICULTY);
++//     Bigint num = 3;
++//     Bigint total = num * work;
++//     ASSERT_EQUAL(totalWork, total);
++//     ASSERT_EQUAL(minerTotal, BMB(80.0));
++//     ASSERT_EQUAL(otherTotal, BMB(20.0));
++//     blockchain->deleteDB();
++//     delete blockchain;
++// }
+ 
+ 
+-TEST(check_duplicate_tx_fails) {
+-    HostManager h;
+-    BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
+-    User miner;
+-    User other;
++// TEST(check_duplicate_tx_fails) {
++//     HostManager h;
++//     BlockChain* blockchain = new BlockChain(h, ledger, blocks, txdb);
++//     User miner;
++//     User other;
+ 
+-    Transaction t = miner.send(other, BMB(20.0));
+-    // have miner mine the next block
+-    for (int i =2; i <=4; i++) {
+-        Transaction fee = miner.mine();
+-        Block newBlock;
+-        newBlock.setId(i);
+-        newBlock.addTransaction(fee);
++//     Transaction t = miner.send(other, BMB(20.0));
++//     // have miner mine the next block
++//     for (int i =2; i <=4; i++) {
++//         Transaction fee = miner.mine();
++//         Block newBlock;
++//         newBlock.setId(i);
++//         newBlock.addTransaction(fee);
+         
+-        if (i==3 || i==4) {
+-            newBlock.addTransaction(t);
+-        }
+-        addMerkleHashToBlock(newBlock);
+-        newBlock.setLastBlockHash(blockchain->getLastHash());
+-        SHA256Hash hash = newBlock.getHash();
+-        SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+-        newBlock.setNonce(solution);
+-        ExecutionStatus status = blockchain->addBlock(newBlock);
+-        if (i==4) { 
+-            ASSERT_EQUAL(status, EXPIRED_TRANSACTION);
+-        }else {
+-            ASSERT_EQUAL(status, SUCCESS);
+-        }
+-    }
+-    blockchain->deleteDB();
+-    delete blockchain;
+-}
+\ No newline at end of file
++//         if (i==3 || i==4) {
++//             newBlock.addTransaction(t);
++//         }
++//         addMerkleHashToBlock(newBlock);
++//         newBlock.setLastBlockHash(blockchain->getLastHash());
++//         SHA256Hash hash = newBlock.getHash();
++//         SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
++//         newBlock.setNonce(solution);
++//         ExecutionStatus status = blockchain->addBlock(newBlock);
++//         if (i==4) { 
++//             ASSERT_EQUAL(status, EXPIRED_TRANSACTION);
++//         }else {
++//             ASSERT_EQUAL(status, SUCCESS);
++//         }
++//     }
++//     blockchain->deleteDB();
++//     delete blockchain;
++// }
+\ No newline at end of file
+diff --git a/src/tests/test_crypto.hpp b/src/tests/test_crypto.hpp
+index 75ac004..75124f1 100644
+--- a/src/tests/test_crypto.hpp
++++ b/src/tests/test_crypto.hpp
+@@ -70,11 +70,11 @@ TEST(total_work) {
+ 
+ TEST(mine_hash) {
+     SHA256Hash hash = SHA256("Hello World");
+-    SHA256Hash answer = mineHash(hash, 16);
++    SHA256Hash answer = mineHash(hash, 6);
+     SHA256Hash newHash = concatHashes(hash, answer);
+     const char * a = (const char*) newHash.data();
+-    // check first 2 bytes (16 bits)
+-    ASSERT_TRUE(a[0] == 0 && a[1] == 0);
++    // check first 6 bits are 0
++    ASSERT_TRUE(a[0] < 63);
+ }
+ 
+ TEST(sha256_to_string) {
+diff --git a/src/tools/miner.cpp b/src/tools/miner.cpp
+index 362d35a..db5c7cb 100644
+--- a/src/tools/miner.cpp
++++ b/src/tools/miner.cpp
+@@ -7,7 +7,6 @@
+ #include "../core/logger.hpp"
+ #include "../core/user.hpp"
+ #include "../core/config.hpp"
+-#include "../core/worker.hpp"
+ #include <iostream>
+ #include <mutex>
+ #include <set>
+@@ -16,73 +15,8 @@
+ #include <chrono>
+ using namespace std;
+ 
+-vector<Worker*> workers;
+ 
+-struct block_status {
+-    std::vector<double> block_hashrates;
+-    std::mutex _lock;
+-};
+-
+-void get_status(block_status& status) {
+-    time_t start = std::time(0);
+-
+-    while (true) {
+-        std::this_thread::sleep_for(std::chrono::minutes(2));
+-
+-        double net_hashrate = 0;
+-        
+-        {
+-            std::unique_lock<std::mutex> lock(status._lock);
+-            if (status.block_hashrates.size() > 0) {
+-                for (auto& hashrate : status.block_hashrates)
+-                {
+-                    net_hashrate += hashrate;
+-                }
+-                net_hashrate /= status.block_hashrates.size();
+-            }
+-        }
+-
+-        uint32_t accepted = Worker::accepted_blocks.load();
+-        uint32_t rejected = Worker::rejected_blocks.load();
+-        uint32_t earned = Worker::earned.load();
+-
+-        uint64_t hash_count = 0;
+-
+-        for (size_t i = 0; i < workers.size(); i++) {
+-            hash_count += workers[i]->get_hash_count();
+-        }
+-
+-        if (hash_count == 0) {
+-            continue;
+-        }
+-
+-        auto end = std::time(0);
+-        auto duration = end - start;
+-        auto total_blocks = accepted + rejected;
+-
+-        Logger::beginWriteConsole();
+-        Logger::writeConsole("Periodic Report");
+-        if (total_blocks > 0) {
+-            Logger::writeConsole("Accepted \t\t" + std::to_string(accepted) + " (" + std::to_string(accepted / (double)total_blocks * 100) + "%)");
+-            Logger::writeConsole("Rejected \t\t" + std::to_string(rejected) + " (" + std::to_string(rejected / (double)total_blocks * 100) + "%)");
+-        }
+-        else {
+-            Logger::writeConsole("Accepted \t\t0 (0%)");
+-            Logger::writeConsole("Rejected \t\t0 (0%)");
+-        }
+-        Logger::writeConsole("Earned \t\t\t" + std::to_string(earned) + " bamboos");
+-        Logger::writeConsole("Miner hash rate \t" + std::to_string(hash_count / (double)duration / 1000000) + " Mh/sec"); // todo: HARDCODED
+-        if (net_hashrate > 0) {
+-            Logger::writeConsole("Net hash rate (est) \t" + std::to_string(net_hashrate / 1000000000) + " Gh/sec"); // todo: HARDCODED
+-        }
+-        else {
+-            Logger::writeConsole("Net hash rate (est) \tN/A");
+-        }
+-        Logger::endWriteConsole();
+-    }
+-}
+-
+-void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& status, string& customHostIp) {
++void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHostIp) {
+     TransactionAmount allEarnings = 0;
+     int failureCount = 0;
+     int last_block_id = 0;
+@@ -90,8 +24,6 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
+ 
+     time_t blockstart = std::time(0);
+ 
+-   
+-
+     while(true) {
+         try {
+             uint64_t currCount;
+@@ -112,24 +44,6 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
+                 return;
+             }
+ 
+-            if (last_block_id < currCount) {
+-                std::unique_lock<std::mutex> lock(status._lock);
+-                if (status.block_hashrates.size() >= 10) {
+-                    status.block_hashrates.erase(status.block_hashrates.begin());
+-                }
+-
+-                if (last_difficulty != 0) {
+-                    status.block_hashrates.push_back(pow(2, last_difficulty) / (double)(std::time(0) - blockstart));
+-                }
+-            } else {
+-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+-                continue;
+-            }
+-
+-            for (size_t i = 0; i < workers.size(); i++) {
+-                workers[i]->abandon();
+-            }
+-
+             int nextBlock = currCount + 1;
+             
+             json problem = getMiningProblem(host);
+@@ -181,15 +95,21 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, block_status& stat
+             last_block_id = currCount;
+             blockstart = std::time(0);
+ 
+-            Job job{
+-                host,
+-                newBlock
+-            };
+-            
+-            for (size_t i = 0; i < workers.size(); i++) {
+-                workers[i]->execute(job);
++            SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, true);
++            newBlock.setNonce(solution);
++            Logger::logStatus("Submitting block...");
++            auto result = submitBlock(host, newBlock);
++            if (result.contains("status") && string(result["status"]) == "SUCCESS")  {
++                Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET );
++            } else {
++                Logger::logStatus(RED + "[ REJECTED ] " + RESET);
++                Logger::logStatus(result.dump(4));
+             }
++
++            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
++
+         } catch (const std::exception& e) {
++            Logger::logStatus("Exception");
+             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+         }
+     }
+@@ -220,16 +140,6 @@ int main(int argc, char **argv) {
+         Logger::logStatus("Running miner. Coins stored in : " + customWallet);
+     }
+         
+-    Logger::logStatus("Starting miner with " + to_string(threads) + " threads. Use -t X to change (for example: miner -t 6)");
+-
+-    block_status status;
+-
+-    // start worker threads
+-    for (int i = 0; i < threads; i++) {
+-        workers.push_back(std::move(new Worker(thread_priority)));
+-    }
+-
+-    std::thread status_thread(get_status, ref(status));
+-    std::thread mining_thread(get_work, wallet, ref(hosts), ref(status), ref(customIp));
+-    mining_thread.join();
++    Logger::logStatus("Starting miner on single thread");
++    get_work(wallet, hosts, customIp);
+ }

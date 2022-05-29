@@ -71,7 +71,7 @@ void BlockChain::initChain() {
 
 void BlockChain::resetChain() {
     Logger::logStatus("BlockStore does not exist");
-    this->difficulty = MIN_DIFFICULTY;
+    this->difficulty = 16;
     this->targetBlockCount = 1;
     this->numBlocks = 0;
     this->totalWork = 0;
@@ -252,6 +252,9 @@ void BlockChain::updateDifficulty() {
     int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
     int32_t difficulty = last.getDifficulty();
     this->difficulty = computeDifficulty(difficulty, elapsed, target);
+    if (this->numBlocks >= PUFFERFISH_START_BLOCK && this->numBlocks < (PUFFERFISH_START_BLOCK + DIFFICULTY_LOOKBACK*2)) {
+        this->difficulty = MIN_DIFFICULTY;
+    }
 }
 
 uint32_t BlockChain::findBlockForTransaction(Transaction &t) {
