@@ -15,7 +15,7 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
     char hash[PF_HASHSPACE];
     memset(hash, 0, PF_HASHSPACE);
     int ret = 0;
-    if ((ret = pf_newhash((const void*) buffer, len, 1, 8, hash)) != 0) {
+    if ((ret = pf_newhash((const void*) buffer, len, 0, 8, hash)) != 0) {
         Logger::logStatus("PUFFERFISH failed to compute hash");
     }
     size_t sz = PF_HASHSPACE;
