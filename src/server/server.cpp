@@ -640,13 +640,19 @@ void BambooServer::run(json config) {
                     if (parsed.is_array()) {
                         for (auto& item : parsed) {
                             Transaction tx(item);
-                            response.push_back(manager.addTransaction(tx));
+                            json result;
+                            result["txid"] = SHA256toString(tx.hashContents());
+                            result["status"] = manager.addTransaction(tx)["status"];
+                            response.push_back(result);
                             // only add a maximum of 100 transactions per request
                             if (response.size() > 100) break;
                         }
                     } else {
                         Transaction tx(parsed);
-                        response.push_back(manager.addTransaction(tx));
+                        json result;
+                        result["txid"] = SHA256toString(tx.hashContents());
+                        result["status"] = manager.addTransaction(tx)["status"];
+                        response.push_back(result);
                     }
                     res->end(response.dump());
                 }  catch(const std::exception &e) {
@@ -674,20 +680,17 @@ void BambooServer::run(json config) {
                     json response = json::array();
                     if (parsed.is_array()) {
                         for (auto& item : parsed) {
-                            Transaction tx(item);
-                            response.push_back(manager.getTransactionStatus(tx));
+                            SHA256Hash txid = stringToSHA256(item);
+                            response.push_back(manager.getTransactionStatus(txid));
                             // only add a maximum of 100 transactions per request
                             if (response.size() > 100) break;
                         }
-                    } else {
-                        Transaction tx(parsed);
-                        response.push_back(manager.getTransactionStatus(tx));
                     }
                     res->end(response.dump());
                 }  catch(const std::exception &e) {
-                    Logger::logError("/add_transaction", e.what());
+                    Logger::logError("/verify_transaction", e.what());
                 } catch(...) {
-                    Logger::logError("/add_transaction", "unknown");
+                    Logger::logError("/verify_transaction", "unknown");
                 }
             }
         });

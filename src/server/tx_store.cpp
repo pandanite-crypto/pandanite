@@ -23,6 +23,15 @@ uint32_t TransactionStore::blockForTransaction(Transaction &t) {
     return val;
 }
 
+uint32_t TransactionStore::blockForTransactionId(SHA256Hash txHash) {
+    leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
+    string value;
+    leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
+    if (!status.ok()) throw std::runtime_error("Could not find specified transaction");
+    uint32_t val = *((uint32_t*)value.c_str());
+    return val;
+}
+
 void TransactionStore::insertTransaction(Transaction& t, uint32_t blockId) {
     SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());

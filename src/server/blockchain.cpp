@@ -257,6 +257,11 @@ void BlockChain::updateDifficulty() {
     }
 }
 
+uint32_t BlockChain::findBlockForTransactionId(SHA256Hash txid) {
+    uint32_t blockId = this->txdb.blockForTransactionId(txid);
+    return blockId;
+}
+
 uint32_t BlockChain::findBlockForTransaction(Transaction &t) {
     uint32_t blockId = this->txdb.blockForTransaction(t);
     return blockId;
