@@ -141,6 +141,7 @@ json Transaction::toJson() {
     result["timestamp"] = uint64ToString(this->timestamp);
     result["fee"] = this->fee;
     if (!this->isTransactionFee) {
+        result["txid"] = SHA256toString(this->hashContents());
         result["from"] = walletAddressToString(this->fromWallet());
         result["signingKey"] = publicKeyToString(this->signingKey);
         result["signature"] = signatureToString(this->signature);

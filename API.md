@@ -146,12 +146,12 @@ Status may be any of the following strings:
 Get status of one or more transactions in JSON format
 Example request:
 ```
-curl -X POST -H "Content-Type: application/json" -d  '["06797D19893C8989CE1F72A828DBA8FBB98FCE56265674D4575831AA129ADEE5"]' http://localhost:3000/verify_transaction
+curl -X POST -H "Content-Type: application/json" -d  '[{"txid": "4727299C12A54980B4E49584F358422AB10CA3B77E82F509E6FEB0F6614E2F32"}]' http://localhost:3000/verify_transaction
 ```
 
 Example response:
 ```json
-[{"status":"IN_CHAIN", "blockId": 33}]
+[{"status":"IN_CHAIN", "blockId": 1}]
 ```
 
 Status may be any of the following strings:

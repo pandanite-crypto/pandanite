@@ -680,8 +680,7 @@ void BambooServer::run(json config) {
                     json response = json::array();
                     if (parsed.is_array()) {
                         for (auto& item : parsed) {
-                            SHA256Hash txid = stringToSHA256(item);
-                            response.push_back(manager.getTransactionStatus(txid));
+                            response.push_back(manager.getTransactionStatus(stringToSHA256(item["txid"])));
                             // only add a maximum of 100 transactions per request
                             if (response.size() > 100) break;
                         }
