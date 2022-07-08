@@ -150,7 +150,7 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
 
         total -= amt;
 
-        if (total < fee) {
+        if (total < fees) {
             return BALANCE_TOO_LOW;
         }
 
