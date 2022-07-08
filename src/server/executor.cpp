@@ -144,9 +144,16 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
         }
         TransactionAmount total = ledger.getWalletValue(from);
         // must have enough for amt+fees
-        if (total < (amt + fees)) {
+        if (total < amt) {
             return BALANCE_TOO_LOW;
         }
+
+        total -= amt;
+
+        if (total < fee) {
+            return BALANCE_TOO_LOW;
+        }
+
         withdraw(from, amt, ledger, deltas);
         deposit(to, amt, ledger, deltas);
         if (fees > 0) {

@@ -114,7 +114,7 @@ json getConfig(int argc, char**argv) {
     if (local) {
         // do nothing
     } else if (testnet) {
-        config["hostSources"].push_back("http://54.185.169.234:3000/peers");
+        config["hostSources"].push_back("http://173.230.139.86:5000/peers");
     } else {
         config["hostSources"].push_back("http://173.230.139.86:3000/peers");
         config["hostSources"].push_back("http://173.230.139.86:3001/peers");
