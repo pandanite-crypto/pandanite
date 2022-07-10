@@ -50,6 +50,7 @@ class HostManager {
         map<string,uint64_t> hostPingTimes;
         map<string,int32_t> peerClockDeltas;
         map<uint64_t, SHA256Hash> checkpoints;
+        map<uint64_t, SHA256Hash> bannedHashes;
         vector<string> hostSources;
         vector<string> hosts;
         set<string> blacklist;

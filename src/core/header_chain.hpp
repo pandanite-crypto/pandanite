@@ -7,7 +7,7 @@ using namespace std;
 
 class HeaderChain {
     public:
-        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints);
+        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes);
         void load();
         void reset();
         bool valid();
@@ -23,6 +23,7 @@ class HeaderChain {
         uint64_t offset;
         bool failed;
         map<uint64_t, SHA256Hash> checkPoints;
+        map<uint64_t, SHA256Hash> bannedHashes;
         vector<std::thread> syncThread;
         friend void chain_sync(HeaderChain& chain);
 };

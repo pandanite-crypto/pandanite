@@ -83,6 +83,11 @@ HostManager::HostManager(json config) {
         this->checkpoints.insert(std::pair<uint64_t, SHA256Hash>(checkpoint[0], stringToSHA256(checkpoint[1])));
     }
 
+    // parse banned hashes
+    for(auto bannedHash : config["bannedHashes"]) {
+        this->bannedHashes.insert(std::pair<uint64_t, SHA256Hash>(bannedHash[0], stringToSHA256(bannedHash[1])));
+    }
+
     // parse supported host versions
     this->minHostVersion = config["minHostVersion"];
 
@@ -317,7 +322,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     // check if we have less peers than needed, if so add this to our peer list
     if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
         this->lock.lock();
-        this->currPeers.push_back(new HeaderChain(addr, this->checkpoints));
+        this->currPeers.push_back(new HeaderChain(addr, this->checkpoints, this->bannedHashes));
         this->lock.unlock();
     }
 
@@ -428,7 +433,7 @@ void HostManager::syncHeadersWithPeers() {
     set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
-        this->currPeers.push_back(new HeaderChain(h, this->checkpoints));
+        this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes));
     }
     this->lock.unlock();
 }

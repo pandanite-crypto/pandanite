@@ -34,6 +34,7 @@ json getConfig(int argc, char**argv) {
     string customName = randomString(25);
     string networkName = "mainnet";
     json checkpoints = json::array();
+    json bannedHashes = json::array();
     int customPort = 3000;
     int threads = std::thread::hardware_concurrency();
     int thread_priority = 0;
@@ -91,6 +92,7 @@ json getConfig(int argc, char**argv) {
         checkpoints.push_back({1, "0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750"});
         checkpoints.push_back({7774, "E1DC4CA2F2D634868C12B2C8963B33DD8632F459A1D37701A6B9BE17C0DA99EB"});
         checkpoints.push_back({14142, "BC77EB5157A82E1FC684653FEBECAEAF1034F7E0ABE09A10908B4F75D0F66956"});
+        bannedHashes.push_back({143799,"60D84E0D3078F3FFD9E54133B450448F3F12B671028B0431F775A37A347FFACA"});
     }
 
     it = std::find(args.begin(), args.end(), "--disable-limiter");
@@ -106,6 +108,7 @@ json getConfig(int argc, char**argv) {
     config["name"] = customName;
     config["networkName"] = networkName;
     config["checkpoints"] = checkpoints;
+    config["bannedHashes"] = bannedHashes;
     config["ip"] = customIp;
     config["thread_priority"] = thread_priority;
     config["hostSources"] = json::array();

@@ -16,7 +16,7 @@ void chain_sync(HeaderChain& chain) {
 }
 
 
-HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints) {
+HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes) {
     this->host = host;
     this->failed = false;
     this->offset = 0;
@@ -24,6 +24,7 @@ HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints) {
     this->chainLength = 0;
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
     this->checkPoints = checkpoints;
+    this->bannedHashes = bannedHashes;
 }
 
 SHA256Hash HeaderChain::getHash(uint64_t blockId) {
@@ -84,6 +85,14 @@ void HeaderChain::load() {
                 vector<Transaction> empty;
                 Block block(b, empty);
                 uint64_t curr = b.id;
+                if (this->bannedHashes.find(curr) != this->bannedHashes.end()) {
+                    // check if the current hash corresponds to a banned hash
+                    if (block.getHash() == this->bannedHashes[curr]) {
+                        Logger::logStatus("Banned hash found for block: " + to_string(curr));
+                        failure = true;
+                        break;
+                    } 
+                }
                 if (this->checkPoints.find(curr) != this->checkPoints.end()) {
                     // check the checkpoint hash:
                     if (block.getHash() != this->checkPoints[curr]) {
