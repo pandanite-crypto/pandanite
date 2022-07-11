@@ -38,6 +38,14 @@ void RequestManager::enableRateLimiting(bool enabled) {
     this->limitRequests = enabled;
 }
 
+json RequestManager::getPeerStats() {
+    json ret;
+    for(auto elem : this->blockchain->getHeaderChainStats()) {
+        ret[elem.first] = elem.second;
+    }
+    return ret;
+}
+
 void RequestManager::exit() {
     this->blockchain->closeDB();
 }

@@ -353,6 +353,10 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     return status;
 }
 
+map<string, uint64_t> BlockChain::getHeaderChainStats() {
+    return this->hosts.getHeaderChainStats();
+}
+
 ExecutionStatus BlockChain::startChainSync() {
     string bestHost = this->hosts.getGoodHost();
     this->targetBlockCount = this->hosts.getBlockCount();

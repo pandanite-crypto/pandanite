@@ -57,6 +57,10 @@ uint64_t HeaderChain::getChainLength() {
     return this->chainLength;
 }
 
+uint64_t HeaderChain::getCurrentDownloaded() {
+    return this->blockHashes.size();
+}
+
 void HeaderChain::load() {
     uint64_t targetBlockCount;
     try {
@@ -78,7 +82,6 @@ void HeaderChain::load() {
         try {
             int end = min(targetBlockCount, (uint64_t) i + BLOCK_HEADERS_PER_FETCH - 1);
             bool failure = false;
-            vector<SHA256Hash>& hashes = this->blockHashes;
             vector<BlockHeader> blockHeaders;
             readRawHeaders(this->host, i, end, blockHeaders);
             for (auto& b : blockHeaders) {
@@ -110,7 +113,7 @@ void HeaderChain::load() {
                     break;
                 }
                 lastHash = block.getHash();
-                hashes.push_back(lastHash);
+                this->blockHashes.push_back(lastHash);
                 totalWork = addWork(totalWork, block.getDifficulty());
                 numBlocks++;
             }

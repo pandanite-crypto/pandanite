@@ -209,6 +209,17 @@ string HostManager::getGoodHost() {
 }
 
 /*
+    Returns number of block headers downloaded by peer host
+*/
+map<string,uint64_t> HostManager::getHeaderChainStats() {
+    map<string, uint64_t> ret;
+    for(auto h : this->currPeers) {
+        ret[h->getHost()] = h->getCurrentDownloaded();
+    }
+    return ret;
+}
+
+/*
     Returns the block count of the highest PoW chain amongst current peers
 */
 uint64_t HostManager::getBlockCount() {

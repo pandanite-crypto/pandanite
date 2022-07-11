@@ -39,6 +39,7 @@ class BlockChain {
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         BlockHeader getBlockHeader(uint32_t blockId);
         TransactionAmount getWalletValue(PublicWalletAddress addr);
+        map<string, uint64_t> getHeaderChainStats();
         void setMemPool(MemPool * memPool);
         void initChain();
         void resetChain();

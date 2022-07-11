@@ -20,7 +20,7 @@ class HostManager {
         uint64_t getBlockCount();
         Bigint getTotalWork();
         SHA256Hash getBlockHash(string host, uint64_t blockId);
-
+        map<string,uint64_t> getHeaderChainStats();
         std::pair<string,uint64_t> getRandomHost();
         vector<string> getHosts(bool includeSelf=true);
         set<string> sampleFreshHosts(int count);

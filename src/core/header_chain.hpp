@@ -14,6 +14,7 @@ class HeaderChain {
         string getHost();
         Bigint getTotalWork();
         uint64_t getChainLength();
+        uint64_t getCurrentDownloaded();
         SHA256Hash getHash(uint64_t blockId);
         vector<SHA256Hash> blockHashes;
     protected:

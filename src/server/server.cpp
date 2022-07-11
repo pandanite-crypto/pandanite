@@ -695,8 +695,37 @@ void BambooServer::run(json config) {
         });
     };
 
+    auto mainHandler = [&manager](auto* res, auto*req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        string response;
+        response +="<head><meta http-equiv=\"refresh\" content=\"1.5\"/><script src=\"https://adamvleggett.github.io/drawdown/drawdown.js\"></script></head>";
+        response += "<body>";
+        response += "<pre id=\"content\" style=\"display:none\">";
+        response += "# Bamboo Server " + string(BUILD_VERSION) + "\n";
+        response += "***\n";
+        response += "## Stats\n";
+        response += "- Loaded Blockchain length: " + manager.getBlockCount() + "\n";
+        response += "- Total Work: " + manager.getTotalWork() + "\n";
+        response += "***\n";
+        response += "## Peers\n";
+        json stats = manager.getPeerStats();
+        for (auto& peer : stats.items()) {
+            response += " - [" + peer.key() + "](" + peer.key() + ") : " + to_string(peer.value()) + "\n";
+        }
+        response += "***\n";
+        response += "</pre><div id=\"visible\"></div>";
+        response += "<script>";
+        response += "document.getElementById(\"visible\").innerHTML=markdown(document.getElementById(\"content\").innerText)\n";
+        response += "</script>";
+        response += "</body>";
+
+        res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(response);
+    };
+
  
     uWS::App()
+        .get("/", mainHandler)
         .get("/name", nameHandler)
         .get("/total_work", totalWorkHandler)
         .get("/peers", peerHandler)

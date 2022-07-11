@@ -27,6 +27,7 @@ class RequestManager {
         json verifyTransaction(Transaction& t);
         json getTransactionStatus(SHA256Hash txid);
         json getPeers();
+        json getPeerStats();
         json getMineStatus(uint32_t blockId);
         json addPeer(string address, uint64_t time, string version, string network);
         BlockHeader getBlockHeader(uint32_t blockId);
