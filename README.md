@@ -45,7 +45,7 @@ cd bamboo
 git checkout release
 mkdir build
 cd build
-conan install ..
+conan install .. --build=missing
 cd ..
 cmake .
 ```
