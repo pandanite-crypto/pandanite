@@ -50,9 +50,15 @@ typedef struct pf_salt
     char salt[PF_SALT_SZ];
 } pf_salt;
 
-#define PF_HMAC(a,b,c,d,e)                                                               \
-    HMAC(PF_DIGEST,(a),(b),(const unsigned char *)(c),(d),(unsigned char *)(e),NULL)
-  
+void PF_HMAC(HMAC_CTX *ctx, unsigned char *key, unsigned int key_sz, const unsigned char *data, unsigned int data_sz, unsigned char *out)
+{
+    unsigned int res_len;
+
+    HMAC_Init_ex(ctx, key, key_sz, PF_DIGEST, NULL);
+    HMAC_Update(ctx, data, data_sz);
+    HMAC_Final(ctx, out, &res_len);
+    HMAC_CTX_reset(ctx);
+}
 #define ENCRYPT_P                                                                        \
     EXPANDSTATE(salt_u64[0], salt_u64[1], P[ 0], P[ 1]);                                 \
     EXPANDSTATE(salt_u64[2], salt_u64[3], P[ 2], P[ 3]);                                 \
@@ -74,11 +80,11 @@ typedef struct pf_salt
     for (i = 0; i < sbox_sz; i += 2)                                                     \
         EXPANDSTATE(salt_u64[i & 7], salt_u64[(i + 1) & 7], S[3][i], S[3][i + 1]);
 
-#define HASH_SBOX(x)                                                                     \
-    PF_HMAC(x, PF_DIGEST_LENGTH, S[0], sbox_sz * sizeof(uint64_t), x);                   \
-    PF_HMAC(x, PF_DIGEST_LENGTH, S[1], sbox_sz * sizeof(uint64_t), x);                   \
-    PF_HMAC(x, PF_DIGEST_LENGTH, S[2], sbox_sz * sizeof(uint64_t), x);                   \
-    PF_HMAC(x, PF_DIGEST_LENGTH, S[3], sbox_sz * sizeof(uint64_t), x);
+#define HASH_SBOX(ctx, x)                                                                     \
+    PF_HMAC(ctx, x, PF_DIGEST_LENGTH, (unsigned char*)S[0], sbox_sz * sizeof(uint64_t), x);   \
+    PF_HMAC(ctx, x, PF_DIGEST_LENGTH, (unsigned char*)S[1], sbox_sz * sizeof(uint64_t), x);   \
+    PF_HMAC(ctx, x, PF_DIGEST_LENGTH, (unsigned char*)S[2], sbox_sz * sizeof(uint64_t), x);   \
+    PF_HMAC(ctx, x, PF_DIGEST_LENGTH, (unsigned char*)S[3], sbox_sz * sizeof(uint64_t), x);
 
 #define F(x)                                                                             \
 (                                                                                        \
@@ -270,6 +276,7 @@ size_t pf_decode(void *dst, char *src, size_t size)
 void pf_hashpass(const void *salt_r, const size_t salt_sz, const uint8_t cost_t, const uint8_t cost_m,
                  const void *key_r, const size_t key_sz, uint8_t *out)
 {
+    HMAC_CTX *ctx = HMAC_CTX_new();
     unsigned char key[PF_DIGEST_LENGTH]  = { 0 };
     unsigned char salt[PF_DIGEST_LENGTH] = { 0 };
 
@@ -288,8 +295,8 @@ void pf_hashpass(const void *salt_r, const size_t salt_sz, const uint8_t cost_t,
     log2_sbox_sz = cost_m + 5;
     sbox_sz = 1ULL << log2_sbox_sz;
 
-    PF_HMAC("", 0, salt_r, salt_sz, salt);
-    PF_HMAC(salt, PF_DIGEST_LENGTH, key_r, key_sz, key);
+    PF_HMAC(ctx, (unsigned char *) "", 0, (unsigned char *) salt_r, salt_sz, salt);
+    PF_HMAC(ctx, salt, PF_DIGEST_LENGTH, (unsigned char *) key_r, key_sz, key);
 
     for (i = 0; i < PF_SBOX_N; i++)
     {
@@ -297,14 +304,14 @@ void pf_hashpass(const void *salt_r, const size_t salt_sz, const uint8_t cost_t,
 
         for (j = 0; j < sbox_sz; j += (PF_DIGEST_LENGTH / sizeof(uint64_t)))
         {
-            PF_HMAC(key, PF_DIGEST_LENGTH, salt, PF_DIGEST_LENGTH, key);
+            PF_HMAC(ctx, key, PF_DIGEST_LENGTH, salt, PF_DIGEST_LENGTH, key);
 
             for (k = 0; k < (PF_DIGEST_LENGTH / sizeof(uint64_t)); k++)
                 S[i][j + k] = key_u64[k];
         }
     }
 
-    HASH_SBOX(key);
+    HASH_SBOX(ctx, key);
 
     P[ 0] = 0x243f6a8885a308d3ULL ^ key_u64[0];
     P[ 1] = 0x13198a2e03707344ULL ^ key_u64[1];
@@ -332,16 +339,18 @@ void pf_hashpass(const void *salt_r, const size_t salt_sz, const uint8_t cost_t,
     do
     {
         L = R = 0;
-        HASH_SBOX(key);
+        HASH_SBOX(ctx, key);
         REKEY(key);
     }
     while (--count);
 
-    HASH_SBOX(key);
+    HASH_SBOX(ctx, key);
     memcpy(out, key, PF_DIGEST_LENGTH);
 
     for (i = 0; i < PF_SBOX_N; i++)
         free(S[i]);
+    
+    HMAC_CTX_free(ctx);
 }
 
 int pf_mksalt( const uint8_t cost_t, const uint8_t cost_m, char *salt)
