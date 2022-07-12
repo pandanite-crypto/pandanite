@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: .
+      x-bake:
+        tags:
+          - ghcr.io/${GITHUB_REPOSITORY}:latest
+          - ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_SHA}
+        platforms:
+          - linux/amd64
+          - linux/arm64
