@@ -1,7 +1,7 @@
 Bamboo 
 ====================
 <image src="https://github.com/mr-pandabear/bamboo-utils/raw/master/logo.png" width=350/>
-Bamboo is a minimalist implementation of a layer 1 cryptocurrency similar to Bitcoin. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ — it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
+[Bamboo](http://www.bamboocrypto.io) is a minimalist implementation of a layer 1 cryptocurrency similar to Bitcoin. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ — it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
 
 ### Circulation
 Bamboo is minted by miners who earn rewards. Mining payments occur using the following algorithm, which yields a total final circulation of 100M BMB
@@ -15,12 +15,9 @@ Bamboo is written from the ground up in C++. We want the Bamboo source code to b
 * Up to 25,000 transactions per block, 90 second block time
 
 ### Getting Started
-*Windows*: Only binaries are available for windows they can be downloaded here:
-
-https://github.com/mr-pandabear/bamboo/releases/download/v0.2-miner-alpha/bamboo-win-update.zip
-
-- Run keygen.exe, this generates a keys.json file in the same folder as miner.exe, copy this file and keep it safe.
-- Run miner.exe, the miner will start running and should indicate that it is loading blocks to solve.
+*Windows*: 
+Windows is not currently supported as a build environment. You may run the dcrptd miner to mine Bamboo:
+https://github.com/De-Crypted/dcrptd-miner/releases
 
 *Mac OSX* build pre-requirements
 ```
