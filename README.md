@@ -1,6 +1,7 @@
 Bamboo 
 ====================
 <image src="https://github.com/mr-pandabear/bamboo-utils/raw/master/logo.png" width=350/>
+
 [Bamboo](http://www.bamboocrypto.io) is a minimalist implementation of a layer 1 cryptocurrency similar to Bitcoin. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ — it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
 
 ### Circulation
@@ -16,8 +17,7 @@ Bamboo is written from the ground up in C++. We want the Bamboo source code to b
 
 ### Getting Started
 *Windows*: 
-Windows is not currently supported as a build environment. You may run the dcrptd miner to mine Bamboo:
-https://github.com/De-Crypted/dcrptd-miner/releases
+Windows is not currently supported as a build environment. You may run the [dcrptd miner](https://github.com/De-Crypted/dcrptd-miner/releases) to mine Bamboo
 
 *Mac OSX* build pre-requirements
 ```
