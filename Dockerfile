@@ -17,16 +17,19 @@ RUN pip3 install conan
 WORKDIR /bamboo
 
 COPY src src
-COPY blacklist.txt CMakeLists.txt conanfile.txt genesis.json .
+COPY CMakeLists.txt conanfile.txt ./
 
 WORKDIR /bamboo/build
 RUN conan install .. --build=missing
 
 WORKDIR /bamboo
+
 RUN cmake .
 
-RUN make miner
-RUN make keygen
-RUN make server
+RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make miner
+RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make keygen
+RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make server
 
 RUN cp /bamboo/bin/* /usr/local/bin
+
+COPY genesis.json blacklist.txt ./
