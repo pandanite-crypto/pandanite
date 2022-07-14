@@ -80,9 +80,49 @@ To host a node:
 ```
 NOTE: you will need to make a folder `~/bamboo/data` to store the nodes data
 
+### Docker
 
+Bamboo is pre-built for amd64 and arm64 with [GitHub Actions](https://github.com/bamboo-crypto/bamboo/actions) and distributed with the [GitHub Container Registry](https://github.com/bamboo-crypto/bamboo/pkgs/container/bamboo)
 
+#### Running with Docker
 
+with `docker`
 
+```shell
+docker run -d --name bamboo -p 3000:3000 -v $(pwd)/bamboo-data:/bamboo/data ghcr.io/bamboo-crypto/bamboo:latest server
+docker logs -f bamboo
+```
 
+NOTE: currently server startup prints out Panda logo and then stays silent for a while - you can follow the progress from `http://localhost:3000`
 
+Running with `docker-compose` is recommended to easily add more options like cpu usage limits and a health checks:
+
+```yaml
+version: '3.4'
+
+services:
+  bamboo:
+    image: ghcr.io/bamboo-crypto/bamboo:latest
+    command: server
+    ports:
+      - 3000:3000
+    volumes:
+      - ./bamboo-data:/bamboo/data
+    restart: unless-stopped
+    cpus: 8
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:3000"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+```
+
+#### Building with docker
+
+Clone this repository and then
+
+```shell
+docker build . -t bamboo
+docker run [OPTIONS] bamboo server
+```
