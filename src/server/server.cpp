@@ -62,7 +62,8 @@ void BambooServer::run(json config) {
 
     signal(SIGINT, signal_handler);
     signal(SIGQUIT, signal_handler);
-    signal(SIGKILL, signal_handler);
+    signal(SIGTERM, signal_handler);
+
 
     if (config["rateLimiter"] == false) manager.enableRateLimiting(false);
     
