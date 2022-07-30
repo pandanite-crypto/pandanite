@@ -12,6 +12,7 @@ using namespace std;
 int main(int argc, char** argv) {
     
     json config = getConfig(argc, argv);
+    config["showHeaderStats"] = false;
     HostManager hosts(config);
 
     json keys;

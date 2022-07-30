@@ -113,7 +113,7 @@ json getConfig(int argc, char**argv) {
     config["thread_priority"] = thread_priority;
     config["hostSources"] = json::array();
     config["minHostVersion"] = "0.2.4-alpha";
-
+    config["showHeaderStats"] = true;
     if (local) {
         // do nothing
     } else if (testnet) {

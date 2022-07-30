@@ -157,7 +157,8 @@ HostManager::HostManager(json config) {
     }
 
     // start thread to print header chain stats
-    this->headerStatsThread.push_back(std::thread(header_stats, ref(*this)));
+    bool showHeaderStats = config["showHeaderStats"];
+    if (showHeaderStats) this->headerStatsThread.push_back(std::thread(header_stats, ref(*this)));
     
 }
 
