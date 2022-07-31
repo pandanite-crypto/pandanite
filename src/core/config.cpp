@@ -29,6 +29,7 @@ json getConfig(int argc, char**argv) {
     bool testnet = false;
     bool local = false;
     bool rateLimiter = true;
+    bool firewall = false;
     string customWallet = "";
     string customIp = "";
     string customName = randomString(25);
@@ -100,6 +101,11 @@ json getConfig(int argc, char**argv) {
         rateLimiter = false;
     }
 
+    it = std::find(args.begin(), args.end(), "--firewall");
+    if (it != args.end()) {
+        firewall = true;
+    }
+
     json config;
     config["rateLimiter"] = rateLimiter;
     config["threads"] = threads;
@@ -107,6 +113,7 @@ json getConfig(int argc, char**argv) {
     config["port"] = customPort;
     config["name"] = customName;
     config["networkName"] = networkName;
+    config["firewall"] = firewall;
     config["checkpoints"] = checkpoints;
     config["bannedHashes"] = bannedHashes;
     config["ip"] = customIp;

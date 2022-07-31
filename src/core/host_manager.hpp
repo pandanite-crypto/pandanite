@@ -39,6 +39,7 @@ class HostManager {
 
         std::mutex lock;
         bool disabled;
+        bool firewall;
         string ip;
         int port;
         string name;

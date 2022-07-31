@@ -32,6 +32,9 @@ bool isJsHost(const string& addr) {
 }
 
 string HostManager::computeAddress() {
+    if (this->firewall) {
+        return "http://undiscoverable";
+    }
     if (this->ip == "") {
         bool found = false;
         vector<string> lookupServices = { "checkip.amazonaws.com", "icanhazip.com", "ifconfig.co", "wtfismyip.com/text", "ifconfig.io" };
@@ -93,6 +96,7 @@ HostManager::HostManager(json config) {
     this->name = config["name"];
     this->port = config["port"];
     this->ip = config["ip"];
+    this->firewall = config["firewall"];
     this->version = BUILD_VERSION;
     this->networkName = config["networkName"];
     this->computeAddress();
