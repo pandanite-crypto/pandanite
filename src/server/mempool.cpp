@@ -18,30 +18,19 @@ MemPool::~MemPool() {
     this->shutdown = true;
 }
 
-void MemPool::acquire() {
-    this->shutdownLock.lock();
-}
-
-void MemPool::release() {
-    this->shutdownLock.unlock();
-}
-
 void mempool_sync(MemPool& mempool) {
     while(true) {
         if (mempool.shutdown) break;
-        mempool.acquire();
+        std::unique_lock<std::mutex> ul(mempool.lock);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         Transaction t;
-        mempool.sendLock.lock();
+        std::unique_lock<std::mutex> ul2(mempool.sendLock);
         if (mempool.toSend.size() == 0) {
-            mempool.sendLock.unlock();
-            mempool.release();
             continue;
         } else {
             t = mempool.toSend.front();
             mempool.toSend.pop_front();
         }
-        mempool.sendLock.unlock();
         vector<future<void>> reqs;
         set<string> neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
         for(auto neighbor : neighbors) {
@@ -57,7 +46,6 @@ void mempool_sync(MemPool& mempool) {
         for(int i =0 ; i < reqs.size(); i++) {
             reqs[i].get();
         }
-        mempool.release();
     }
 }
 
@@ -67,30 +55,26 @@ void MemPool::sync() {
 
 bool MemPool::hasTransaction(Transaction t) {
     bool ret = false;
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     if (this->transactionQueue.find(t) != this->transactionQueue.end()) ret = true;
-    this->lock.unlock();
     return ret;
 }
 
 ExecutionStatus MemPool::addTransaction(Transaction t) {
     ExecutionStatus status;
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     if (this->transactionQueue.find(t) != this->transactionQueue.end()) {
         status = ALREADY_IN_QUEUE;
-        this->lock.unlock();
         return status;
     }
 
     if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL) {
         status = TRANSACTION_FEE_TOO_LOW;
-        this->lock.unlock();
         return status;
     }
     
     status = this->blockchain.verifyTransaction(t);
     if (status != SUCCESS) {
-        this->lock.unlock();
         return status;
     } else {
         // check how much of the from wallets balance is outstanding in mempool
@@ -108,11 +92,9 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
             status = QUEUE_FULL;
         }
         if (status==SUCCESS) {
-            this->sendLock.lock();
+            std::unique_lock<std::mutex> ul2(this->sendLock);
             this->toSend.push_back(t);
-            this->sendLock.unlock();
         }
-        this->lock.unlock();
         return status;
     }
 }
@@ -131,7 +113,7 @@ vector<Transaction> MemPool::getTransactions() {
 
 std::pair<char*, size_t> MemPool::getRaw() {
     int count = 0;
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     size_t len = this->transactionQueue.size() * TRANSACTIONINFO_BUFFER_SIZE;
     char* buf = (char*) malloc(len);
     for (auto tx : this->transactionQueue) {
@@ -139,12 +121,11 @@ std::pair<char*, size_t> MemPool::getRaw() {
         transactionInfoToBuffer(t, buf + count);
         count+=TRANSACTIONINFO_BUFFER_SIZE;
     }
-    this->lock.unlock();
     return std::pair<char*, size_t>((char*)buf, len);
 }
 
 void MemPool::finishBlock(Block& block) {
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     // erase all of this blocks included transactions from the mempool
     for(auto tx : block.getTransactions()) {
         auto it = this->transactionQueue.find(tx);
@@ -160,5 +141,4 @@ void MemPool::finishBlock(Block& block) {
             }
         }
     }
-    this->lock.unlock();
 }

@@ -12,6 +12,7 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
+#include <mutex>
 #include "../core/merkle_tree.hpp"
 #include "../core/logger.hpp"
 #include "../core/helpers.hpp"
@@ -32,9 +33,8 @@ void chain_sync(BlockChain& blockchain) {
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         if (blockchain.shutdown) break;
-        blockchain.acquire();
+        std::unique_lock<std::mutex> ul(blockchain.lock);
         blockchain.startChainSync();
-        blockchain.release();
     }
 }
 
@@ -143,13 +143,6 @@ void BlockChain::sync() {
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
-void BlockChain::acquire() {
-    this->lock.lock();
-}
-void BlockChain::release() {
-    this->lock.unlock();
-}
-
 Ledger& BlockChain::getLedger() {
     return this->ledger;
 }
@@ -189,7 +182,7 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     if (!t.signatureValid()) return INVALID_SIGNATURE;
     LedgerState deltas;
     // verify the transaction is consistent with ledger
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
 
     //roll back the ledger to it's original state:
@@ -199,7 +192,6 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
         status = EXPIRED_TRANSACTION;
     }
 
-    this->lock.unlock();
     return status;
 }
 
@@ -293,6 +285,7 @@ void BlockChain::popBlock() {
 }
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
+    std::unique_lock<std::mutex> ul(lock);
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;

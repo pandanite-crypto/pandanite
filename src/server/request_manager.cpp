@@ -51,10 +51,8 @@ void RequestManager::exit() {
 }
 
 RequestManager::~RequestManager() {
-    this->mempool->acquire();
     //delete mempool; TODO: figure out why this destructor causes segfault
     delete rateLimiter;
-    this->blockchain->acquire();
     delete blockchain;
 }
 
@@ -81,11 +79,9 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
         return result;
     }
     // build map of all public keys in transaction
-    this->blockchain->acquire();
     // add to the chain!
     ExecutionStatus status = this->blockchain->addBlock(newBlock);
     result["status"] = executionStatusAsString(status);
-    this->blockchain->release();
     
     if (status == SUCCESS) {
         //pick random neighbor hosts and forward the new block to:

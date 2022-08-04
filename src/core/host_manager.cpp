@@ -168,11 +168,10 @@ HostManager::HostManager(json config) {
 
 HostManager::~HostManager() {
     // free existing peers
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     for(auto peer : this->currPeers) {
         delete peer;
     }
-    this->currPeers.empty();
 }
 
 void HostManager::startPingingPeers() {
@@ -224,14 +223,13 @@ string HostManager::getGoodHost() {
     if (this->currPeers.size() < 1) return "";
     Bigint bestWork = 0;
     string bestHost = this->currPeers[0]->getHost();
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     for(auto h : this->currPeers) {
         if (h->getTotalWork() > bestWork) {
             bestWork = h->getTotalWork();
             bestHost = h->getHost();
         }
     }
-    this->lock.unlock();
     return bestHost;
 }
 
@@ -253,14 +251,13 @@ uint64_t HostManager::getBlockCount() {
     if (this->currPeers.size() < 1) return 0;
     uint64_t bestLength = 0;
     Bigint bestWork = 0;
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     for(auto h : this->currPeers) {
         if (h->getTotalWork() > bestWork) {
             bestWork = h->getTotalWork();
             bestLength = h->getChainLength();
         }
     }
-    this->lock.unlock();
     return bestLength;
 }
 
@@ -269,14 +266,13 @@ uint64_t HostManager::getBlockCount() {
 */
 Bigint HostManager::getTotalWork() {
     Bigint bestWork = 0;
+    std::unique_lock<std::mutex> ul(lock);
     if (this->currPeers.size() < 1) return bestWork;
-    this->lock.lock();
     for(auto h : this->currPeers) {
         if (h->getTotalWork() > bestWork) {
             bestWork = h->getTotalWork();
         }
     }
-    this->lock.unlock();
     return bestWork;
 }
 
@@ -285,14 +281,13 @@ Bigint HostManager::getTotalWork() {
  */
 SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) {
     SHA256Hash ret = NULL_SHA256_HASH;
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     for(auto h : this->currPeers) {
         if (h->getHost() == host) {
             ret = h->getHash(blockId);
             break;
         }
     }
-    this->lock.unlock();
     return ret;
 }
 
@@ -359,9 +354,8 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 
     // check if we have less peers than needed, if so add this to our peer list
     if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
-        this->lock.lock();
+        std::unique_lock<std::mutex> ul(lock);
         this->currPeers.push_back(new HeaderChain(addr, this->checkpoints, this->bannedHashes));
-        this->lock.unlock();
     }
 
     // pick random neighbor hosts and forward the addPeer request to them:
@@ -440,13 +434,12 @@ void HostManager::refreshHostList() {
                         Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
                         return;
                     }
-                    lock.lock();
+                    std::unique_lock<std::mutex> ul(lock);
                     if (hm.whitelist.size() == 0 || hm.whitelist.find(hostUrl) != hm.whitelist.end()){
                         hm.hosts.push_back(hostUrl);
                         Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
                         hm.hostPingTimes[hostUrl] = std::time(0);
                     }
-                    lock.unlock();
                     
                 } catch (...) {
                     Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
@@ -462,7 +455,7 @@ void HostManager::refreshHostList() {
 void HostManager::syncHeadersWithPeers() {
     // free existing peers
     Logger::logStatus("Starting header chain sync. This may take up to 15 minutes.");
-    this->lock.lock();
+    std::unique_lock<std::mutex> ul(lock);
     for(auto peer : this->currPeers) {
         delete peer;
     }
@@ -474,7 +467,6 @@ void HostManager::syncHeadersWithPeers() {
     for (auto h : hosts) {
         this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes));
     }
-    this->lock.unlock();
 }
 
 

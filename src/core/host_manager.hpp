@@ -31,8 +31,6 @@ class HostManager {
         void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
         
-        void acquire();
-        void release();
     protected:
         void syncHeadersWithPeers();
         vector<HeaderChain*> currPeers;

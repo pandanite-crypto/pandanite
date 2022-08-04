@@ -24,8 +24,6 @@ class MemPool {
         size_t size();
         std::pair<char*, size_t> getRaw();
         vector<Transaction> getTransactions();
-        void acquire();
-        void release();
     protected:
         bool shutdown;
         std::mutex shutdownLock;

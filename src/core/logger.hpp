@@ -35,10 +35,8 @@ class Logger {
             stringstream s;
             s<<"[ERROR] "<<std::put_time(&tm, TIME_FORMAT)<<": "<<endpoint<<": "<<message<<endl;
             if (!file.is_open()) {
-                Logger::console_lock.lock();
-                cout << s.str();
-                Logger::console_lock.unlock();
-
+                std::unique_lock<std::mutex> ul(Logger::console_lock);
+                cout << s.str() << std::flush;
             } else {
                 file<<s.str();
                 file.flush();
@@ -52,25 +50,12 @@ class Logger {
             stringstream s;
             s<<"[STATUS] "<<std::put_time(&tm, TIME_FORMAT)<<": "<<message<<endl;
             if (!file.is_open()) {
-                Logger::console_lock.lock();
-                cout << s.str();
-                Logger::console_lock.unlock();
+                std::unique_lock<std::mutex> ul(Logger::console_lock);
+                cout << s.str() << std::flush;
             } else {
                 file<<s.str();
                 file.flush();
             }  
             Logger::logToBuffer(s.str());
-        }
-
-        static void beginWriteConsole() {
-            Logger::console_lock.lock();
-        }
-
-        static void writeConsole(string message) {
-            cout << message << endl;
-        }
-
-        static void endWriteConsole() {
-            Logger::console_lock.unlock();
         }
 };

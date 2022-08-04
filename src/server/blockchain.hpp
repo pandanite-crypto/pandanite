@@ -23,8 +23,6 @@ class BlockChain {
         BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
         ~BlockChain();
         void sync();
-        void acquire();
-        void release();
         Block getBlock(uint32_t blockId);
         Bigint getTotalWork();
         uint8_t getDifficulty();
