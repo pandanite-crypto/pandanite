@@ -21,18 +21,28 @@ MemPool::~MemPool() {
 void mempool_sync(MemPool& mempool) {
     while(true) {
         if (mempool.shutdown) break;
-        std::unique_lock<std::mutex> ul(mempool.lock);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         Transaction t;
-        std::unique_lock<std::mutex> ul2(mempool.sendLock);
-        if (mempool.toSend.size() == 0) {
-            continue;
-        } else {
-            t = mempool.toSend.front();
-            mempool.toSend.pop_front();
+
+        {
+            std::unique_lock<std::mutex> ul2(mempool.sendLock);
+            if (mempool.toSend.size() == 0) {
+                continue;
+            } else {
+                t = mempool.toSend.front();
+                mempool.toSend.pop_front();
+            }
         }
+
         vector<future<void>> reqs;
-        set<string> neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
+        set<string> neighbors;
+
+        {
+            std::unique_lock<std::mutex> ul(mempool.lock);
+            neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
+        }
+
         for(auto neighbor : neighbors) {
             Transaction newT = t;
             reqs.push_back(std::async([neighbor, &newT](){
