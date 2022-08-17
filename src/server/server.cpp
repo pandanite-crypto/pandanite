@@ -696,6 +696,19 @@ void BambooServer::run(json config) {
         });
     };
 
+    auto getNetworkHashrateHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            std::string hashrate = to_string(manager.getNetworkHashrate());
+            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(hashrate);
+        } catch(const std::exception &e) {
+            Logger::logError("/getnetworkhashrate", e.what());
+        } catch(...) {
+            Logger::logError("/getnetworkhashrate", "unknown");
+        }
+    };
+
     auto mainHandler = [&manager](auto* res, auto*req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
@@ -744,6 +757,7 @@ void BambooServer::run(json config) {
         .get("/block_headers/:start/:end", blockHeaderHandlerDeprecated) // DEPRECATED
         .get("/block/:b", blockHandlerDeprecated) // DEPRECATED
         .get("/mine", mineHandler)
+        .get("/getnetworkhashrate", getNetworkHashrateHandler)
         .post("/add_peer", addPeerHandler)
         .post("/submit", submitHandler)
         .get("/gettx", getTxHandler)
@@ -766,6 +780,7 @@ void BambooServer::run(json config) {
         .options("/mine_status", corsHandler)
         .options("/ledger", corsHandler)
         .options("/mine", corsHandler)
+        .options("/getnetworkhashrate", corsHandler)
         .options("/add_peer", corsHandler)
         .options("/submit", corsHandler)
         .options("/gettx", corsHandler)
