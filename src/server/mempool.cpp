@@ -38,10 +38,7 @@ void mempool_sync(MemPool& mempool) {
         vector<future<void>> reqs;
         set<string> neighbors;
 
-        {
-            std::unique_lock<std::mutex> ul(mempool.lock);
-            neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
-        }
+        neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
 
         for(auto neighbor : neighbors) {
             Transaction newT = t;
