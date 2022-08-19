@@ -33,7 +33,6 @@ void chain_sync(BlockChain& blockchain) {
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         if (blockchain.shutdown) break;
-        std::unique_lock<std::mutex> ul(blockchain.lock);
         blockchain.startChainSync();
     }
 }
