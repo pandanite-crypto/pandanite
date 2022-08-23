@@ -1,5 +1,6 @@
 
 #include "crypto.hpp"
+#include "helpers.hpp"
 #include <iostream>
 #include <atomic>
 #include <thread>
@@ -222,6 +223,11 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bo
 
 
 SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePufferFish) {
+
+    int hashes = 0;
+    int threadId = 0;
+    int64_t st = getTimeMilliseconds();
+
     // By @Shifu!
     vector<uint8_t> concat;
     SHA256Hash solution;
@@ -234,6 +240,14 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
     for (size_t i = 32; i < 64; ++i) concat[i] = t_rand() % 256;
 
     while(true) {
+
+        if (hashes++ > 1024) {
+            double hps = (double)hashes / ((double)(getTimeMilliseconds() - st) / 1000);
+            Logger::logStatus("[thread" + std::to_string(threadId) + "] mining at " + std::to_string(hps) + "h/sec");
+            hashes = 0;
+            st = getTimeMilliseconds();
+        }
+
         ++i;
         *reinterpret_cast<uint64_t*>(concat.data() + 32) += 1;
         memcpy(solution.data(), concat.data() + 32, 32);
