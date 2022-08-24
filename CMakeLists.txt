@@ -6,7 +6,7 @@
  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
  set(CONAN_DISABLE_CHECK_COMPILER TRUE)
 else()
- set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")    
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -march=native")
 endif()
 
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
