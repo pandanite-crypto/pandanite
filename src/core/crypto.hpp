@@ -13,7 +13,7 @@ string SHA256toString(SHA256Hash h);
 std::vector<uint8_t> hexDecode(const string& hex);
 string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish = false);
-bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize);
+bool checkLeadingZeroBits(uint8_t* hash, unsigned int challengeSize);
 Bigint addWork(Bigint previousWork, uint32_t challengeSize);
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);

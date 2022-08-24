@@ -186,14 +186,13 @@ SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish) {
     return fullHash;
 }
 
-bool checkLeadingZeroBits(SHA256Hash& hash, uint8_t challengeSize) {
+bool checkLeadingZeroBits(uint8_t* hash, uint8_t challengeSize) {
     int bytes = challengeSize / 8; 
-    const uint8_t * a = hash.data();
-    for (int i = 0; i < bytes; i++) {
-        if (a[i] != 0) return false;
+    for (int i = bytes - 1; i > -1; --i) {
+        if (hash[i] != 0) return false;
     }
     int remainingBits = challengeSize - 8*bytes;
-    if (remainingBits > 0) return a[bytes]>>(8-remainingBits) == 0;
+    if (remainingBits > 0) return hash[bytes]>>(8-remainingBits) == 0;
     else return true;
 }
 
@@ -205,7 +204,7 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
 
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish) {
     SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish);
-    return checkLeadingZeroBits(fullHash, challengeSize);
+    return checkLeadingZeroBits((uint8_t*)&fullHash, challengeSize);
 }
 
 
@@ -240,7 +239,7 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
         memcpy(solution.data(), concat.data() + 32, 32);
         SHA256Hash fullHash = concatHashes(target, solution, usePufferFish);
 
-        bool found = checkLeadingZeroBits(fullHash, challengeSize);
+        bool found = checkLeadingZeroBits((uint8_t*)&fullHash, challengeSize);
 
         if (found) {
             break;
