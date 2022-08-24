@@ -20,26 +20,13 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
         Logger::logStatus("PUFFERFISH failed to compute hash");
     }
     size_t sz = PF_HASHSPACE;
-    return SHA256(hash, sz);
+    return SHA256_(hash, sz);
 }
 
-SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish) {
+SHA256Hash SHA256_(const char* buffer, size_t len, bool usePufferFish) {
     if (usePufferFish) return PUFFERFISH(buffer, len);
     std::array<uint8_t, 32> ret;
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, buffer, len);
-    SHA256_Final(ret.data(), &sha256);
-    return ret;
-}
-
-
-std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
-    std::array<uint8_t, 32> ret;
-    sha256_ctx sha256;
-    sha256_init(&sha256);
-    sha256_update(&sha256, (const unsigned char*) buffer, len);
-    sha256_final(&sha256, ret.data());
+    SHA256((const unsigned char*)buffer, len, (unsigned char*)ret.data());
     return ret;
 }
 
@@ -53,7 +40,7 @@ RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
 }
 
 SHA256Hash SHA256(string str) {
-    return SHA256(str.c_str(), str.length());
+    return SHA256_(str.c_str(), str.length());
 }
 
 std::vector<uint8_t> hexDecode(const string& hex) {
@@ -92,10 +79,10 @@ string SHA256toString(SHA256Hash h) {
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
     // Based on: https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
     SHA256Hash hash;
-    hash = SHA256((const char*)inputKey.data(), inputKey.size());
+    hash = SHA256_((const char*)inputKey.data(), inputKey.size());
     RIPEMD160Hash hash2 = RIPEMD160((const char*)hash.data(), hash.size());
-    SHA256Hash hash3 = SHA256((const char*)hash2.data(),hash2.size());
-    SHA256Hash hash4 = SHA256((const char*)hash3.data(),hash3.size());
+    SHA256Hash hash3 = SHA256_((const char*)hash2.data(),hash2.size());
+    SHA256Hash hash4 = SHA256_((const char*)hash3.data(),hash3.size());
     uint8_t checksum = hash4[0];
     PublicWalletAddress address;
     address[0] = 0;
@@ -195,7 +182,7 @@ SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish) {
     char data[64];
     memcpy(data, (char*)a.data(), 32);
     memcpy(&data[32], (char*)b.data(), 32);
-    SHA256Hash fullHash  = SHA256((const char*)data, 64, usePufferFish);
+    SHA256Hash fullHash  = SHA256_(data, 64, usePufferFish);
     return fullHash;
 }
 

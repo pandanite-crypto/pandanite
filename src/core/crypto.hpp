@@ -5,7 +5,7 @@
 #include <mutex>
 using namespace std;
 
-SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish=false);
+SHA256Hash SHA256_(const char* buffer, size_t len, bool usePufferFish=false);
 SHA256Hash SHA256(string str);
 RIPEMD160Hash  RIPEMD(const char* buffer, size_t len);
 SHA256Hash stringToSHA256(string hex);
