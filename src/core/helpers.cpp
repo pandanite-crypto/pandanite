@@ -168,3 +168,12 @@ size_t writeFunction(void *ptr, size_t size, size_t nmemb, std::string* data) {
     return size * nmemb;
 }
 
+template <typename T>
+static T getSystemTime() {
+    return std::chrono::duration_cast<T>(std::chrono::system_clock::now().time_since_epoch());
+}
+
+int64_t getTimeMilliseconds() {
+    return int64_t { getSystemTime<std::chrono::milliseconds>().count() };
+}
+

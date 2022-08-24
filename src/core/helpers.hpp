@@ -23,3 +23,4 @@ void writeNetworkUint64(char*& buffer, uint64_t x);
 void writeNetworkSHA256(char*& buffer, SHA256Hash& x);
 void writeNetworkPublicWalletAddress(char*& buffer, PublicWalletAddress& x);
 void writeNetworkNBytes(char*& buffer, char const* inputBuffer, size_t N);
+int64_t getTimeMilliseconds();
