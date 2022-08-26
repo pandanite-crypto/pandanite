@@ -3,6 +3,7 @@
 #include "helpers.hpp"
 #include <iostream>
 #include <atomic>
+#include <map>
 #include <thread>
 #include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
@@ -12,7 +13,19 @@
 using namespace std;
 
 
-SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
+std::map<string,SHA256Hash> pufferfishCache;
+std::mutex pufferfishCacheLock;
+
+SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
+    std::string key;
+    if (useCache) {
+        key = std::string(buffer, len);
+        std::unique_lock<std::mutex> ul(pufferfishCacheLock);
+        auto it = pufferfishCache.find(key);
+        if (it != pufferfishCache.end()) {
+            return it->second;
+        }
+    }
     char hash[PF_HASHSPACE];
     memset(hash, 0, PF_HASHSPACE);
     int ret = 0;
@@ -20,11 +33,17 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len) {
         Logger::logStatus("PUFFERFISH failed to compute hash");
     }
     size_t sz = PF_HASHSPACE;
-    return SHA256(hash, sz);
+
+    auto finalHash =  SHA256(hash, sz);
+
+    if (useCache) {
+        pufferfishCache[key] = finalHash;
+    }
+    return finalHash;
 }
 
-SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish) {
-    if (usePufferFish) return PUFFERFISH(buffer, len);
+SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish, bool useCache) {
+    if (usePufferFish) return PUFFERFISH(buffer, len, useCache);
     std::array<uint8_t, 32> ret;
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -191,11 +210,11 @@ bool checkSignature(const char* bytes, size_t len, TransactionSignature signatur
     return status == 1;
 }
 
-SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish) {
+SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish, bool useCache) {
     char data[64];
     memcpy(data, (char*)a.data(), 32);
     memcpy(&data[32], (char*)b.data(), 32);
-    SHA256Hash fullHash  = SHA256((const char*)data, 64, usePufferFish);
+    SHA256Hash fullHash  = SHA256((const char*)data, 64, usePufferFish, useCache);
     return fullHash;
 }
 
@@ -216,8 +235,8 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
     return previousWork;
 }
 
-bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish) {
-    SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish);
+bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish, bool useCache) {
+    SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish, useCache);
     return checkLeadingZeroBits(fullHash, challengeSize);
 }
 

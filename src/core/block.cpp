@@ -152,7 +152,7 @@ vector<Transaction>& Block::getTransactions() {
 bool Block::verifyNonce() {
     SHA256Hash target = this->getHash();
     bool usePufferfish = this->getId() > PUFFERFISH_START_BLOCK;
-    return verifyHash(target, this->nonce, this->difficulty, usePufferfish);
+    return verifyHash(target, this->nonce, this->difficulty, usePufferfish, true);
 }
 
 void Block::setDifficulty(uint8_t d) {
