@@ -46,7 +46,7 @@ if (UNIX)
         target_link_libraries(loader ${CONAN_LIBS} -lleveldb -lstdc++fs)
         target_link_libraries(tx ${CONAN_LIBS} -lleveldb -lstdc++fs)
         target_link_libraries(miner ${CONAN_LIBS}  -lleveldb -lstdc++fs)
-        target_link_libraries(keygen ${CONAN_LIBS} -lstdc++fs)
+        target_link_libraries(keygen ${CONAN_LIBS}  -lleveldb -lstdc++fs)
     endif()
 endif()
 
