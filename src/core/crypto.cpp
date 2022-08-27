@@ -1,30 +1,36 @@
 
 #include "crypto.hpp"
 #include "helpers.hpp"
+#include "logger.hpp"
+#include "constants.hpp"
 #include <iostream>
 #include <atomic>
-#include <map>
 #include <thread>
 #include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
 #include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
 #include "../external/sha256/sha2.hpp" 
-#include "../core/logger.hpp"
+#include "../server/pufferfish_cache.hpp"
 using namespace std;
 
 
-std::map<string,SHA256Hash> pufferfishCache;
+PufferfishCache * pufferfishCache = NULL;
 std::mutex pufferfishCacheLock;
 
 SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     std::string key;
     if (useCache) {
+        if (!pufferfishCache) {
+            pufferfishCache = new PufferfishCache();
+            pufferfishCache->init(PUFFERFISH_CACHE_FILE_PATH);
+        }
         key = std::string(buffer, len);
         std::unique_lock<std::mutex> ul(pufferfishCacheLock);
-        auto it = pufferfishCache.find(key);
-        if (it != pufferfishCache.end()) {
-            return it->second;
-        }
+        SHA256Hash h;
+        try {
+            h = pufferfishCache->getHash(h);
+            return h;
+        } catch(...) {}
     }
     char hash[PF_HASHSPACE];
     memset(hash, 0, PF_HASHSPACE);
@@ -37,7 +43,9 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     auto finalHash =  SHA256(hash, sz);
 
     if (useCache) {
-        pufferfishCache[key] = finalHash;
+        SHA256Hash inputHash;
+        memcpy(inputHash.data(), buffer, 32);
+        pufferfishCache->setHash(inputHash, finalHash);
     }
     return finalHash;
 }
