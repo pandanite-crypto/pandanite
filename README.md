@@ -40,7 +40,6 @@ sudo apt install git
 ```
 git clone https://github.com/mr-pandabear/bamboo.git
 cd bamboo
-git checkout release
 mkdir build
 cd build
 conan install .. --build=missing
