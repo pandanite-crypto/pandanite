@@ -3,6 +3,7 @@
 #include "transaction.hpp"
 #include "block.hpp"
 #include "common.hpp"
+#include "../server/work_template.hpp"
 using namespace std;
 
 Bigint getTotalWork(string host_url);
