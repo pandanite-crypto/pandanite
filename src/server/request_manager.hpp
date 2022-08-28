@@ -20,6 +20,7 @@ class RequestManager {
         json addTransaction(Transaction& t);
         json getProofOfWork();
         json submitProofOfWork(Block & block);
+        json getBlockTemplate(PublicWalletAddress& wallet);
         json getTransactionQueue();
         json getBlock(uint32_t blockId);
         json getLedger(PublicWalletAddress w);

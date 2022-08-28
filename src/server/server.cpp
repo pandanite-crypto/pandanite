@@ -423,6 +423,24 @@ void BambooServer::run(json config) {
         }
     };
 
+    auto templateHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            std::pair<PublicKey,PrivateKey> pair = generateKeyPair();
+            PublicKey publicKey = pair.first;
+            PrivateKey privateKey = pair.second;
+            PublicWalletAddress w = walletAddressFromPublicKey(publicKey);
+
+            json response = manager.getBlockTemplate(w);
+            res->end(response.dump());
+        } catch(const std::exception &e) {
+            Logger::logError("/getblocktemplate", e.what());
+        } catch(...) {
+            Logger::logError("/getblocktemplate", "unknown");
+        }
+    };
+
     /************* BEGIN DEPRECATED ***************/
 
     auto syncHandlerDeprecated = [&manager](auto *res, auto *req) {
@@ -744,6 +762,7 @@ void BambooServer::run(json config) {
         .get("/block_headers/:start/:end", blockHeaderHandlerDeprecated) // DEPRECATED
         .get("/block/:b", blockHandlerDeprecated) // DEPRECATED
         .get("/mine", mineHandler)
+        .get("/getblocktemplate", templateHandler)
         .post("/add_peer", addPeerHandler)
         .post("/submit", submitHandler)
         .get("/gettx", getTxHandler)

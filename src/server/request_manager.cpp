@@ -171,7 +171,6 @@ json RequestManager::getMineStatus(uint32_t blockId) {
     return result;
 }
 
-
 json RequestManager::getProofOfWork() {
     json result;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
@@ -180,6 +179,11 @@ json RequestManager::getProofOfWork() {
     result["miningFee"] = this->blockchain->getCurrentMiningFee();
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
     result["lastTimestamp"] = uint64ToString(last.timestamp);
+    return result;
+}
+
+json RequestManager::getBlockTemplate(PublicWalletAddress& wallet) {
+    json result = get_work_template(this->hosts, wallet);
     return result;
 }
 

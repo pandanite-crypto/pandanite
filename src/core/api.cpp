@@ -73,6 +73,13 @@ json getMiningProblem(string host_url) {
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
+json getBlockTemplate(string host_url) {
+    string url = host_url + "/getblocktemplate";
+    http::Request request(url);
+    const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
+    return json::parse(std::string{response.body.begin(), response.body.end()});
+}
+
 json sendTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/add_transaction");
 
