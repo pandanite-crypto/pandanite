@@ -20,12 +20,12 @@ std::mutex pufferfishCacheLock;
 SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     SHA256Hash inputHash;
     if (useCache) {
+        std::unique_lock<std::mutex> ul(pufferfishCacheLock);
         memcpy(inputHash.data(), buffer, 32);
         if (!pufferfishCache) {
             pufferfishCache = new PufferfishCache();
             pufferfishCache->init(PUFFERFISH_CACHE_FILE_PATH);
         }
-        std::unique_lock<std::mutex> ul(pufferfishCacheLock);
         SHA256Hash h;
         try {
             h = pufferfishCache->getHash(inputHash);
@@ -43,6 +43,7 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     auto finalHash =  SHA256(hash, sz);
 
     if (useCache) {
+        std::unique_lock<std::mutex> ul(pufferfishCacheLock);
         pufferfishCache->setHash(inputHash, finalHash);
     }
     return finalHash;

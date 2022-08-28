@@ -34,13 +34,13 @@ sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
 sudo pip3 install conan
 sudo apt install curl
+sudo apt install git
 ```
 
 ### Building
 ```
 git clone https://github.com/mr-pandabear/bamboo.git
 cd bamboo
-git checkout release
 mkdir build
 cd build
 conan install .. --build=missing

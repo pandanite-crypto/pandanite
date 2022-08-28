@@ -24,7 +24,7 @@ file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/murmurhash3/
 if (UNIX)
     add_executable(tests ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tests/tests.cpp)
     add_executable(server ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tools/server.cpp)
-    add_executable(cli ${CORE_SOURCES} ${EXTERNAL_SOURCES} ./src/tools/cli.cpp)
+    add_executable(cli ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tools/cli.cpp)
     add_executable(loader ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tools/loader.cpp)
     add_executable(tx ${CORE_SOURCES} ${SERVER_SOURCES}  ${EXTERNAL_SOURCES} ./src/tools/tx.cpp)
     add_executable(miner ${CORE_SOURCES} ${SERVER_SOURCES} ${EXTERNAL_SOURCES} ./src/tools/miner.cpp)
