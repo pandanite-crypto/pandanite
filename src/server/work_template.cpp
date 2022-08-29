@@ -84,6 +84,9 @@ Block get_block_template(HostManager& hosts, PublicWalletAddress wallet)
     return newBlock;
 }
 
+// blockhash = https://github.com/bamboo-crypto/bamboo/blob/master/src/core/block.cpp#L174-L184
+// powhash   = https://github.com/bamboo-crypto/bamboo/blob/master/src/core/block.cpp#L152-L156
+
 json get_work_template(HostManager& hosts, PublicWalletAddress wallet)
 {
     Block newBlock = get_block_template(hosts, wallet);
@@ -91,13 +94,21 @@ json get_work_template(HostManager& hosts, PublicWalletAddress wallet)
         return json();
     }
 
-    json result;
-    result["height"] = newBlock.id;
-    result["curtime"] = newBlock.timestamp;
-    result["previousblockhash"] = newBlock.lastBlockHash;
-    result["tx"] = newBlock.transactions.size();
-    result["merkleRoot"] = newBlock.merkleRoot;
-    result["difficulty"] = newBlock.difficulty;
+    json tmpl;
+    {
+        json result;
+        {
+            result["height"] = newBlock.id;
+            result["curtime"] = uint64ToString(newBlock.timestamp);
+            result["previousblockhash"] = SHA256toString(newBlock.lastBlockHash, true);
+            result["merkleRoot"] = SHA256toString(newBlock.merkleRoot, true);
+            result["difficulty"] = newBlock.difficulty;
+        }
 
-    return result;
+        tmpl["id"] = 0;
+        tmpl["error"] = "null";
+        tmpl["result"] = result;
+    }
+
+    return tmpl;
 }

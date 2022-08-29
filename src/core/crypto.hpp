@@ -9,7 +9,7 @@ SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish=false, bool
 SHA256Hash SHA256(string str);
 RIPEMD160Hash  RIPEMD(const char* buffer, size_t len);
 SHA256Hash stringToSHA256(string hex);
-string SHA256toString(SHA256Hash h);
+string SHA256toString(SHA256Hash h, bool lower = false);
 std::vector<uint8_t> hexDecode(const string& hex);
 string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish = false, bool useCache = false);

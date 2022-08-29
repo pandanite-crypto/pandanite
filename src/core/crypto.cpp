@@ -111,8 +111,12 @@ SHA256Hash stringToSHA256(string hex) {
     return sha;
 }
 
-string SHA256toString(SHA256Hash h) {
-    return hexEncode((const char*)h.data(), h.size());
+string SHA256toString(SHA256Hash h, bool lower) {
+    string shastr = hexEncode((const char*)h.data(), h.size());
+    if (lower) {
+       for (auto& c : shastr) { c = tolower(c); }
+    }
+    return shastr;
 }
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
