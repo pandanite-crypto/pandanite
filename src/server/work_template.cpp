@@ -66,6 +66,11 @@ Block get_block_template(HostManager& hosts, PublicWalletAddress wallet)
 {
     int search_height = new_template_height(hosts);
 
+    // maintain cache
+    if (templates.size() > 8) {
+        templates.clear();
+    }
+
     // check templates
     for (unsigned int i=0; i<templates.size(); i++) {
         if (templates.at(i).first == search_height) {
