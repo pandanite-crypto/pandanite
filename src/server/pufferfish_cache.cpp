@@ -6,13 +6,9 @@
 #include "ledger.hpp"
 using namespace std;
 
-
 leveldb::Slice sha256ToSlice(const SHA256Hash& h) {
     leveldb::Slice s2 = leveldb::Slice((const char*) h.data(), h.size());
     return s2;
-}
-
-PufferfishCache::PufferfishCache() {
 }
 
 bool PufferfishCache::hasHash(const SHA256Hash& hash) {
