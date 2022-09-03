@@ -32,7 +32,6 @@ class BlockChain {
         Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);
         uint32_t findBlockForTransactionId(SHA256Hash txid);
-        ExecutionStatus addBlock(Block& block);
         ExecutionStatus addBlockSync(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
@@ -46,6 +45,7 @@ class BlockChain {
         void deleteDB();
         void closeDB();
     protected:
+        ExecutionStatus addBlock(Block& block);
         bool shutdown;
         HostManager& hosts;
         MemPool * memPool;
