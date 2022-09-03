@@ -267,7 +267,6 @@ uint8_t BlockChain::getDifficulty() {
 }
 
 void BlockChain::popBlock() {
-    std::unique_lock<std::mutex> ul(lock);
     Block last = this->getBlock(this->getBlockCount());
     Executor::RollbackBlock(last, this->ledger, this->txdb);
     this->numBlocks--;
