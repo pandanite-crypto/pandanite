@@ -33,6 +33,7 @@ class BlockChain {
         uint32_t findBlockForTransaction(Transaction &t);
         uint32_t findBlockForTransactionId(SHA256Hash txid);
         ExecutionStatus addBlock(Block& block);
+        ExecutionStatus addBlockSync(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         BlockHeader getBlockHeader(uint32_t blockId);

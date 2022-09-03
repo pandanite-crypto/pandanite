@@ -284,8 +284,12 @@ void BlockChain::popBlock() {
     }
 }
 
-ExecutionStatus BlockChain::addBlock(Block& block) {
+ExecutionStatus BlockChain::addBlockSync(Block& block) {
     std::unique_lock<std::mutex> ul(lock);
+    return this->addBlock(block);
+}
+
+ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
@@ -351,6 +355,7 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
+    std::unique_lock<std::mutex> ul(lock);
     string bestHost = this->hosts.getGoodHost();
     this->targetBlockCount = this->hosts.getBlockCount();
     // If our current chain is lower POW than the trusted host
