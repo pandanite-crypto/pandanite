@@ -1,4 +1,6 @@
 #pragma once
+#include <thread>
+#include <mutex>
 #include "leveldb/db.h"
 #include "../core/common.hpp"
 #include "../core/block.hpp"

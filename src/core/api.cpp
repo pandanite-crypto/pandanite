@@ -141,6 +141,7 @@ void readRawBlocks(string host_url, int startId, int endId, vector<Block>& block
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_BLOCK_MS});
     std::vector<char> bytes(response.body.begin(), response.body.end());
+    if (bytes.size() < BLOCKHEADER_BUFFER_SIZE) throw std::runtime_error("Invalid data for block");
     uint8_t* buffer = (uint8_t*)bytes.data();
     uint8_t* currPtr = buffer;
     int bytesRead = 0;

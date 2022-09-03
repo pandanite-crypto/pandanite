@@ -38,6 +38,7 @@ class BlockChain {
         BlockHeader getBlockHeader(uint32_t blockId);
         TransactionAmount getWalletValue(PublicWalletAddress addr);
         map<string, uint64_t> getHeaderChainStats();
+        void downloadRawBlocks(map<uint64_t, Block>& blockCache, uint64_t startId, uint64_t endId, int numWorkers);
         void setMemPool(MemPool * memPool);
         void initChain();
         void resetChain();

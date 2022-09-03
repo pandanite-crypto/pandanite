@@ -353,6 +353,49 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() {
     return this->hosts.getHeaderChainStats();
 }
 
+void BlockChain::downloadRawBlocks(map<uint64_t, Block>& blockCache, uint64_t startId, uint64_t endId, int numWorkers) {
+    // if we are fetching just a few blocks, force single worker:
+    if (endId - startId < numWorkers) numWorkers = 1;
+    
+    // get random hosts to download from
+    set<string> randomHosts = this->hosts.sampleFreshHosts(numWorkers);
+
+    // set numWorkers to number of hosts returned
+    numWorkers = randomHosts.size();
+
+    // split range by numThreads
+    uint64_t numPerThread = (int) ceil((endId - startId) / (float) numWorkers) - 1;
+
+    vector<std::thread> threads;
+    std::mutex cacheLock;
+    
+    // kick off threads to fill blockStore
+    uint64_t start = startId;
+    uint64_t end = start + numPerThread + 1;
+    for(auto& host : randomHosts) {
+        threads.emplace_back(
+            std::thread([host, start, end, &blockCache, &cacheLock](){
+                try {
+                    // download blocks from host url
+                    vector<Block> blocks;
+                    // TODO: extend readRawBlocks to write directly to map by reference
+                    readRawBlocks(host, start, end, blocks);
+                    for (auto block : blocks) {
+                        std::unique_lock<std::mutex> ul(cacheLock);
+                        blockCache[block.getId()] = block;
+                    }
+                    Logger::logStatus(GREEN + "[ SUCCESS ] " + RESET  + " [" + std::to_string(start) + " to " + std::to_string(end) + "] from " + host);
+                } catch (...) {
+                    Logger::logStatus(RED + "[ FAILED ] " + RESET  + " to download blocks from " + host);
+                }
+            })
+        );
+        start += numPerThread + 1;
+        end += numPerThread + 1;
+    }
+    for (auto& th : threads) th.join();
+}
+
 ExecutionStatus BlockChain::startChainSync() {
     std::unique_lock<std::mutex> ul(lock);
     string bestHost = this->hosts.getGoodHost();
@@ -381,18 +424,23 @@ ExecutionStatus BlockChain::startChainSync() {
 
     int needed = this->targetBlockCount - startCount;
     if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
-    // download any remaining blocks in batches
     uint64_t start = std::time(0);
-    for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
+    int numThreads = 8;
+    int numBlocksPerFetch = numThreads * BLOCKS_PER_FETCH;
+    for(int i = startCount + 1; i <= this->targetBlockCount; i+=numBlocksPerFetch) {
         try {
-            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
+            int start = i;
+            int end = min(this->targetBlockCount, i + numBlocksPerFetch - 1);
             bool failure = false;
             ExecutionStatus status;
             BlockChain &bc = *this;
             int count = 0;
-            vector<Block> blocks;
-            readRawBlocks(bestHost, i, end, blocks);
-            for(auto & b : blocks) {   
+            map<uint64_t, Block> blockCache;
+            // download raw blocks in parallel
+            this->downloadRawBlocks(blockCache, start, end, numThreads);
+            // verify this batch
+            for(int j = start; j <= end; j++ ) {
+                Block b = blockCache[j];
                 ExecutionStatus addResult = bc.addBlock(b);
                 if (addResult != SUCCESS) {
                     failure = true;
@@ -410,6 +458,8 @@ ExecutionStatus BlockChain::startChainSync() {
             return UNKNOWN_ERROR;
         }
     }
+
+
     uint64_t final = std::time(0);
     uint64_t d = final - start;
     stringstream s;
