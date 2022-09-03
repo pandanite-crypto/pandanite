@@ -80,7 +80,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     }
     // build map of all public keys in transaction
     // add to the chain!
-    ExecutionStatus status = this->blockchain->addBlock(newBlock);
+    ExecutionStatus status = this->blockchain->addBlockSync(newBlock);
     result["status"] = executionStatusAsString(status);
     
     if (status == SUCCESS) {
@@ -198,7 +198,6 @@ std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
 BlockHeader RequestManager::getBlockHeader(uint32_t blockId) {
     return this->blockchain->getBlockHeader(blockId);
 }
-
 
 std::pair<char*, size_t> RequestManager::getRawTransactionData() {
     return this->mempool->getRaw();

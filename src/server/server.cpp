@@ -723,7 +723,6 @@ void BambooServer::run(json config) {
 
         res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(response);
     };
-
  
     uWS::App()
         .get("/", mainHandler)
