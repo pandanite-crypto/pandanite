@@ -35,6 +35,7 @@ class RequestManager {
         std::pair<char*, size_t> getRawTransactionData();
         string getBlockCount();
         string getTotalWork();
+        uint64_t getNetworkHashrate();
         void exit();
         void deleteDB();
         void enableRateLimiting(bool enabled);

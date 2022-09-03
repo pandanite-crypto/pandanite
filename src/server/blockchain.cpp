@@ -334,7 +334,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         }
         // add all transactions to txdb:
         for(auto t : block.getTransactions()) {
-            if (!t.isFee()) this->txdb.insertTransaction(t, block.getId());
+            this->txdb.insertTransaction(t, block.getId());
         }
         this->blockStore.setBlock(block);
         this->numBlocks++;

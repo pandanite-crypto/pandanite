@@ -1,6 +1,7 @@
 #include <map>
 #include <iostream>
 #include <future>
+#include <math.h>
 #include "../core/helpers.hpp"
 #include "../core/logger.hpp"
 #include "../core/merkle_tree.hpp"
@@ -241,6 +242,34 @@ string RequestManager::getBlockCount() {
 string RequestManager::getTotalWork() {
     Bigint totalWork = this->blockchain->getTotalWork();
     return to_string(totalWork);
+}
+
+uint64_t RequestManager::getNetworkHashrate() {
+    auto blockCount = this->blockchain->getBlockCount();
+
+    uint64_t totalWork = 0;
+
+    int blockStart = blockCount < 52 ? 2 : blockCount - 50;
+    int blockEnd = blockCount;
+
+    int start = 0;
+    int end = 0;
+
+    for (int blockId = blockStart; blockId <= blockEnd; blockId++) {
+        auto header = this->blockchain->getBlockHeader(blockId);
+
+        if (blockId == blockStart) {
+            start = header.timestamp;
+        }
+
+        if (blockId == blockEnd) {
+            end = header.timestamp;
+        }
+
+        totalWork += pow(2, header.difficulty);
+    }
+
+    return totalWork / (end - start);
 }
 
 json RequestManager::getStats() {
