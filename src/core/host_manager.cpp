@@ -291,6 +291,12 @@ SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) {
     return ret;
 }
 
+/*
+    Blacklists a host 
+*/
+void HostManager::blacklistHost(string host) {
+    this->blacklist.insert(host);
+}
 
 /*
     Returns N unique random hosts that have pinged us
@@ -300,7 +306,7 @@ set<string> HostManager::sampleFreshHosts(int count) {
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged
-        if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first)) { 
+        if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first) && blacklist.find(pair.first) == blacklist.end()) { 
             freshHosts.push_back(pair.first);
         }
     }

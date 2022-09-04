@@ -372,26 +372,35 @@ void BlockChain::downloadRawBlocks(map<uint64_t, Block>& blockCache, uint64_t st
     // kick off threads to fill blockStore
     uint64_t start = startId;
     uint64_t end = start + numPerThread + 1;
+    HostManager & hm = this->hosts;
     for(auto& host : randomHosts) {
         threads.emplace_back(
-            std::thread([host, start, end, &blockCache, &cacheLock](){
-                try {
-                    // download blocks from host url
-                    vector<Block> blocks;
-                    // TODO: extend readRawBlocks to write directly to map by reference
-                    readRawBlocks(host, start, end, blocks);
-                    for (auto block : blocks) {
+            std::thread([host, start, end, &blockCache, &cacheLock, &hm](){
+                string currHost = host;
+                while(true) {
+                    try {
+                        // download blocks from host url
+                        vector<Block> blocks;
+                        // TODO: extend readRawBlocks to write directly to map by reference
+                        readRawBlocks(currHost, start, end, blocks);
+                        for (auto block : blocks) {
+                            std::unique_lock<std::mutex> ul(cacheLock);
+                            blockCache[block.getId()] = block;
+                        }
+                        Logger::logStatus(GREEN + "[ SUCCESS ] " + RESET  + " [" + std::to_string(start) + " to " + std::to_string(end) + "] from " + host);
+                        break;
+                    } catch (...) {
+                        Logger::logStatus(RED + "[ FAILED ] " + RESET  + " to download blocks from " + host);
                         std::unique_lock<std::mutex> ul(cacheLock);
-                        blockCache[block.getId()] = block;
+                        hm.blacklistHost(host);
+                        currHost = *(hm.sampleFreshHosts(1).begin());
                     }
-                    Logger::logStatus(GREEN + "[ SUCCESS ] " + RESET  + " [" + std::to_string(start) + " to " + std::to_string(end) + "] from " + host);
-                } catch (...) {
-                    Logger::logStatus(RED + "[ FAILED ] " + RESET  + " to download blocks from " + host);
                 }
             })
         );
         start += numPerThread + 1;
-        end += numPerThread + 1;
+        end = min(endId, start + numPerThread);
+        if (start > endId) break;
     }
     for (auto& th : threads) th.join();
 }

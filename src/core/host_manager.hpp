@@ -15,6 +15,7 @@ class HostManager {
         string computeAddress();
         void refreshHostList();
         void startPingingPeers();
+        void blacklistHost(string host);
 
         string getGoodHost();
         uint64_t getBlockCount();
