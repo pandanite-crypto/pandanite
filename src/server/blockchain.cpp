@@ -151,12 +151,12 @@ uint32_t BlockChain::getBlockCount() {
     return this->numBlocks;
 }
 
-uint32_t BlockChain::getCurrentMiningFee() {
+uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) {
     // NOTE:
     // The chain was forked three times, once at 7,750 and again at 125,180, then at 18k
     // Thus we push the chain ahead by this count.
     // SEE: https://bitcointalk.org/index.php?topic=5372707.msg58965610#msg58965610
-    uint64_t logicalBlock = this->numBlocks + 125180 + 7750 + 18000;
+    uint64_t logicalBlock = blockId + 125180 + 7750 + 18000;
     if (logicalBlock < 1000000) {
         return BMB(50.0);
     } else if (logicalBlock < 2000000) {
@@ -331,7 +331,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
     LedgerState deltasFromBlock;
-    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee());
+    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee(block.getId()));
 
     if (status != SUCCESS) {
         Executor::Rollback(this->ledger, deltasFromBlock);
@@ -358,6 +358,19 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 map<string, uint64_t> BlockChain::getHeaderChainStats() {
     return this->hosts.getHeaderChainStats();
+}
+
+void BlockChain::recomputeLedger() {
+    this->ledger.clear();
+    for(int i = 1; i <= this->numBlocks; i++) {
+        LedgerState deltas;
+        Block b = this->getBlock(i);
+        ExecutionStatus addResult = Executor::ExecuteBlock(b, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
+        if (addResult != SUCCESS) {
+            Logger::logError(RED + "[FATAL]" + RESET, "Corrupt blockchain. Exiting. Please delete data dir and sync from scratch.");
+            exit(-1);
+        }
+    }
 }
 
 ExecutionStatus BlockChain::startChainSync() {
@@ -405,7 +418,8 @@ ExecutionStatus BlockChain::startChainSync() {
                 if (addResult != SUCCESS) {
                     failure = true;
                     status = addResult;
-                    Logger::logError("Chain failed at blockID", std::to_string(b.getId()));
+                    Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
+                    this->recomputeLedger();
                     break;
                 }
             }

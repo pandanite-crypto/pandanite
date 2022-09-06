@@ -177,7 +177,7 @@ json RequestManager::getProofOfWork() {
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
     result["chainLength"] = this->blockchain->getBlockCount();
-    result["miningFee"] = this->blockchain->getCurrentMiningFee();
+    result["miningFee"] = this->blockchain->getCurrentMiningFee(this->blockchain->getBlockCount());
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
     result["lastTimestamp"] = uint64ToString(last.timestamp);
     return result;
