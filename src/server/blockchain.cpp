@@ -54,6 +54,7 @@ BlockChain::~BlockChain() {
 }
 
 void BlockChain::initChain() {
+    this->isSyncing = false;
     if (blockStore.hasBlockCount()) {
         Logger::logStatus("BlockStore exists, loading from disk");
         size_t count = blockStore.getBlockCount();
@@ -177,6 +178,7 @@ Block BlockChain::getBlock(uint32_t blockId) {
 }
 
 ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
+    if (this->isSyncing) return IS_SYNCING;
     if (t.isFee()) return EXTRA_MINING_FEE;
     if (!t.signatureValid()) return INVALID_SIGNATURE;
     LedgerState deltas;
@@ -283,9 +285,17 @@ void BlockChain::popBlock() {
         this->resetChain();
     }
 }
+ExecutionStatus BlockChain::addBlockSync(Block& block) {
+    if (this->isSyncing) {
+        return IS_SYNCING;
+    } else {
+        std::unique_lock<std::mutex> ul(lock);
+        return this->addBlock(block);
+    }
+}
+    
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
-    std::unique_lock<std::mutex> ul(lock);
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
@@ -351,6 +361,7 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
+    this->isSyncing = true;
     string bestHost = this->hosts.getGoodHost();
     this->targetBlockCount = this->hosts.getBlockCount();
     // If our current chain is lower POW than the trusted host
@@ -369,6 +380,7 @@ ExecutionStatus BlockChain::startChainSync() {
         // pop all subsequent blocks
         for (uint64_t i = 0; i < toPop; i++) {
             if (this->numBlocks == 1) break;
+            std::unique_lock<std::mutex> ul(lock);
             this->popBlock();
         }
     }
@@ -399,9 +411,11 @@ ExecutionStatus BlockChain::startChainSync() {
             }
             if (failure) {
                 Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
+                this->isSyncing = false;
                 return status;
             }
         } catch (const std::exception &e) {
+            this->isSyncing = false;
             Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
             return UNKNOWN_ERROR;
         }
@@ -411,6 +425,7 @@ ExecutionStatus BlockChain::startChainSync() {
     stringstream s;
     s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
     if (needed > 1) Logger::logStatus(s.str());
+    this->isSyncing = false;
     return SUCCESS;
 }
 
