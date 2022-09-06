@@ -362,10 +362,15 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() {
 
 void BlockChain::recomputeLedger() {
     this->ledger.clear();
+    this->txdb.clear();
     for(int i = 1; i <= this->numBlocks; i++) {
         LedgerState deltas;
-        Block b = this->getBlock(i);
-        ExecutionStatus addResult = Executor::ExecuteBlock(b, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
+        Block block = this->getBlock(i);
+        ExecutionStatus addResult = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
+        // add all transactions to txdb:
+        for(auto t : block.getTransactions()) {
+            if (!t.isFee()) this->txdb.insertTransaction(t, block.getId());
+        }
         if (addResult != SUCCESS) {
             Logger::logError(RED + "[FATAL]" + RESET, "Corrupt blockchain. Exiting. Please delete data dir and sync from scratch.");
             exit(-1);
