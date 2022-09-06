@@ -80,7 +80,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     }
     // build map of all public keys in transaction
     // add to the chain!
-    ExecutionStatus status = this->blockchain->addBlock(newBlock);
+    ExecutionStatus status = this->blockchain->addBlockSync(newBlock);
     result["status"] = executionStatusAsString(status);
     
     if (status == SUCCESS) {

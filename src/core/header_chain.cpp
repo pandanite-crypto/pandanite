@@ -116,6 +116,8 @@ void HeaderChain::load() {
                 this->blockHashes.push_back(lastHash);
                 totalWork = addWork(totalWork, block.getDifficulty());
                 numBlocks++;
+                this->chainLength = numBlocks;
+                this->totalWork = totalWork;
             }
             if (failure) {
                 Logger::logStatus("header chain sync failed host=" + this->host);
@@ -133,8 +135,6 @@ void HeaderChain::load() {
             return;
         }
     }
-    this->chainLength = numBlocks;
-    this->totalWork = totalWork;
     this->failed = false;
     if (numBlocks != startBlocks) {
         // Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));

@@ -85,6 +85,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case TRANSACTION_FEE_TOO_LOW:
             return "TRANSACTION_FEE_TOO_LOW";
         break;
+        case IS_SYNCING:
+            return "IS_SYNCING";
+        break;
     }
 }
 
