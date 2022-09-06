@@ -27,7 +27,7 @@ class BlockChain {
         Bigint getTotalWork();
         uint8_t getDifficulty();
         uint32_t getBlockCount();
-        uint32_t getCurrentMiningFee();
+        uint32_t getCurrentMiningFee(uint64_t blockId);
         SHA256Hash getLastHash();
         Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);
@@ -40,6 +40,7 @@ class BlockChain {
         map<string, uint64_t> getHeaderChainStats();
         void setMemPool(MemPool * memPool);
         void initChain();
+        void recomputeLedger();
         void resetChain();
         void popBlock();
         void deleteDB();
