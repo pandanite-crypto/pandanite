@@ -269,7 +269,6 @@ uint8_t BlockChain::getDifficulty() {
 }
 
 void BlockChain::popBlock() {
-    std::unique_lock<std::mutex> ul(lock);
     Block last = this->getBlock(this->getBlockCount());
     Executor::RollbackBlock(last, this->ledger, this->txdb);
     this->numBlocks--;
@@ -379,6 +378,7 @@ void BlockChain::recomputeLedger() {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
+    std::unique_lock<std::mutex> ul(lock);
     this->isSyncing = true;
     string bestHost = this->hosts.getGoodHost();
     this->targetBlockCount = this->hosts.getBlockCount();
@@ -398,7 +398,6 @@ ExecutionStatus BlockChain::startChainSync() {
         // pop all subsequent blocks
         for (uint64_t i = 0; i < toPop; i++) {
             if (this->numBlocks == 1) break;
-            std::unique_lock<std::mutex> ul(lock);
             this->popBlock();
         }
     }
@@ -424,7 +423,6 @@ ExecutionStatus BlockChain::startChainSync() {
                     failure = true;
                     status = addResult;
                     Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
-                    this->recomputeLedger();
                     break;
                 }
             }
