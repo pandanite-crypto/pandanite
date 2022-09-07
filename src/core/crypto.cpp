@@ -151,6 +151,7 @@ string walletAddressToString(PublicWalletAddress p) {
 }
 
 PublicWalletAddress stringToWalletAddress(string s) {
+    if (s.size() != 50) throw std::runtime_error("Invalid wallet address string");
     vector<uint8_t> bytes = hexDecode(s);
     PublicWalletAddress ret;
     std::move(bytes.begin(), bytes.begin() + ret.size(), ret.begin());
@@ -161,6 +162,7 @@ string privateKeyToString(PrivateKey p) {
     return hexEncode((const char*)p.data(), p.size());
 }
 PrivateKey stringToPrivateKey(string p) {
+    if (p.size() != 128) throw std::runtime_error("Invalid private key string");
     vector<uint8_t> bytes = hexDecode(p);
     PrivateKey pKey;
     std::move(bytes.begin(), bytes.begin() + pKey.size(), pKey.begin());
@@ -171,6 +173,7 @@ string publicKeyToString(PublicKey pubKey) {
     return hexEncode((const char*) pubKey.data(),pubKey.size());
 }
 PublicKey stringToPublicKey(string p) {
+    if (p.size() != 64) throw std::runtime_error("Invalid public key string");
     vector<uint8_t> data = hexDecode(p);
     PublicKey pubKey;
     for(int i = 0; i < data.size(); i++) {
