@@ -146,6 +146,7 @@ json Transaction::toJson() {
         result["signingKey"] = publicKeyToString(this->signingKey);
         result["signature"] = signatureToString(this->signature);
     } else {
+        result["txid"] = SHA256toString(this->hashContents());
         result["from"] = "";
     }
     
