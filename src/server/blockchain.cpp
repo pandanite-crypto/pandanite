@@ -398,7 +398,6 @@ ExecutionStatus BlockChain::startChainSync() {
         // pop all subsequent blocks
         for (uint64_t i = 0; i < toPop; i++) {
             if (this->numBlocks == 1) break;
-            std::unique_lock<std::mutex> ul(lock);
             this->popBlock();
         }
     }
@@ -424,7 +423,6 @@ ExecutionStatus BlockChain::startChainSync() {
                     failure = true;
                     status = addResult;
                     Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
-                    this->recomputeLedger();
                     break;
                 }
             }
