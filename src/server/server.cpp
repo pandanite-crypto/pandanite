@@ -170,6 +170,12 @@ void BambooServer::run(json config) {
         sendCorsHeaders(res);
         json result;
         try {
+            if (req->getQuery("blockId").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
             int blockId= std::stoi(string(req->getQuery("blockId")));
             int count = std::stoi(manager.getBlockCount());
             if (blockId<= 0 || blockId > count) {
@@ -193,6 +199,12 @@ void BambooServer::run(json config) {
         sendCorsHeaders(res);
         json result;
         try {
+            if (req->getQuery("blockId").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
             int blockId = std::stoi(string(req->getQuery("blockId")));
             int count = std::stoi(manager.getBlockCount());
             if (blockId <= 0 || blockId > count) {
@@ -215,6 +227,12 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            if (req->getQuery("wallet").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
             PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
             json ledger = manager.getLedger(w);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
@@ -534,6 +552,12 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            if (req->getQuery("start").length() == 0 || req->getQuery("end").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
             int start = std::stoi(string(req->getQuery("start")));
             int end = std::stoi(string(req->getQuery("end")));
             if ((end-start) > BLOCKS_PER_FETCH) {
@@ -562,6 +586,12 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            if (req->getQuery("start").length() == 0 || req->getQuery("end").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
             int start = std::stoi(string(req->getQuery("start")));
             int end = std::stoi(string(req->getQuery("end")));
             if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
