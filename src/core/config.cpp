@@ -83,7 +83,7 @@ json getConfig(int argc, char**argv) {
 
     it = std::find(args.begin(), args.end(), "--host-source");
     if (it++ != args.end()) {
-        config["hostSources"].push_back(string(*it));
+        hostSources.push_back(string(*it));
     }
 
     it = std::find(args.begin(), args.end(), "--testnet");
