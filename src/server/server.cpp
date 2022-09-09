@@ -7,6 +7,7 @@
 #include <string_view>
 #include <atomic>
 #include <signal.h>
+#include <filesystem>
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
@@ -45,6 +46,18 @@ namespace {
 
 void BambooServer::run(json config) {
     srand(time(0));
+
+    std::filesystem::path data{ "data" };
+
+    if (!std::filesystem::exists(data)) {
+        Logger::logStatus("Creating data directory...");
+        try {
+            std::filesystem::create_directory(data);
+        }
+        catch (std::exception& e) {
+            std::cout << e.what() << std::endl;
+        }
+    }
 
     Logger::logStatus("Starting server...");
     HostManager hosts(config);
