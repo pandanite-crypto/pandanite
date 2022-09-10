@@ -1,6 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include "header_chain.hpp"
+#include "../server/block_store.hpp"
 #include <set>
 #include <mutex>
  #include <thread>
@@ -27,13 +28,14 @@ class HostManager {
         set<string> sampleAllHosts(int count);
         string getAddress();
         uint64_t getNetworkTimestamp();
+        void setBlockstore(BlockStore* blockStore);
         
         void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
-        
-    protected:
         void syncHeadersWithPeers();
-        vector<HeaderChain*> currPeers;
+    protected:
+        vector<HeaderChain*> currPeers; 
+        BlockStore* blockStore;
 
         std::mutex lock;
         bool disabled;

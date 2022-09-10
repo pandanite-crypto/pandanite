@@ -46,6 +46,7 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     this->ledger.init(ledgerPath);
     this->blockStore.init(blockPath);
     this->txdb.init(txdbPath);
+    hosts.setBlockstore(&this->blockStore);
     this->initChain();
 }
 

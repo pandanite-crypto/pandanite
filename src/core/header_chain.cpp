@@ -10,18 +10,31 @@ using namespace std;
 
 void chain_sync(HeaderChain& chain) {
     while(true) {
-        chain.load();
+        if (!chain.triedBlockStoreCache && chain.blockStore) {
+            uint64_t chainLength = chain.blockStore->getBlockCount();
+            for(uint64_t i = 1; i <= chainLength; i++) {
+                chain.blockHashes.push_back(chain.blockStore->getBlock(i).getHash());
+            }
+            chain.totalWork = chain.blockStore->getTotalWork();
+            chain.chainLength = chainLength;
+            chain.triedBlockStoreCache = true;
+            chain.load();
+        } else {
+            chain.load();
+        }
         std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 }
 
 
-HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes) {
+HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, BlockStore* blockStore) {
     this->host = host;
     this->failed = false;
     this->offset = 0;
     this->totalWork = 0;
     this->chainLength = 0;
+    this->blockStore = blockStore;
+    this->triedBlockStoreCache = false;
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
     this->checkPoints = checkpoints;
     this->bannedHashes = bannedHashes;

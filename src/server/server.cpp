@@ -62,10 +62,15 @@ void BambooServer::run(json config) {
     Logger::logStatus("Starting server...");
     HostManager hosts(config);
 
+    
+    RequestManager manager(hosts);
+
+    // start downloading headers from peers
+    hosts.syncHeadersWithPeers();
+
+    // start pinging other peers about ourselves
     hosts.startPingingPeers();
 
-    Logger::logStatus("HostManager ready...");
-    RequestManager manager(hosts);
 
     shutdown_handler = [&](int signal) {
         Logger::logStatus("Shutting down server.");
