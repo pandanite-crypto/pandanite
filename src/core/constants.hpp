@@ -10,7 +10,6 @@
 #define BLOCK_HEADERS_PER_FETCH 2000
 #define BUILD_VERSION "0.7.7-beta"
 
-
 // Files
 #define LEDGER_FILE_PATH "./data/ledger"
 #define TXDB_FILE_PATH "./data/txdb"
