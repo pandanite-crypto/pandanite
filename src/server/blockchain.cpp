@@ -107,7 +107,13 @@ void BlockChain::resetChain() {
 
     // writeJsonToFile(genesis.toJson(), "genesis.json");
 
-    json genesisJson = readJsonFromFile("genesis.json");
+    json genesisJson;
+    try {
+         genesisJson = readJsonFromFile("genesis.json");
+    } catch(...) {
+        Logger::logError(RED + "[FATAL]" + RESET, "Could not load genesis.json file.");
+        exit(-1);
+    }
     Block genesis(genesisJson);
 
     ExecutionStatus status = this->addBlock(genesis);
