@@ -17,6 +17,9 @@ class BlockStore : public DataStore {
         void setTotalWork(Bigint work);
         Bigint getTotalWork();
         bool hasBlockCount();
+
+        vector<SHA256Hash> getTransactionsForWallet(PublicWalletAddress& wallet);
+        void removeBlockWalletTransactions(Block& block);
     protected:
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block);
 };

@@ -14,13 +14,30 @@ TEST(test_blockstore_stores_block) {
     a.addTransaction(t);
     // send tiny shares to receiver:
     for(int i = 0; i < 5; i++) {
-        a.addTransaction(miner.send(receiver, 1));
+        Transaction t = miner.send(receiver, 1);
+        t.setTimestamp(i);
+        a.addTransaction(t);
     }
     ASSERT_EQUAL(blocks.hasBlock(2), false);
     blocks.setBlock(a);
     ASSERT_EQUAL(blocks.hasBlock(2), true);
     Block b = blocks.getBlock(2);
     ASSERT_TRUE(b==a);
+
+    // test we can get transactions for wallets
+    PublicWalletAddress to = receiver.getAddress();
+    vector<SHA256Hash> txIdsTo = blocks.getTransactionsForWallet(to);
+    ASSERT_EQUAL(txIdsTo.size(), 5);
+    PublicWalletAddress from = miner.getAddress();
+    vector<SHA256Hash> txIdsFrom = blocks.getTransactionsForWallet(from);
+    ASSERT_EQUAL(txIdsFrom.size(), 6);
+
+    // test transactions are removed
+    blocks.removeBlockWalletTransactions(b);
+    txIdsTo = blocks.getTransactionsForWallet(to);
+    txIdsFrom = blocks.getTransactionsForWallet(from);
+    ASSERT_EQUAL(txIdsTo.size(), 0);
+    ASSERT_EQUAL(txIdsFrom.size(), 0);
     blocks.closeDB();
     blocks.deleteDB();
 }

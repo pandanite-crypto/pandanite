@@ -268,6 +268,22 @@ uint8_t BlockChain::getDifficulty() {
     return this->difficulty;
 }
 
+vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress addr) {
+    vector<SHA256Hash> txids = this->blockStore.getTransactionsForWallet(addr);
+    vector<Transaction> ret;
+    // TODO: this is pretty inefficient -- might want direct index of transactions
+    for (auto txid : txids) {
+        Block b = this->blockStore.getBlock(this->txdb.blockForTransactionId(txid));
+        for (auto tx : b.getTransactions()) {
+            if (tx.hashContents() == txid) {
+                ret.push_back(tx);
+                break;
+            }
+        }
+    }
+    return std::move(ret);
+}
+
 void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
     Executor::RollbackBlock(last, this->ledger, this->txdb);
@@ -276,6 +292,7 @@ void BlockChain::popBlock() {
     this->totalWork -= base.pow((int)last.getDifficulty());
     this->blockStore.setTotalWork(this->totalWork);
     this->blockStore.setBlockCount(this->numBlocks);
+    this->blockStore.removeBlockWalletTransactions(last);
     if (this->getBlockCount() > 1) {
         Block newLast = this->getBlock(this->getBlockCount());
         this->difficulty = newLast.getDifficulty();
@@ -284,6 +301,7 @@ void BlockChain::popBlock() {
         this->resetChain();
     }
 }
+
 ExecutionStatus BlockChain::addBlockSync(Block& block) {
     if (this->isSyncing) {
         return IS_SYNCING;

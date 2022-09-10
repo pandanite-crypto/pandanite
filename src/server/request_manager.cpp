@@ -61,6 +61,15 @@ void RequestManager::deleteDB() {
     this->blockchain->deleteDB();
 }
 
+json RequestManager::getTransactionsForWallet(PublicWalletAddress addr) {
+    json ret = json::array();
+    vector<Transaction> txs = this->blockchain->getTransactionsForWallet(addr);
+    for(auto tx : txs) {
+        ret.push_back(tx.toJson());
+    }
+    return ret;
+}
+
 bool RequestManager::acceptRequest(std::string& ip) {
     if (!this->limitRequests) return true;
     return this->rateLimiter->limit(ip);
