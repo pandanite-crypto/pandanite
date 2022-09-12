@@ -133,6 +133,67 @@ Block BlockStore::getBlock(uint32_t blockId) {
     return ret;
 }
 
+vector<SHA256Hash> BlockStore::getTransactionsForWallet(PublicWalletAddress& wallet) {
+    struct {
+        uint8_t addr[25];
+        uint8_t txId[32];
+    } startKey;
+
+    struct {
+        uint8_t addr[25];
+        uint8_t txId[32];
+    } endKey;
+
+    memcpy(startKey.addr,wallet.data(), 25);
+    memset(startKey.txId, 0, 32);
+    memcpy(endKey.addr, wallet.data(), 25);
+    memset(endKey.txId, -1, 32);
+
+    auto startSlice = leveldb::Slice((const char*) &startKey, sizeof(startKey));
+    auto endSlice = leveldb::Slice((const char*) &endKey, sizeof(endKey));
+
+    // Get a database iterator
+    std::shared_ptr<leveldb::Iterator> it(db->NewIterator(leveldb::ReadOptions()));
+
+    vector<SHA256Hash> ret;
+    for(it->Seek(startSlice); it->Valid() && it->key().compare(endSlice) < 0; it->Next()) {                
+        leveldb::Slice keySlice(it->key());
+        SHA256Hash txid;
+        memcpy(txid.data(), keySlice.data() + 25, 32);
+        ret.push_back(txid);
+    }
+    return std::move(ret);
+}
+
+
+void BlockStore::removeBlockWalletTransactions(Block& block) {
+    for(auto t : block.getTransactions()) {
+        SHA256Hash txid = t.hashContents();
+        struct {
+            uint8_t addr[25];
+            uint8_t txId[32];
+        } w1Key;
+
+        struct {
+            uint8_t addr[25];
+            uint8_t txId[32];
+        } w2Key;
+
+        memcpy(w1Key.addr, t.fromWallet().data(), 25);
+        memcpy(w1Key.txId, txid.data(), 32);
+        memcpy(w2Key.addr, t.toWallet().data(), 25);
+        memcpy(w2Key.txId, txid.data(), 32);
+
+        leveldb::Slice key = leveldb::Slice((const char*) &w1Key, sizeof(w1Key));
+        leveldb::Status status = db->Delete(leveldb::WriteOptions(), key);
+        if(!status.ok()) throw std::runtime_error("Could not remove transaction from wallet in blockstore db : " + status.ToString());
+
+        key = leveldb::Slice((const char*) &w2Key, sizeof(w2Key));
+        status = db->Delete(leveldb::WriteOptions(), key);
+        if(!status.ok()) throw std::runtime_error("Could not remove transaction from wallet in blockstore db : " + status.ToString());
+    }
+}
+
 void BlockStore::setBlock(Block& block) {
     uint32_t blockId = block.getId();
     leveldb::Slice key = leveldb::Slice((const char*) &blockId, sizeof(uint32_t));
@@ -149,6 +210,33 @@ void BlockStore::setBlock(Block& block) {
         leveldb::Slice slice = leveldb::Slice((const char*)&t, sizeof(TransactionInfo));
         leveldb::Status status = db->Put(leveldb::WriteOptions(), key, slice);
         if(!status.ok()) throw std::runtime_error("Could not write transaction to BlockStore db : " + status.ToString());
+
+        // add the transaction to from and to wallets list of transactions
+        SHA256Hash txid = block.getTransactions()[i].hashContents();
+        struct {
+            uint8_t addr[25];
+            uint8_t txId[32];
+        } w1Key;
+
+        struct {
+            uint8_t addr[25];
+            uint8_t txId[32];
+        } w2Key;
+
+        memcpy(w1Key.addr, t.from.data(), 25);
+        memcpy(w1Key.txId, txid.data(), 32);
+        memcpy(w2Key.addr, t.to.data(), 25);
+        memcpy(w2Key.txId, txid.data(), 32);
+
+        key = leveldb::Slice((const char*) &w1Key, sizeof(w1Key));
+        slice = leveldb::Slice("", 0);
+        status = db->Put(leveldb::WriteOptions(), key, slice);
+        if(!status.ok()) throw std::runtime_error("Could not write wallet transactions to BlockStore db : " + status.ToString());
+
+        key = leveldb::Slice((const char*) &w2Key, sizeof(w2Key));
+        slice = leveldb::Slice("", 0);
+        status = db->Put(leveldb::WriteOptions(), key, slice);
+        if(!status.ok()) throw std::runtime_error("Could not write wallet transactions to BlockStore db : " + status.ToString());
     }
 }
 

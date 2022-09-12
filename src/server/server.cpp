@@ -261,6 +261,26 @@ void BambooServer::run(json config) {
         }
     };
 
+    auto walletHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            if (req->getQuery("wallet").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
+            PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
+            json ret = manager.getTransactionsForWallet(w);
+            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ret.dump());
+        } catch(const std::exception &e) {
+            Logger::logError("/wallet", e.what());
+        } catch(...) {
+            Logger::logError("/wallet", "unknown");
+        }
+    };
+
     // TODO: remove this once all nodes and clients migrated
     auto ledgerHandlerDeprecated = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
@@ -798,6 +818,7 @@ void BambooServer::run(json config) {
         .get("/tx_json", txJsonHandler)
         .get("/mine_status", mineStatusHandler)
         .get("/ledger", ledgerHandler)
+        .get("/wallet_transactions", walletHandler)
         .get("/gettx/:blockId", getTxHandler) // DEPRECATED
         .get("/mine_status/:b", mineStatusHandlerDeprecated) // DEPRECATED
         .get("/ledger/:user", ledgerHandlerDeprecated) // DEPRECATED
@@ -823,6 +844,7 @@ void BambooServer::run(json config) {
         .options("/block_count", corsHandler)
         .options("/logs", corsHandler)
         .options("/stats", corsHandler)
+        .options("/wallet_transactions", corsHandler)
         .options("/block", corsHandler)
         .options("/tx_json", corsHandler)
         .options("/mine_status", corsHandler)
