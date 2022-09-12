@@ -79,8 +79,9 @@ void peer_sync(HostManager& hm) {
 */
 
 void header_stats(HostManager& hm) {
+    std::this_thread::sleep_for(std::chrono::seconds(30));
     while(true) {
-        Logger::logStatus("================ Header Sync Status ==============");
+        Logger::logStatus("================ Header Sync Status ===============");
         map<string, uint64_t> stats = hm.getHeaderChainStats();
         for(auto item : stats) {
             stringstream ss;
@@ -379,6 +380,10 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     }   
 }
 
+void HostManager::setBlockstore(BlockStore* blockStore) {
+    this->blockStore = blockStore;
+}
+
 
 bool HostManager::isDisabled() {
     return this->disabled;
@@ -448,13 +453,10 @@ void HostManager::refreshHostList() {
         );
     }
     for (auto& th : threads) th.join();
-
-    this->syncHeadersWithPeers();
 }
 
 void HostManager::syncHeadersWithPeers() {
     // free existing peers
-    Logger::logStatus("Starting header chain sync. This may take up to 15 minutes.");
     std::unique_lock<std::mutex> ul(lock);
     for(auto peer : this->currPeers) {
         delete peer;
@@ -465,7 +467,7 @@ void HostManager::syncHeadersWithPeers() {
     set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
-        this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes));
+        this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes, this->blockStore));
     }
 }
 
