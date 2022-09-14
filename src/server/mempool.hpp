@@ -15,7 +15,7 @@ class BlockChain;
 
 class MemPool {
     public:
-        MemPool(HostManager& h, BlockChain &b);
+        MemPool(HostManager& h, BlockChain& b);
         ~MemPool();
         void sync();
         ExecutionStatus addTransaction(Transaction t);
@@ -29,8 +29,8 @@ class MemPool {
         std::mutex shutdownLock;
         map<PublicWalletAddress,TransactionAmount> mempoolOutgoing;
         list<Transaction> toSend;
-        BlockChain & blockchain;
-        HostManager & hosts;
+        BlockChain& blockchain;
+        HostManager& hosts;
         set<Transaction> transactionQueue;
         vector<std::thread> syncThread;
         std::mutex lock;

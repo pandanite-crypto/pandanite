@@ -4,7 +4,8 @@
 #include "../server/block_store.hpp"
 #include <set>
 #include <mutex>
- #include <thread>
+#include <memory>
+#include <thread>
 using namespace std;
 
 class HostManager {
@@ -28,14 +29,14 @@ class HostManager {
         set<string> sampleAllHosts(int count);
         string getAddress();
         uint64_t getNetworkTimestamp();
-        void setBlockstore(BlockStore* blockStore);
+        void setBlockstore(std::shared_ptr<BlockStore> blockStore);
         
         void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
         void syncHeadersWithPeers();
     protected:
-        vector<HeaderChain*> currPeers; 
-        BlockStore* blockStore;
+        vector<std::shared_ptr<HeaderChain>> currPeers; 
+        std::shared_ptr<BlockStore> blockStore;
 
         std::mutex lock;
         bool disabled;

@@ -3,12 +3,13 @@
 #include "common.hpp"
 #include "../server/block_store.hpp"
 #include <thread>
+#include <memory>
 #include <map>
 using namespace std;
 
 class HeaderChain {
     public:
-        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, BlockStore* blockStore = NULL);
+        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, std::shared_ptr<BlockStore> blockStore = nullptr);
         void load();
         void reset();
         bool valid();
@@ -23,7 +24,7 @@ class HeaderChain {
         Bigint totalWork;
         uint64_t chainLength;
         uint64_t offset;
-        BlockStore* blockStore;
+        std::shared_ptr<BlockStore> blockStore;
         bool failed;
         bool triedBlockStoreCache;
         map<uint64_t, SHA256Hash> checkPoints;

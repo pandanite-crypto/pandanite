@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <map>
+#include <memory>
 #include <mutex>
 #include "../core/block.hpp"
 #include "../core/api.hpp"
@@ -39,7 +40,7 @@ class BlockChain {
         TransactionAmount getWalletValue(PublicWalletAddress addr);
         map<string, uint64_t> getHeaderChainStats();
         vector<Transaction> getTransactionsForWallet(PublicWalletAddress addr);
-        void setMemPool(MemPool * memPool);
+        void setMemPool(std::shared_ptr<MemPool> memPool);
         void initChain();
         void recomputeLedger();
         void resetChain();
@@ -51,10 +52,10 @@ class BlockChain {
         bool isSyncing;
         bool shutdown;
         HostManager& hosts;
-        MemPool * memPool;
+        std::shared_ptr<MemPool> memPool;
         int numBlocks;
         Bigint totalWork;
-        BlockStore blockStore;
+        std::shared_ptr<BlockStore> blockStore;
         Ledger ledger;
         TransactionStore txdb;
         SHA256Hash lastHash;

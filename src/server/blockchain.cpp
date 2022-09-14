@@ -44,9 +44,10 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     this->memPool = nullptr;
     this->shutdown = false;
     this->ledger.init(ledgerPath);
-    this->blockStore.init(blockPath);
+    this->blockStore = std::make_unique<BlockStore>();
+    this->blockStore->init(blockPath);
     this->txdb.init(txdbPath);
-    hosts.setBlockstore(&this->blockStore);
+    hosts.setBlockstore(this->blockStore);
     this->initChain();
 }
 
@@ -56,13 +57,13 @@ BlockChain::~BlockChain() {
 
 void BlockChain::initChain() {
     this->isSyncing = false;
-    if (blockStore.hasBlockCount()) {
+    if (this->blockStore->hasBlockCount()) {
         Logger::logStatus("BlockStore exists, loading from disk");
-        size_t count = blockStore.getBlockCount();
+        size_t count = this->blockStore->getBlockCount();
         this->numBlocks = count;
         this->targetBlockCount = count;
-        Block lastBlock = blockStore.getBlock(count);
-        this->totalWork = blockStore.getTotalWork();
+        Block lastBlock = this->blockStore->getBlock(count);
+        this->totalWork = this->blockStore->getTotalWork();
         this->difficulty = lastBlock.getDifficulty();
         this->lastHash = lastBlock.getHash();
     } else {
@@ -80,7 +81,7 @@ void BlockChain::resetChain() {
 
     // reset the ledger, block & tx stores
     this->ledger.clear();
-    this->blockStore.clear();
+    this->blockStore->clear();
     this->txdb.clear();
     
     
@@ -126,24 +127,24 @@ void BlockChain::resetChain() {
 void BlockChain::closeDB() {
     txdb.closeDB();
     ledger.closeDB();
-    blockStore.closeDB();
+    this->blockStore->closeDB();
 }
 
 void BlockChain::deleteDB() {
     this->closeDB();
     txdb.deleteDB();
     ledger.deleteDB();
-    blockStore.deleteDB();
+    this->blockStore->deleteDB();
 }
 
 std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
-    return this->blockStore.getRawData(blockId);
+    return this->blockStore->getRawData(blockId);
 }
 
 BlockHeader BlockChain::getBlockHeader(uint32_t blockId) {
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
-    return this->blockStore.getBlockHeader(blockId);
+    return this->blockStore->getBlockHeader(blockId);
 }
 
 void BlockChain::sync() {
@@ -181,7 +182,7 @@ Bigint BlockChain::getTotalWork() {
 
 Block BlockChain::getBlock(uint32_t blockId) {
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
-    return this->blockStore.getBlock(blockId);
+    return this->blockStore->getBlock(blockId);
 }
 
 ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
@@ -267,7 +268,7 @@ uint32_t BlockChain::findBlockForTransaction(Transaction &t) {
     return blockId;
 }
 
-void BlockChain::setMemPool(MemPool * memPool) {
+void BlockChain::setMemPool(std::shared_ptr<MemPool> memPool) {
     this->memPool = memPool;
 }
 
@@ -276,11 +277,11 @@ uint8_t BlockChain::getDifficulty() {
 }
 
 vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress addr) {
-    vector<SHA256Hash> txids = this->blockStore.getTransactionsForWallet(addr);
+    vector<SHA256Hash> txids = this->blockStore->getTransactionsForWallet(addr);
     vector<Transaction> ret;
     // TODO: this is pretty inefficient -- might want direct index of transactions
     for (auto txid : txids) {
-        Block b = this->blockStore.getBlock(this->txdb.blockForTransactionId(txid));
+        Block b = this->blockStore->getBlock(this->txdb.blockForTransactionId(txid));
         for (auto tx : b.getTransactions()) {
             if (tx.hashContents() == txid) {
                 ret.push_back(tx);
@@ -297,9 +298,9 @@ void BlockChain::popBlock() {
     this->numBlocks--;
     Bigint base = 2;
     this->totalWork -= base.pow((int)last.getDifficulty());
-    this->blockStore.setTotalWork(this->totalWork);
-    this->blockStore.setBlockCount(this->numBlocks);
-    this->blockStore.removeBlockWalletTransactions(last);
+    this->blockStore->setTotalWork(this->totalWork);
+    this->blockStore->setBlockCount(this->numBlocks);
+    this->blockStore->removeBlockWalletTransactions(last);
     if (this->getBlockCount() > 1) {
         Block newLast = this->getBlock(this->getBlockCount());
         this->difficulty = newLast.getDifficulty();
@@ -367,11 +368,11 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         for(auto t : block.getTransactions()) {
             this->txdb.insertTransaction(t, block.getId());
         }
-        this->blockStore.setBlock(block);
+        this->blockStore->setBlock(block);
         this->numBlocks++;
         this->totalWork = addWork(this->totalWork, block.getDifficulty());
-        this->blockStore.setTotalWork(this->totalWork);
-        this->blockStore.setBlockCount(this->numBlocks);
+        this->blockStore->setTotalWork(this->totalWork);
+        this->blockStore->setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty();
         Logger::logStatus("Added block " + to_string(block.getId()));
