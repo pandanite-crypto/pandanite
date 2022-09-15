@@ -36,6 +36,7 @@ void mempool_sync(MemPool& mempool) {
 
         vector<future<void>> reqs;
         set<string> neighbors;
+        bool success = false;
 
         neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
 
@@ -43,6 +44,7 @@ void mempool_sync(MemPool& mempool) {
             reqs.push_back(std::async([neighbor, &txs](){
                 try {
                     sendTransactions(neighbor, txs);
+                    success = true;
                 } catch(...) {
                     Logger::logError("MemPool::sync", "Could not send tx to " + neighbor);
                 }
@@ -50,6 +52,14 @@ void mempool_sync(MemPool& mempool) {
         }
         for(int i =0 ; i < reqs.size(); i++) {
             reqs[i].get();
+        }
+
+        // if we did not succeed sending transactions, put them back in queue
+        if (!success) {
+            std::unique_lock<std::mutex> ul2(mempool.sendLock);
+            for (auto tx : txs) {
+                mempool.toSend.push_back(tx);
+            }
         }
     }
 }
