@@ -41,7 +41,7 @@ void mempool_sync(MemPool& mempool) {
         neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
 
         for(auto neighbor : neighbors) {
-            reqs.push_back(std::async([neighbor, &txs](){
+            reqs.push_back(std::async([neighbor, &txs, &success](){
                 try {
                     sendTransactions(neighbor, txs);
                     success = true;
