@@ -69,7 +69,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
 
             // check that our mined blocks timestamp is *at least* as old as the tip of the chain.
             // if it's not then your system clock is wonky, so we just make up a date:
-            if (newBlock.getTimestamp() < lastTimestamp) {
+            if (newBlock.getNonce() < lastTimestamp) {
                 newBlock.setTimestamp(lastTimestamp + 1);
             }
 
@@ -77,7 +77,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             newBlock.addTransaction(fee);
 
             TransactionAmount total = problem["miningFee"];
-            if (newBlock.getTimestamp() < lastTimestamp) {
+            if (newBlock.getNonce() < lastTimestamp) {
                 newBlock.setTimestamp(lastTimestamp);
             }
         
