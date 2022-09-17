@@ -10,10 +10,12 @@ using namespace std;
 
 #define NEW_BLOCK_PEER_FANOUT 8
 
-RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
+RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath, string programStorePath) : hosts(hosts) {
     this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
     this->mempool = new MemPool(hosts, *this->blockchain);
     this->rateLimiter = new RateLimiter(30,5); // max of 30 requests over 5 sec period 
+    this->programs = std::make_shared<ProgramStore>();
+    this->programs->init(programStorePath);
     this->limitRequests = true;
     if (!hosts.isDisabled()) {
         this->blockchain->sync();
@@ -181,6 +183,34 @@ json RequestManager::getMineStatus(uint32_t blockId) {
     return result;
 }
 
+json RequestManager::getProgram(PublicWalletAddress& w) {
+    ProgramID id = this->blockchain->getProgramForWallet(w);
+    json result;
+    if (id == NULL_SHA256_HASH) {
+        result["error"] = "No program for wallet";
+        return result;
+    }
+
+    if (!this->programs->hasProgram(id)) {
+        result["error"] = "Program not loaded in node";
+        return result;
+    }
+
+    result = this->programs->getProgram(id).toJson();
+    return result;
+}
+
+json RequestManager::setProgram(PublicWalletAddress& wallet, Program& program) {
+    ProgramID id = this->blockchain->getProgramForWallet(wallet);
+    json result;
+    if (id != program.getId()) {
+        result["error"] = "Program byte code does not match blockchain";
+        return result;
+    }
+    this->programs->insertProgram(program);
+    result["status"] = executionStatusAsString(SUCCESS);
+    return result;
+}
 
 json RequestManager::getProofOfWork() {
     json result;
@@ -208,7 +238,6 @@ std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
 BlockHeader RequestManager::getBlockHeader(uint32_t blockId) {
     return this->blockchain->getBlockHeader(blockId);
 }
-
 
 std::pair<char*, size_t> RequestManager::getRawTransactionData() {
     return this->mempool->getRaw();

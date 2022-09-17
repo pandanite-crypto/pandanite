@@ -73,6 +73,13 @@ json getMiningProblem(string host_url) {
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
+json getProgram(string host_url, PublicWalletAddress& w) {
+    string url = host_url + "/get_program?wallet=" + walletAddressToString(w);
+    http::Request request(url);
+    const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
+    return json::parse(std::string{response.body.begin(), response.body.end()});
+}
+
 json sendTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/add_transaction");
 

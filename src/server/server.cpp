@@ -261,6 +261,55 @@ void BambooServer::run(json config) {
         }
     };
 
+    auto getProgramHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            if (req->getQuery("wallet").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
+            PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
+            json program = manager.getProgram(w);
+            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(program.dump());
+        } catch(const std::exception &e) {
+            Logger::logError("/get_program", e.what());
+        } catch(...) {
+            Logger::logError("/get_program", "unknown");
+        }
+    };
+
+    auto setProgramHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        std::string buffer;
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
+            if (last) {
+                try {
+                    json parsed = json::parse(string(buffer));
+                    if (req->getQuery("wallet").length() == 0) {
+                        json err;
+                        err["error"] = "No query parameters specified";
+                        res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                        return;
+                    }
+                    PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
+                    Program p(parsed);
+                    json result = manager.setProgram(w,p);
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/set_program", e.what());
+                } catch(...) {
+                    Logger::logError("/set_program", "unknown");
+                }
+            }
+        });
+    };
+
     auto walletHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
