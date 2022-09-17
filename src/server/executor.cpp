@@ -88,6 +88,9 @@ string executionStatusAsString(ExecutionStatus status) {
         case IS_SYNCING:
             return "IS_SYNCING";
         break;
+        case UNSUPPORTED_CHAIN:
+            return "UNSUPPORTED_CHAIN";
+        break;
     }
 }
 

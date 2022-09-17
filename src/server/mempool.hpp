@@ -19,6 +19,7 @@ class MemPool {
         ~MemPool();
         void sync();
         ExecutionStatus addTransaction(Transaction t);
+        void addProgram(SHA256Hash programId);
         void finishBlock(Block& block);
         bool hasTransaction(Transaction t);
         size_t size();
@@ -29,8 +30,9 @@ class MemPool {
         std::mutex shutdownLock;
         map<PublicWalletAddress,TransactionAmount> mempoolOutgoing;
         list<Transaction> toSend;
-        BlockChain& blockchain;
-        HostManager& hosts;
+        BlockChain & blockchain;
+        HostManager & hosts;
+        set<SHA256Hash> programs;
         set<Transaction> transactionQueue;
         vector<std::thread> syncThread;
         std::mutex lock;

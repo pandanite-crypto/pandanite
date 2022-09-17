@@ -14,28 +14,39 @@ TEST(check_transaction_json_serialization) {
 
     Transaction t = miner.mine();
     Transaction t2 = miner.send(receiver, BMB(30.0));
+    Transaction t3 = t2;
+    t3.makeLayer2(NULL_SHA256_HASH, std::array<uint8_t, 128>());
     
     ASSERT_TRUE(t2.signatureValid());
 
     // test the send transaction
-    uint64_t ts = t2.getTimestamp();
+    uint64_t ts = t2.getNonce();
     string serialized = t2.toJson().dump();
     json parsed = json::parse(serialized);
     Transaction deserialized = Transaction(parsed);
 
     ASSERT_TRUE(deserialized.signatureValid());
     ASSERT_TRUE(t2 == deserialized);
-    ASSERT_EQUAL(ts, deserialized.getTimestamp());
+    ASSERT_EQUAL(ts, deserialized.getNonce());
 
     // test mining transaction
     serialized = t.toJson().dump();
     
     parsed = json::parse(serialized);
     deserialized = Transaction(parsed);
-    ts = t.getTimestamp();
+    ts = t.getNonce();
     ASSERT_TRUE(t.hashContents() == deserialized.hashContents());
     ASSERT_TRUE(t == deserialized);
-    ASSERT_EQUAL(ts, deserialized.getTimestamp());
+    ASSERT_EQUAL(ts, deserialized.getNonce());
+
+    // test layer 2 transaction
+    serialized = t3.toJson().dump();
+    parsed = json::parse(serialized);
+    deserialized = Transaction(parsed);
+    ts = t3.getNonce();
+    ASSERT_TRUE(t3.hashContents() == deserialized.hashContents());
+    ASSERT_TRUE(t3 == deserialized);
+    ASSERT_EQUAL(ts, deserialized.getNonce());
 }
 
 TEST(check_transaction_struct_serialization) {
@@ -49,21 +60,21 @@ TEST(check_transaction_struct_serialization) {
     ASSERT_TRUE(t2.signatureValid());
 
     // test the send transaction
-    uint64_t ts = t2.getTimestamp();
+    uint64_t ts = t2.getNonce();
     TransactionInfo serialized = t2.serialize();
     Transaction deserialized = Transaction(serialized);
 
     ASSERT_TRUE(deserialized.signatureValid());
     ASSERT_TRUE(t2 == deserialized);
-    ASSERT_EQUAL(ts, deserialized.getTimestamp());
+    ASSERT_EQUAL(ts, deserialized.getNonce());
 
     // test mining transaction
     serialized = t.serialize();
     deserialized = Transaction(serialized);
-    ts = t.getTimestamp();
+    ts = t.getNonce();
     ASSERT_TRUE(t.hashContents() == deserialized.hashContents());
     ASSERT_TRUE(t == deserialized);
-    ASSERT_EQUAL(ts, deserialized.getTimestamp());
+    ASSERT_EQUAL(ts, deserialized.getNonce());
 }
 
 TEST(check_transaction_copy) {
