@@ -6,6 +6,7 @@
 #include "../core/transaction.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/common.hpp"
+#include "program_store.hpp"
 #include "blockchain.hpp"
 #include "mempool.hpp"
 #include "rate_limiter.hpp"
@@ -14,7 +15,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
+        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="", string programStorePath="");
         ~RequestManager();
         bool acceptRequest(std::string& ip);
         json addTransaction(Transaction& t);
@@ -29,6 +30,8 @@ class RequestManager {
         json getTransactionStatus(SHA256Hash txid);
         json getPeers();
         json getPeerStats();
+        json getProgram(PublicWalletAddress& wallet);
+        json setProgram(PublicWalletAddress& wallet, Program& program);
         json getMineStatus(uint32_t blockId);
         json addPeer(string address, uint64_t time, string version, string network);
         BlockHeader getBlockHeader(uint32_t blockId);
@@ -46,4 +49,5 @@ class RequestManager {
         RateLimiter* rateLimiter;
         BlockChain* blockchain;
         MemPool* mempool;
+        std::shared_ptr<ProgramStore> programs;
 };

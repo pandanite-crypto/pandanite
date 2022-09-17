@@ -10,6 +10,7 @@
 // #include "test_request_manager.hpp"
 // #include "test_helpers.hpp"
 #include "test_blockchain.hpp"
+#include "test_program_store.hpp"
 // #include "test_merkle_tree.hpp"
 // #include "test_ledger.hpp"
 // #include "test_block_store.hpp"
