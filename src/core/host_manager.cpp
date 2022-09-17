@@ -168,11 +168,6 @@ HostManager::HostManager(json config) {
 }
 
 HostManager::~HostManager() {
-    // free existing peers
-    std::unique_lock<std::mutex> ul(lock);
-    for(auto peer : this->currPeers) {
-        delete peer;
-    }
 }
 
 void HostManager::startPingingPeers() {
@@ -356,7 +351,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     // check if we have less peers than needed, if so add this to our peer list
     if (this->currPeers.size() < RANDOM_GOOD_HOST_COUNT) {
         std::unique_lock<std::mutex> ul(lock);
-        this->currPeers.push_back(new HeaderChain(addr, this->checkpoints, this->bannedHashes));
+        this->currPeers.push_back(std::make_shared<HeaderChain>(addr, this->checkpoints, this->bannedHashes));
     }
 
     // pick random neighbor hosts and forward the addPeer request to them:
@@ -380,7 +375,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     }   
 }
 
-void HostManager::setBlockstore(BlockStore* blockStore) {
+void HostManager::setBlockstore(std::shared_ptr<BlockStore> blockStore) {
     this->blockStore = blockStore;
 }
 
@@ -458,16 +453,13 @@ void HostManager::refreshHostList() {
 void HostManager::syncHeadersWithPeers() {
     // free existing peers
     std::unique_lock<std::mutex> ul(lock);
-    for(auto peer : this->currPeers) {
-        delete peer;
-    }
     this->currPeers.empty();
     
     // pick N random peers
     set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
-        this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes, this->blockStore));
+        this->currPeers.push_back(std::make_shared<HeaderChain>(h, this->checkpoints, this->bannedHashes, this->blockStore));
     }
 }
 

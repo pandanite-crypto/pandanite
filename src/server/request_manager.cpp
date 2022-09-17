@@ -11,9 +11,9 @@ using namespace std;
 #define NEW_BLOCK_PEER_FANOUT 8
 
 RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
-    this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
-    this->mempool = new MemPool(hosts, *this->blockchain);
-    this->rateLimiter = new RateLimiter(30,5); // max of 30 requests over 5 sec period 
+    this->blockchain = std::make_shared<BlockChain>(hosts, ledgerPath, blockPath, txdbPath);
+    this->mempool = std::make_shared<MemPool>(hosts, *this->blockchain);
+    this->rateLimiter = std::make_shared<RateLimiter>(30,5); // max of 30 requests over 5 sec period 
     this->limitRequests = true;
     if (!hosts.isDisabled()) {
         this->blockchain->sync();
@@ -52,9 +52,6 @@ void RequestManager::exit() {
 }
 
 RequestManager::~RequestManager() {
-    //delete mempool; TODO: figure out why this destructor causes segfault
-    delete rateLimiter;
-    delete blockchain;
 }
 
 void RequestManager::deleteDB() {

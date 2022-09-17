@@ -2,6 +2,7 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <memory>
 #include <list>
 #include "../core/transaction.hpp"
 #include "../core/host_manager.hpp"
@@ -43,7 +44,7 @@ class RequestManager {
     protected:
         bool limitRequests;
         HostManager& hosts;
-        RateLimiter* rateLimiter;
-        BlockChain* blockchain;
-        MemPool* mempool;
+        std::shared_ptr<RateLimiter> rateLimiter;
+        std::shared_ptr<BlockChain> blockchain;
+        std::shared_ptr<MemPool> mempool;
 };
