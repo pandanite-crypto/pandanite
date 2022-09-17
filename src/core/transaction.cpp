@@ -13,7 +13,7 @@ TransactionInfo transactionInfoFromBuffer(const char* buffer) {
     TransactionInfo t;
     readNetworkNBytes(buffer, t.signature, 64);
     readNetworkNBytes(buffer, t.signingKey, 32);
-    t.timestamp = readNetworkUint64(buffer);
+    t.nonce = readNetworkUint64(buffer);
     t.to = readNetworkPublicWalletAddress(buffer);
     t.amount = readNetworkUint64(buffer);
     t.fee = readNetworkUint64(buffer);
@@ -34,7 +34,7 @@ TransactionInfo transactionInfoFromBuffer(const char* buffer) {
 void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
     writeNetworkNBytes(buffer, t.signature, 64);
     writeNetworkNBytes(buffer, t.signingKey, 32);
-    writeNetworkUint64(buffer, t.timestamp);
+    writeNetworkUint64(buffer, t.nonce);
     writeNetworkPublicWalletAddress(buffer, t.to);
     writeNetworkUint64(buffer, t.amount);
     writeNetworkUint64(buffer, t.fee);
@@ -50,19 +50,19 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->to = to;
     this->amount = amount;
     this->isTransactionFee = false;
-    this->timestamp = std::time(0);
+    this->nonce = std::time(0);
     this->fee = fee;
     this->signingKey = signingKey;
     this->data.fill(0);
     this->programId = NULL_SHA256_HASH;
 }
 
-Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp) {
+Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t nonce) {
     this->from = from;
     this->to = to;
     this->amount = amount;
     this->isTransactionFee = false;
-    this->timestamp = timestamp;
+    this->nonce = nonce;
     this->fee = fee;
     this->signingKey = signingKey;
     this->data.fill(0);
@@ -74,7 +74,7 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->to = to;
     this->amount = amount;
     this->isTransactionFee = false;
-    this->timestamp = LAYER_2_TX_FLAG;
+    this->nonce = LAYER_2_TX_FLAG;
     this->fee = fee;
     this->signingKey = signingKey;
     this->data = data;
@@ -86,7 +86,7 @@ Transaction::Transaction(PublicWalletAddress from, PublicKey signingKey, Transac
     this->to = NULL_ADDRESS;
     this->amount = 0;
     this->isTransactionFee = false;
-    this->timestamp = PROGRAM_CREATE_TX_FLAG;
+    this->nonce = PROGRAM_CREATE_TX_FLAG;
     this->fee = fee;
     this->signingKey = signingKey;
     this->data.fill(0);
@@ -104,7 +104,7 @@ Transaction::Transaction(const TransactionInfo& t) {
     memcpy((void*)this->signingKey.data(), (void*)t.signingKey, 32);
     this->amount = t.amount;
     this->isTransactionFee = t.isTransactionFee;
-    this->timestamp = t.timestamp;
+    this->nonce = t.nonce;
     this->fee = t.fee;
     this->data = t.data;
     this->programId = t.programId;
@@ -113,7 +113,7 @@ TransactionInfo Transaction::serialize() {
     TransactionInfo t;
     memcpy((void*)t.signature, (void*)this->signature.data(), 64);
     memcpy((void*)t.signingKey, (void*)this->signingKey.data(), 32);
-    t.timestamp = this->timestamp;
+    t.nonce = this->nonce;
     t.to = this->to;
     t.from = this->from;
     t.amount = this->amount;
@@ -125,11 +125,11 @@ TransactionInfo Transaction::serialize() {
 }
 
 bool Transaction::isLayer2() const {
-    return this->timestamp == LAYER_2_TX_FLAG;
+    return this->nonce == LAYER_2_TX_FLAG;
 }
 
 bool Transaction::isProgramExecution() const {
-    return this->timestamp == PROGRAM_CREATE_TX_FLAG;
+    return this->nonce == PROGRAM_CREATE_TX_FLAG;
 }
 
 ProgramID Transaction::getProgramId() const {
@@ -148,7 +148,7 @@ Transaction::Transaction(const Transaction & t) {
     this->signature = t.signature;
     this->amount = t.amount;
     this->isTransactionFee = t.isTransactionFee;
-    this->timestamp = t.timestamp;
+    this->nonce = t.nonce;
     this->fee = t.fee;
     this->signingKey = t.signingKey;
     this->programId = t.programId;
@@ -159,19 +159,19 @@ Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
     this->to = to;
     this->amount = fee;
     this->isTransactionFee = true;
-    this->timestamp = getCurrentTime();
+    this->nonce = getCurrentTime();
     this->fee = 0;
 }
 
 Transaction::Transaction(json obj) {
     PublicWalletAddress to;
-    this->timestamp = stringToUint64(obj["timestamp"]);
+    this->nonce = stringToUint64(obj["nonce"]);
 
-    if (this->timestamp == LAYER_2_TX_FLAG) {
+    if (this->nonce == LAYER_2_TX_FLAG) {
         this->programId = stringToSHA256(obj["programId"]);
         vector<uint8_t> bytes = hexDecode(obj["data"]);
         memcpy(this->data.data(), bytes.data(), this->data.size());
-    } else if (this->timestamp == PROGRAM_CREATE_TX_FLAG) {
+    } else if (this->nonce == PROGRAM_CREATE_TX_FLAG) {
         this->programId = stringToSHA256(obj["programId"]);
         this->data.fill(0);
     } else {
@@ -201,7 +201,7 @@ TransactionAmount Transaction::getTransactionFee() const {
 }
 
 void Transaction::makeLayer2(ProgramID programId, TransactionData data) {
-    this->timestamp = LAYER_2_TX_FLAG;
+    this->nonce = LAYER_2_TX_FLAG;
     this->programId = programId;
     this->data = data;
 }
@@ -210,7 +210,7 @@ json Transaction::toJson() {
     json result;
     result["to"] = walletAddressToString(this->toWallet());
     result["amount"] = this->amount;
-    result["timestamp"] = uint64ToString(this->timestamp);
+    result["nonce"] = uint64ToString(this->nonce);
     result["fee"] = this->fee;
     if (this->isLayer2()) {
         result["data"] = hexEncode((const char*)this->data.data(), this->data.size());
@@ -237,12 +237,12 @@ bool Transaction::isFee() const {
     return this->isTransactionFee;
 }
 
-void Transaction::setTimestamp(uint64_t t) {
-    this->timestamp = t;
+void Transaction::setNonce(uint64_t t) {
+    this->nonce = t;
 }
 
 uint64_t Transaction::getNonce() {
-    return this->timestamp;
+    return this->nonce;
 }
 
 TransactionSignature Transaction::getSignature() const {
@@ -308,7 +308,7 @@ SHA256Hash Transaction::hashContents() const {
     }
     SHA256_Update(&sha256, (unsigned char*)&this->fee, sizeof(TransactionAmount));
     SHA256_Update(&sha256, (unsigned char*)&this->amount, sizeof(TransactionAmount));
-    SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(uint64_t));
+    SHA256_Update(&sha256, (unsigned char*)&this->nonce, sizeof(uint64_t));
     SHA256_Final(ret.data(), &sha256);
     return ret;
 }
@@ -324,7 +324,7 @@ bool operator<(const Transaction& a, const Transaction& b) {
 }
 
 bool operator==(const Transaction& a, const Transaction& b) {
-    if(a.timestamp != b.timestamp) return false;
+    if(a.nonce != b.nonce) return false;
     if(a.toWallet() != b.toWallet()) return false;
     if(a.getTransactionFee() != b.getTransactionFee()) return false;
     if(a.amount != b.amount) return false;
