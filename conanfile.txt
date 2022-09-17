@@ -1,5 +1,6 @@
 [requires]
 openssl/3.0.0
 uwebsockets/19.3.0
+wasmer/2.3.0
 [generators]
 cmake
