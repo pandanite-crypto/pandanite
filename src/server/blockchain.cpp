@@ -111,11 +111,12 @@ void BlockChain::resetChain() {
 
     json genesisJson;
     try {
-         genesisJson = readJsonFromFile("genesis.json");
+        genesisJson = readJsonFromFile("genesis.json");
     } catch(...) {
         Logger::logError(RED + "[FATAL]" + RESET, "Could not load genesis.json file.");
         exit(-1);
     }
+
     Block genesis(genesisJson);
 
     ExecutionStatus status = this->addBlock(genesis);
@@ -383,6 +384,11 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
 
 map<string, uint64_t> BlockChain::getHeaderChainStats() {
     return this->hosts.getHeaderChainStats();
+}
+
+ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
+    if (this->ledger.hasWalletProgram(addr)) return this->ledger.getWalletProgram(addr);
+    return NULL_SHA256_HASH;
 }
 
 void BlockChain::recomputeLedger() {
