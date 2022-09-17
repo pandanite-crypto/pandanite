@@ -91,6 +91,12 @@ string executionStatusAsString(ExecutionStatus status) {
         case UNSUPPORTED_CHAIN:
             return "UNSUPPORTED_CHAIN";
         break;
+        case ALREADY_HAS_PROGRAM:
+            return "ALREADY_HAS_PROGRAM";
+        break;
+        case WALLET_LOCKED:
+            return "WALLET_LOCKED";
+        break;
     }
 }
 
@@ -123,6 +129,14 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
 }
 
 ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
+    if (t.isProgramExecution()) {
+        ledger.setWalletProgram(t.fromWallet(), t.getProgramId());
+        return SUCCESS;
+    }
+    // check if the wallet has a program execution associated with it:
+    if (ledger.hasWalletProgram(t.fromWallet())) {
+        return WALLET_LOCKED;
+    }
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
@@ -176,7 +190,9 @@ void rollbackLedger(Transaction& t,  PublicWalletAddress& miner, Ledger& ledger)
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
-    if (t.isFee()) {
+    if (t.isProgramExecution()) {
+        ledger.removeWalletProgram(t.fromWallet());
+    } else if (t.isFee()) {
         ledger.revertDeposit(to, amt);
     } else {
         ledger.revertDeposit(to, amt);
@@ -230,7 +246,16 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
     PublicWalletAddress miner;
     TransactionAmount miningFee;
     for(auto t : curr.getTransactions()) {
-        if (t.isFee()) {
+        if (t.isProgramExecution()) {
+            if (ledger.hasWalletProgram(t.fromWallet())) {
+                return ALREADY_HAS_PROGRAM;
+            } else {
+                if (walletAddressFromPublicKey(t.getSigningKey()) != t.fromWallet()) {
+                    return WALLET_SIGNATURE_MISMATCH;
+                }
+                continue;
+            }
+        } if (t.isFee()) {
             if (foundFee) return EXTRA_MINING_FEE;
             miner = t.toWallet();
             miningFee = t.getAmount();

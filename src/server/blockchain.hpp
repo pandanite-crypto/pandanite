@@ -39,6 +39,7 @@ class BlockChain {
         TransactionAmount getWalletValue(PublicWalletAddress addr);
         map<string, uint64_t> getHeaderChainStats();
         vector<Transaction> getTransactionsForWallet(PublicWalletAddress addr);
+        ProgramID getProgramForWallet(PublicWalletAddress addr);
         void setMemPool(MemPool * memPool);
         void initChain();
         void recomputeLedger();

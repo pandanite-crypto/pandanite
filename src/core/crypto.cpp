@@ -272,7 +272,6 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
 
         if (hashes++ > 1024) {
             double hps = (double)hashes / ((double)(getTimeMilliseconds() - st) / 1000);
-            Logger::logStatus("[thread" + std::to_string(threadId) + "] mining at " + std::to_string(hps) + "h/sec");
             hashes = 0;
             st = getTimeMilliseconds();
         }

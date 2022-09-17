@@ -44,8 +44,6 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
                 return;
             }
 
-            
-            
             json problem = getMiningProblem(host);
             int nextBlock = problem["chainLength"];
             nextBlock++;
