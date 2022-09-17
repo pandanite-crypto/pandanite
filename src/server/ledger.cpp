@@ -13,6 +13,14 @@ leveldb::Slice walletToSlice(const PublicWalletAddress& w) {
     return s2;
 }
 
+leveldb::Slice walletProgramStatus(const PublicWalletAddress& w, std::array<uint8_t,26>& walletProgramStatusKey) {
+    // copy wallet address into byte array
+    std::copy_n(w.begin(), w.size(), walletProgramStatusKey.begin());
+    walletProgramStatusKey[25] = 255; // append flag byte to indicate it is a program status
+    leveldb::Slice s2 = leveldb::Slice((const char*) walletProgramStatusKey.data(), walletProgramStatusKey.size());
+    return s2;
+}
+
 leveldb::Slice amountToSlice(const TransactionAmount& t) {
     leveldb::Slice s2 = leveldb::Slice((const char*) &t, sizeof(TransactionAmount));
     return s2;
@@ -22,6 +30,35 @@ bool Ledger::hasWallet(const PublicWalletAddress& wallet) {
     std::string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), walletToSlice(wallet), &value);
     return (status.ok());
+}
+
+bool Ledger::hasWalletProgram(const PublicWalletAddress& wallet) {
+    std::string value;
+    std::array<uint8_t, 26> buf; // TODO: This is ugly, but leveldb::Slice needs membuffer to point into
+    leveldb::Status status = db->Get(leveldb::ReadOptions(), walletProgramStatus(wallet, buf), &value);
+    return (status.ok());
+}
+
+void Ledger::removeWalletProgram(const PublicWalletAddress& wallet) {
+    std::array<uint8_t, 26> buf; // TODO: This is ugly, but leveldb::Slice needs membuffer to point into
+    leveldb::Slice key = walletProgramStatus(wallet, buf);
+    leveldb::Status status = db->Delete(leveldb::WriteOptions(), key);
+    if(!status.ok()) throw std::runtime_error("Could not remove wallet program " + status.ToString());
+}
+
+ProgramID Ledger::getWalletProgram(const PublicWalletAddress& wallet) {
+    std::string value;
+    std::array<uint8_t, 26> buf; // TODO: This is ugly, but leveldb::Slice needs membuffer to point into
+    leveldb::Status status = db->Get(leveldb::ReadOptions(), walletProgramStatus(wallet, buf), &value);
+    if (!status.ok()) throw std::runtime_error("No program for wallet");
+    return *((ProgramID*)value.c_str());
+}
+
+void Ledger::setWalletProgram(const PublicWalletAddress& wallet, const ProgramID& program) {
+    std::array<uint8_t, 26> buf; // TODO: This is ugly, but leveldb::Slice needs membuffer to point into
+    leveldb::Slice programIdSlice = leveldb::Slice((const char*) program.data(), program.size());
+    leveldb::Status status = db->Put(leveldb::WriteOptions(), walletProgramStatus(wallet, buf), programIdSlice);
+    if (!status.ok()) throw std::runtime_error("Write failed: " + status.ToString());
 }
 
 void Ledger::createWallet(const PublicWalletAddress& wallet) {
