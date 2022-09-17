@@ -34,6 +34,7 @@ json getConfig(int argc, char**argv) {
     string customIp = "";
     string customName = randomString(25);
     string networkName = "mainnet";
+    json hostSources = json::array();
     json checkpoints = json::array();
     json bannedHashes = json::array();
     int customPort = 3000;
@@ -75,6 +76,16 @@ json getConfig(int argc, char**argv) {
         customPort = std::stoi(*it);
     }
 
+    it = std::find(args.begin(), args.end(), "--network-name");
+    if (it++ != args.end()) {
+        networkName = string(*it);
+    }
+
+    it = std::find(args.begin(), args.end(), "--host-source");
+    if (it++ != args.end()) {
+        hostSources.push_back(string(*it));
+    }
+
     it = std::find(args.begin(), args.end(), "--testnet");
     if (it != args.end()) {
         testnet = true;
@@ -88,8 +99,7 @@ json getConfig(int argc, char**argv) {
         local = true;
     }
 
-    if (!local && !testnet) {
-        networkName = "mainnet";
+    if (networkName == "mainnet") {
         checkpoints.push_back({1, "0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750"});
         checkpoints.push_back({7774, "E1DC4CA2F2D634868C12B2C8963B33DD8632F459A1D37701A6B9BE17C0DA99EB"});
         checkpoints.push_back({14142, "BC77EB5157A82E1FC684653FEBECAEAF1034F7E0ABE09A10908B4F75D0F66956"});
@@ -118,9 +128,10 @@ json getConfig(int argc, char**argv) {
     config["bannedHashes"] = bannedHashes;
     config["ip"] = customIp;
     config["thread_priority"] = thread_priority;
-    config["hostSources"] = json::array();
+    config["hostSources"] = hostSources;
     config["minHostVersion"] = "0.2.4-alpha";
     config["showHeaderStats"] = true;
+
     if (local) {
         // do nothing
     } else if (testnet) {
