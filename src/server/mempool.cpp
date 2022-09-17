@@ -23,28 +23,28 @@ void mempool_sync(MemPool& mempool) {
         if (mempool.shutdown) break;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        Transaction t;
-
+        vector<Transaction> txs;
         {
             std::unique_lock<std::mutex> ul2(mempool.sendLock);
             if (mempool.toSend.size() == 0) {
                 continue;
             } else {
-                t = mempool.toSend.front();
-                mempool.toSend.pop_front();
+                txs.assign(std::make_move_iterator(mempool.toSend.begin()), std::make_move_iterator(mempool.toSend.end()));
+                mempool.toSend.clear();
             }
         }
 
         vector<future<void>> reqs;
         set<string> neighbors;
+        bool success = false;
 
         neighbors = mempool.hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
 
         for(auto neighbor : neighbors) {
-            Transaction newT = t;
-            reqs.push_back(std::async([neighbor, &newT](){
+            reqs.push_back(std::async([neighbor, &txs, &success](){
                 try {
-                    sendTransaction(neighbor, newT);
+                    sendTransactions(neighbor, txs);
+                    success = true;
                 } catch(...) {
                     Logger::logError("MemPool::sync", "Could not send tx to " + neighbor);
                 }
@@ -52,6 +52,14 @@ void mempool_sync(MemPool& mempool) {
         }
         for(int i =0 ; i < reqs.size(); i++) {
             reqs[i].get();
+        }
+
+        // if we did not succeed sending transactions, put them back in queue
+        if (!success) {
+            std::unique_lock<std::mutex> ul2(mempool.sendLock);
+            for (auto tx : txs) {
+                mempool.toSend.push_back(tx);
+            }
         }
     }
 }
