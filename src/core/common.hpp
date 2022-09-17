@@ -24,6 +24,8 @@ typedef std::array<uint8_t,64> TransactionSignature;
 typedef map<PublicWalletAddress,TransactionAmount> LedgerState;
 typedef std::array<uint8_t, 32> SHA256Hash;
 typedef std::array<uint8_t, 20> RIPEMD160Hash;
+typedef std::array<uint8_t, 128> TransactionData;
+typedef SHA256Hash ProgramID;
 
 #define NULL_SHA256_HASH SHA256Hash({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
 #define NULL_KEY SHA256Hash({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})

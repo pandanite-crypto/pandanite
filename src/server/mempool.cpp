@@ -75,12 +75,25 @@ bool MemPool::hasTransaction(Transaction t) {
     return ret;
 }
 
+void MemPool::addProgram(SHA256Hash programId) {
+    programs.insert(programId);
+}
+
 ExecutionStatus MemPool::addTransaction(Transaction t) {
     ExecutionStatus status;
     std::unique_lock<std::mutex> ul(lock);
     if (this->transactionQueue.find(t) != this->transactionQueue.end()) {
         status = ALREADY_IN_QUEUE;
         return status;
+    }
+
+    // check if this is a layer-2 transaction
+    if (t.isLayer2()) {
+        if (programs.find(t.getProgramId()) != programs.end()) {
+            //TODO: send this transaction to the program
+        } else {
+            return UNSUPPORTED_CHAIN;
+        }
     }
 
     if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL) {

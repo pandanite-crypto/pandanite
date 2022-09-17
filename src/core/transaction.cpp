@@ -26,7 +26,8 @@ TransactionInfo transactionInfoFromBuffer(const char* buffer) {
     } else {
         t.from = NULL_ADDRESS;
     }
-
+    t.programId = readNetworkSHA256(buffer);
+    readNetworkNBytes(buffer, (char*)t.data.data(), 128);
     return t;
 }
 
@@ -40,6 +41,8 @@ void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
     uint32_t flag = 0;
     if (t.isTransactionFee) flag = 1;
     writeNetworkUint32(buffer, flag);
+    writeNetworkSHA256(buffer,t.programId);
+    writeNetworkNBytes(buffer, (char*)t.data.data(), 128);
 }
 
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee) {
@@ -50,6 +53,8 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->timestamp = std::time(0);
     this->fee = fee;
     this->signingKey = signingKey;
+    this->data.fill(0);
+    this->programId = NULL_SHA256_HASH;
 }
 
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp) {
@@ -60,6 +65,20 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->timestamp = timestamp;
     this->fee = fee;
     this->signingKey = signingKey;
+    this->data.fill(0);
+    this->programId = NULL_SHA256_HASH;
+}
+
+Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, ProgramID programId, TransactionData data) {
+    this->from = from;
+    this->to = to;
+    this->amount = amount;
+    this->isTransactionFee = false;
+    this->timestamp = LAYER_2_TX_FLAG;
+    this->fee = fee;
+    this->signingKey = signingKey;
+    this->data = data;
+    this->programId = programId;
 }
 
 Transaction::Transaction() {
@@ -75,6 +94,8 @@ Transaction::Transaction(const TransactionInfo& t) {
     this->isTransactionFee = t.isTransactionFee;
     this->timestamp = t.timestamp;
     this->fee = t.fee;
+    this->data = t.data;
+    this->programId = t.programId;
 }
 TransactionInfo Transaction::serialize() {
     TransactionInfo t;
@@ -86,9 +107,24 @@ TransactionInfo Transaction::serialize() {
     t.amount = this->amount;
     t.fee = this->fee;
     t.isTransactionFee = this->isTransactionFee;
+    t.data = this->data;
+    t.programId = this->programId;
     return t;
 }
 
+bool Transaction::isLayer2() const {
+    return this->timestamp == LAYER_2_TX_FLAG;
+}
+
+ProgramID Transaction::getProgramId() const {
+    if (!this->isLayer2()) throw std::runtime_error("Cannot get programID of non-layer 2 transaction");
+    return this->programId;
+}
+
+TransactionData Transaction::getData() const {
+    if (!this->isLayer2()) throw std::runtime_error("Cannot get tx data of non-layer 2 transaction");
+    return this->data;
+}
 
 Transaction::Transaction(const Transaction & t) {
     this->to = t.to;
@@ -99,6 +135,8 @@ Transaction::Transaction(const Transaction & t) {
     this->timestamp = t.timestamp;
     this->fee = t.fee;
     this->signingKey = t.signingKey;
+    this->programId = t.programId;
+    this->data = t.data;
 }
 
 Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
@@ -109,20 +147,30 @@ Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
     this->fee = 0;
 }
 
-Transaction::Transaction(json data) {
+Transaction::Transaction(json obj) {
     PublicWalletAddress to;
-    this->timestamp = stringToUint64(data["timestamp"]);
-    this->to = stringToWalletAddress(data["to"]);
-    this->fee = data["fee"];
-    if(data["from"] == "") {        
-        this->amount = data["amount"];
+    this->timestamp = stringToUint64(obj["timestamp"]);
+
+    if (this->timestamp == LAYER_2_TX_FLAG) {
+        this->programId = stringToSHA256(obj["programId"]);
+        vector<uint8_t> bytes = hexDecode(obj["data"]);
+        memcpy(this->data.data(), bytes.data(), this->data.size());
+    } else {
+        this->programId = NULL_SHA256_HASH;
+        this->data.fill(0);
+    }
+
+    this->to = stringToWalletAddress(obj["to"]);
+    this->fee = obj["fee"];
+    if(obj["from"] == "") {        
+        this->amount = obj["amount"];
         this->isTransactionFee = true;
     } else {
-        this->from = stringToWalletAddress(data["from"]);
-        this->signature = stringToSignature(data["signature"]);
-        this->amount = data["amount"];
+        this->from = stringToWalletAddress(obj["from"]);
+        this->signature = stringToSignature(obj["signature"]);
+        this->amount = obj["amount"];
         this->isTransactionFee = false;
-        this->signingKey = stringToPublicKey(data["signingKey"]);
+        this->signingKey = stringToPublicKey(obj["signingKey"]);
     }
 }
 
@@ -133,6 +181,11 @@ TransactionAmount Transaction::getTransactionFee() const {
     return this->fee;
 }
 
+void Transaction::makeLayer2(ProgramID programId, TransactionData data) {
+    this->timestamp = LAYER_2_TX_FLAG;
+    this->programId = programId;
+    this->data = data;
+}
 
 json Transaction::toJson() {
     json result;
@@ -140,6 +193,10 @@ json Transaction::toJson() {
     result["amount"] = this->amount;
     result["timestamp"] = uint64ToString(this->timestamp);
     result["fee"] = this->fee;
+    if (this->isLayer2()) {
+        result["data"] = hexEncode((const char*)this->data.data(), this->data.size());
+        result["programId"] = SHA256toString(this->programId);
+    }
     if (!this->isTransactionFee) {
         result["txid"] = SHA256toString(this->hashContents());
         result["from"] = walletAddressToString(this->fromWallet());
@@ -162,7 +219,7 @@ void Transaction::setTimestamp(uint64_t t) {
     this->timestamp = t;
 }
 
-uint64_t Transaction::getTimestamp() {
+uint64_t Transaction::getNonce() {
     return this->timestamp;
 }
 
@@ -245,8 +302,12 @@ bool operator==(const Transaction& a, const Transaction& b) {
     if(a.timestamp != b.timestamp) return false;
     if(a.toWallet() != b.toWallet()) return false;
     if(a.getTransactionFee() != b.getTransactionFee()) return false;
-    if( a.amount != b.amount) return false;
-    if( a.isTransactionFee != b.isTransactionFee) return false;
+    if(a.amount != b.amount) return false;
+    if(a.isTransactionFee != b.isTransactionFee) return false;
+    if(a.isLayer2()) {
+        if (a.programId != b.programId) return false;
+        if (a.data != b.data) return false;
+    }
     if (!a.isTransactionFee) {
         if( a.fromWallet() != b.fromWallet()) return false;
         if(signatureToString(a.signature) != signatureToString(b.signature)) return false;
