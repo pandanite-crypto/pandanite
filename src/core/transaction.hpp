@@ -19,6 +19,7 @@ struct TransactionInfo {
 };
 
 #define LAYER_2_TX_FLAG -1
+#define PROGRAM_CREATE_TX_FLAG -2
 
 #define TRANSACTIONINFO_BUFFER_SIZE 309
 
@@ -34,6 +35,7 @@ class Transaction {
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee=0);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, ProgramID programId, TransactionData data);
+        Transaction(PublicWalletAddress from, PublicKey signingKey, TransactionAmount fee, ProgramID programId);
         Transaction(const TransactionInfo& t);
         TransactionInfo serialize();
         json toJson();
@@ -55,6 +57,7 @@ class Transaction {
         bool signatureValid() const;
         bool isFee() const;
         bool isLayer2() const;
+        bool isProgramExecution() const;
         ProgramID getProgramId() const;
         TransactionData getData() const;
     protected:

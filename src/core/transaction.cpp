@@ -81,6 +81,18 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->programId = programId;
 }
 
+Transaction::Transaction(PublicWalletAddress from, PublicKey signingKey, TransactionAmount fee, ProgramID programId) {
+    this->from = from;
+    this->to = NULL_ADDRESS;
+    this->amount = 0;
+    this->isTransactionFee = false;
+    this->timestamp = PROGRAM_CREATE_TX_FLAG;
+    this->fee = fee;
+    this->signingKey = signingKey;
+    this->data.fill(0);
+    this->programId = programId;
+}
+
 Transaction::Transaction() {
 
 }
@@ -116,8 +128,12 @@ bool Transaction::isLayer2() const {
     return this->timestamp == LAYER_2_TX_FLAG;
 }
 
+bool Transaction::isProgramExecution() const {
+    return this->timestamp == PROGRAM_CREATE_TX_FLAG;
+}
+
 ProgramID Transaction::getProgramId() const {
-    if (!this->isLayer2()) throw std::runtime_error("Cannot get programID of non-layer 2 transaction");
+    if (!this->isLayer2() && !this->isProgramExecution()) throw std::runtime_error("Cannot get programID of transaction");
     return this->programId;
 }
 
@@ -155,6 +171,9 @@ Transaction::Transaction(json obj) {
         this->programId = stringToSHA256(obj["programId"]);
         vector<uint8_t> bytes = hexDecode(obj["data"]);
         memcpy(this->data.data(), bytes.data(), this->data.size());
+    } else if (this->timestamp == PROGRAM_CREATE_TX_FLAG) {
+        this->programId = stringToSHA256(obj["programId"]);
+        this->data.fill(0);
     } else {
         this->programId = NULL_SHA256_HASH;
         this->data.fill(0);
@@ -195,6 +214,9 @@ json Transaction::toJson() {
     result["fee"] = this->fee;
     if (this->isLayer2()) {
         result["data"] = hexEncode((const char*)this->data.data(), this->data.size());
+        result["programId"] = SHA256toString(this->programId);
+    }
+    if (this->isProgramExecution()) {
         result["programId"] = SHA256toString(this->programId);
     }
     if (!this->isTransactionFee) {
@@ -281,6 +303,9 @@ SHA256Hash Transaction::hashContents() const {
         wallet = this->fromWallet();
         SHA256_Update(&sha256, (unsigned char*)wallet.data(), wallet.size());
     }
+    if (this->isProgramExecution()) {
+        SHA256_Update(&sha256, (unsigned char*)this->getProgramId().data(), this->getProgramId().size());
+    }
     SHA256_Update(&sha256, (unsigned char*)&this->fee, sizeof(TransactionAmount));
     SHA256_Update(&sha256, (unsigned char*)&this->amount, sizeof(TransactionAmount));
     SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(uint64_t));
@@ -307,6 +332,9 @@ bool operator==(const Transaction& a, const Transaction& b) {
     if(a.isLayer2()) {
         if (a.programId != b.programId) return false;
         if (a.data != b.data) return false;
+    }
+    if(a.isProgramExecution()) {
+        if (a.programId != b.programId) return false;
     }
     if (!a.isTransactionFee) {
         if( a.fromWallet() != b.fromWallet()) return false;
