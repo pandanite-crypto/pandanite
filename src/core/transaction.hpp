@@ -8,7 +8,7 @@ using namespace std;
 struct TransactionInfo {
     char signature[64];
     char signingKey[32];
-    uint64_t timestamp;
+    uint64_t nonce;
     PublicWalletAddress to;
     PublicWalletAddress from;
     TransactionAmount amount;
@@ -49,7 +49,7 @@ class Transaction {
         PublicWalletAddress toWallet() const;
         TransactionAmount getAmount() const;
         TransactionAmount getFee() const;
-        void setTimestamp(uint64_t t);
+        void setNonce(uint64_t t);
         uint64_t getNonce();
         SHA256Hash getHash() const;
         SHA256Hash hashContents() const;
@@ -63,7 +63,7 @@ class Transaction {
     protected:
         TransactionSignature signature;
         PublicKey signingKey;
-        uint64_t timestamp;
+        uint64_t nonce;
         ProgramID programId;
         TransactionData data;
         PublicWalletAddress to;
