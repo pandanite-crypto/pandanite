@@ -22,9 +22,11 @@ struct TransactionInfo {
 #define PROGRAM_CREATE_TX_FLAG -2
 
 #define TRANSACTIONINFO_BUFFER_SIZE 309
+#define TRANSACTIONINFO_BUFFER_SIZE_V0 149
 
-TransactionInfo transactionInfoFromBuffer(const char* buffer);
-void transactionInfoToBuffer(TransactionInfo& t, char* buffer);
+TransactionInfo transactionInfoFromBuffer(const char* buffer, bool useV0=true);
+void transactionInfoToBuffer(TransactionInfo& t, char* buffer, bool useV0 = true);
+uint64_t transactionInfoBufferSize(bool useV0 = true);
 
 class Transaction {
     public:
