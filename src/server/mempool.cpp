@@ -142,12 +142,12 @@ vector<Transaction> MemPool::getTransactions() {
 std::pair<char*, size_t> MemPool::getRaw() {
     int count = 0;
     std::unique_lock<std::mutex> ul(lock);
-    size_t len = this->transactionQueue.size() * TRANSACTIONINFO_BUFFER_SIZE;
+    size_t len = this->transactionQueue.size() * transactionInfoBufferSize();
     char* buf = (char*) malloc(len);
     for (auto tx : this->transactionQueue) {
         TransactionInfo t = tx.serialize();
         transactionInfoToBuffer(t, buf + count);
-        count+=TRANSACTIONINFO_BUFFER_SIZE;
+        count+=transactionInfoBufferSize();
     }
     return std::pair<char*, size_t>((char*)buf, len);
 }

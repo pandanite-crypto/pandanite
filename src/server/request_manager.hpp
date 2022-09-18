@@ -15,7 +15,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="", string programStorePath="");
+        RequestManager(json config);
         ~RequestManager();
         bool acceptRequest(std::string& ip);
         json addTransaction(Transaction& t);
@@ -37,6 +37,7 @@ class RequestManager {
         BlockHeader getBlockHeader(uint32_t blockId);
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t blockId);
         std::pair<char*, size_t> getRawTransactionData();
+        string getHostAddress();
         string getBlockCount();
         string getTotalWork();
         uint64_t getNetworkHashrate();
@@ -45,9 +46,10 @@ class RequestManager {
         void enableRateLimiting(bool enabled);
     protected:
         bool limitRequests;
-        HostManager& hosts;
+        std::shared_ptr<HostManager> hosts;
         RateLimiter* rateLimiter;
         BlockChain* blockchain;
         MemPool* mempool;
+        std::shared_ptr<Program> defaultProgram;
         std::shared_ptr<ProgramStore> programs;
 };

@@ -60,17 +60,9 @@ void BambooServer::run(json config) {
     }
 
     Logger::logStatus("Starting server...");
-    HostManager hosts(config);
 
     
-    RequestManager manager(hosts);
-
-    // start downloading headers from peers
-    hosts.syncHeadersWithPeers();
-
-    // start pinging other peers about ourselves
-    hosts.startPingingPeers();
-
+    RequestManager manager(config);
 
     shutdown_handler = [&](int signal) {
         Logger::logStatus("Shutting down server.");
@@ -444,7 +436,7 @@ void BambooServer::run(json config) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE) {
+                    if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed block";
                         Logger::logError("/submit","Malformed block");
@@ -453,7 +445,7 @@ void BambooServer::run(json config) {
                         char * ptr = (char*)buffer.c_str();
                         BlockHeader blockH = blockHeaderFromBuffer(ptr);
                         ptr += BLOCKHEADER_BUFFER_SIZE;
-                        if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
+                        if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*transactionInfoBufferSize()) {
                             json response;
                             response["error"] = "Malformed block";
                             Logger::logError("/submit","Malformed block");
@@ -470,7 +462,7 @@ void BambooServer::run(json config) {
                         } else {
                             for(int j = 0; j < blockH.numTransactions; j++) {
                                 TransactionInfo t = transactionInfoFromBuffer(ptr);
-                                ptr += TRANSACTIONINFO_BUFFER_SIZE;
+                                ptr += transactionInfoBufferSize();
                                 Transaction tx(t);
                                 transactions.push_back(tx);
                             }
@@ -716,13 +708,13 @@ void BambooServer::run(json config) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    if (buffer.length() < TRANSACTIONINFO_BUFFER_SIZE) {
+                    if (buffer.length() < transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed transaction";
                         Logger::logError("/add_transaction","Malformed transaction");
                         res->end(response.dump());
                     } else {
-                        uint32_t numTransactions = buffer.length() / TRANSACTIONINFO_BUFFER_SIZE;
+                        uint32_t numTransactions = buffer.length() / transactionInfoBufferSize();
                         const char* buf = buffer.c_str();
                         json response = json::array();
                         for (int i = 0; i < numTransactions; i++) {
@@ -912,9 +904,9 @@ void BambooServer::run(json config) {
         .options("/verify_transaction", corsHandler)
         
         
-        .listen((int)config["port"], [&hosts](auto *token) {
+        .listen((int)config["port"], [&manager](auto *token) {
             Logger::logStatus("==========================================");
-            Logger::logStatus("Started server: " + hosts.getAddress());
+            Logger::logStatus("Started server " + manager.getHostAddress());
             Logger::logStatus("==========================================");
         }).run();
 }
