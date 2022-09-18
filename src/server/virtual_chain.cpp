@@ -55,9 +55,11 @@ void VirtualChain::resetChain() {
     this->targetBlockCount = 1;
     // reset the program ledger, block & tx stores
     this->program.clearState();
-
     Block genesis = program.getGenesis();
     ExecutionStatus status = this->addBlock(genesis);
+    if (status != SUCCESS) {
+        throw std::runtime_error("Could not add genesis block");
+    }
 }
 
 ProgramID VirtualChain::getProgramForWallet(PublicWalletAddress addr) {

@@ -50,8 +50,6 @@ Block Executor::getGenesis() const {
     return genesis;
 }
 
-
-
 uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
     uint32_t newDifficulty = currentDifficulty;
     if (elapsedTime > expectedTime) {
@@ -195,7 +193,7 @@ void Executor::rollback(Ledger& ledger, LedgerState& deltas) const{
     }
 }
 
-void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb) const{
+void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore) const{
     PublicWalletAddress miner;
     for(auto t : curr.getTransactions()) {
         if (t.isFee()) {
@@ -210,6 +208,7 @@ void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txd
             txdb.removeTransaction(t);
         }
     }
+    blockStore.removeBlockWalletTransactions(curr);
 }
 
 ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t,  LedgerState& deltas) const{
