@@ -32,10 +32,8 @@ void chain_sync(VirtualChain& blockchain) {
     }
 }
 
-VirtualChain::VirtualChain(Program& program) {
+VirtualChain::VirtualChain(Program& program, HostManager& hosts) : program(program), hosts(hosts) {
     this->shutdown = false;
-    this->program = program;
-    this->hosts = hosts;
     this->initChain();
 }
 
@@ -46,29 +44,20 @@ VirtualChain::~VirtualChain() {
 void VirtualChain::initChain() {
     this->isSyncing = false;
     if (program.hasBlockCount()) {
-        size_t count = blockStore.getBlockCount();
-        this->numBlocks = count;
+        size_t count = this->program.getBlockCount();
         this->targetBlockCount = count;
-        Block lastBlock = blockStore.getBlock(count);
-        this->totalWork = blockStore.getTotalWork();
-        this->difficulty = lastBlock.getDifficulty();
-        this->lastHash = lastBlock.getHash();
     } else {
         this->resetChain();
     }
 }
 
 void VirtualChain::resetChain() {
-    this->difficulty = 16;
     this->targetBlockCount = 1;
-    this->numBlocks = 0;
-    this->totalWork = 0;
-    this->lastHash = NULL_SHA256_HASH;
-
     // reset the program ledger, block & tx stores
     this->program.clearState();
 
-    ExecutionStatus status = this->addBlock(program.getGenesis());
+    Block genesis = program.getGenesis();
+    ExecutionStatus status = this->addBlock(genesis);
 }
 
 ProgramID VirtualChain::getProgramForWallet(PublicWalletAddress addr) {
@@ -76,12 +65,12 @@ ProgramID VirtualChain::getProgramForWallet(PublicWalletAddress addr) {
 }
 
 std::pair<uint8_t*, size_t> VirtualChain::getRaw(uint32_t blockId) {
-    if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    if (blockId <= 0 || blockId > this->program.getBlockCount()) throw std::runtime_error("Invalid block");
     return this->program.getRawBlock(blockId);
 }
 
 BlockHeader VirtualChain::getBlockHeader(uint32_t blockId) {
-    if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    if (blockId <= 0 || blockId > this->program.getBlockCount()) throw std::runtime_error("Invalid block");
     return this->program.getBlockHeader(blockId);
 }
 
@@ -90,100 +79,47 @@ void VirtualChain::sync() {
 }
 
 uint32_t VirtualChain::getBlockCount() {
-    return this->numBlocks;
+    return this->program.getBlockCount();
 }
 
 Bigint VirtualChain::getTotalWork() {
-    return this->totalWork;
+    return this->program.getTotalWork();
 }
 
 Block VirtualChain::getBlock(uint32_t blockId) {
-    if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
+    if (blockId <= 0 || blockId > this->program.getBlockCount()) throw std::runtime_error("Invalid block");
     return this->program.getBlock(blockId);
 }
 
-ExecutionStatus VirtualChain::verifyTransaction(const Transaction& t) {
-    if (this->isSyncing) return IS_SYNCING;
-
-    LedgerState deltas;
-    // verify the transaction is consistent with ledger
-    std::unique_lock<std::mutex> ul(lock);
-    ExecutionStatus status = this->program.executeTransaction(t, deltas);
-    this->program.rollback(deltas);
-
-    if (this->program.hasTransaction(t)) {
-        status = EXPIRED_TRANSACTION;
-    }
-
-    return status;
-}
-
 SHA256Hash VirtualChain::getLastHash() {
-    return this->lastHash;
+    return this->program.getLastHash();
 }
 
 TransactionAmount VirtualChain::getWalletValue(PublicWalletAddress addr) {
     return this->program.getWalletValue(addr);
 }
 
-uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32_t expectedTime) {
-    uint32_t newDifficulty = currentDifficulty;
-    if (elapsedTime > expectedTime) {
-        int k = 2;
-        int lastK = 1;
-        while(newDifficulty > MIN_DIFFICULTY) {
-                if(abs(elapsedTime/k - expectedTime) > abs(elapsedTime/lastK - expectedTime) ) {
-                    break;
-                }
-            newDifficulty--;
-            lastK = k;
-            k*=2;
-        }
-        return newDifficulty;
-    } else {
-        int k = 2;
-        int lastK = 1;
-        while(newDifficulty < 254) {
-            if(abs(elapsedTime*k - expectedTime) > abs(elapsedTime*lastK - expectedTime) ) {
-                break;
-            }
-            newDifficulty++;
-            lastK = k;
-            k*=2;
-        }
-        return newDifficulty;
-    }
+void VirtualChain::updateDifficulty() {
+    return;
 }
 
-void VirtualChain::updateDifficulty() {
-    if (this->numBlocks <= DIFFICULTY_LOOKBACK*2) return;
-    if (this->numBlocks % DIFFICULTY_LOOKBACK != 0) return;
-    int firstID = this->numBlocks - DIFFICULTY_LOOKBACK;
-    int lastID = this->numBlocks;  
-    Block first = this->getBlock(firstID);
-    Block last = this->getBlock(lastID);
-    int32_t elapsed = last.getTimestamp() - first.getTimestamp(); 
-    uint32_t numBlocksElapsed = lastID - firstID;
-    int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
-    int32_t difficulty = last.getDifficulty();
-    this->difficulty = computeDifficulty(difficulty, elapsed, target);
+TransactionAmount VirtualChain::getCurrentMiningFee() {
+    return this->program.getCurrentMiningFee();
 }
 
 uint32_t VirtualChain::findBlockForTransactionId(SHA256Hash txid) {
-    uint32_t blockId = this->program.blockForTransactionId(txid);
-    return blockId;
+    return this->program.blockForTransactionId(txid);
 }
 
 uint32_t VirtualChain::findBlockForTransaction(Transaction &t) {
-    uint32_t blockId = this->program.blockForTransaction(t);
-    return blockId;
+    return this->program.blockForTransaction(t);
 }
 
-uint8_t VirtualChain::getDifficulty() {
-    return this->difficulty;
+int VirtualChain::getDifficulty() {
+    return this->program.getDifficulty();
 }
 
-vector<Transaction> VirtualChain::getTransactionsForWallet(PublicWalletAddress addr) {
+vector<Transaction> VirtualChain::getTransactionsForWallet(const PublicWalletAddress& addr) const {
     vector<SHA256Hash> txids = this->program.getTransactionsForWallet(addr);
     vector<Transaction> ret;
     // TODO: this is pretty inefficient -- might want direct index of transactions
@@ -202,14 +138,7 @@ vector<Transaction> VirtualChain::getTransactionsForWallet(PublicWalletAddress a
 void VirtualChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
     this->program.rollbackBlock(last);
-    this->numBlocks--;
-    Bigint base = 2;
-    this->totalWork -= base.pow((int)last.getDifficulty());
-    if (this->getBlockCount() > 1) {
-        Block newLast = this->getBlock(this->getBlockCount());
-        this->difficulty = newLast.getDifficulty();
-        this->lastHash = newLast.getHash();
-    } else {
+    if (this->getBlockCount() == 1) {
         this->resetChain();
     }
 }
@@ -226,20 +155,20 @@ ExecutionStatus VirtualChain::addBlockSync(Block& block) {
 ExecutionStatus VirtualChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
-    if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
+    if (block.getId() != this->program.getBlockCount() + 1) return INVALID_BLOCK_ID;
+    if (block.getDifficulty() != this->program.getDifficulty()) return INVALID_DIFFICULTY;
     if (!block.verifyNonce()) return INVALID_NONCE;
-    if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
+    if (block.getLastBlockHash() != this->program.getLastHash()) return INVALID_LASTBLOCK_HASH;
     if (block.getId() != 1) {
         // block must be less than 2 hrs into future from network time
         uint64_t maxTime = this->hosts.getNetworkTimestamp() + 120*60;
         if (block.getTimestamp() > maxTime) return BLOCK_TIMESTAMP_IN_FUTURE;
 
         // block must be after the median timestamp of last 10 blocks
-        if (this->numBlocks > 10) {
+        if (this->program.getBlockCount() > 10) {
             vector<uint64_t> times;
             for(int i = 0; i < 10; i++) {
-                Block b = this->getBlock(this->numBlocks - i);
+                Block b = this->getBlock(this->program.getBlockCount() - i);
                 times.push_back(b.getTimestamp());
             }
             std::sort(times.begin(), times.end());
@@ -258,25 +187,7 @@ ExecutionStatus VirtualChain::addBlock(Block& block) {
     m.setItems(block.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
-    LedgerState deltasFromBlock;
-    ExecutionStatus status = this->program.executeBlock(block, deltasFromBlock);
-
-    if (status != SUCCESS) {
-        this->program.rollback(deltasFromBlock);
-    } else {
-        // add all transactions to txdb:
-        for(auto t : block.getTransactions()) {
-            this->program.insertTransaction(t, block.getId());
-        }
-        this->program.setBlock(block);
-        this->numBlocks++;
-        this->totalWork = addWork(this->totalWork, block.getDifficulty());
-        this->program.setTotalWork(this->totalWork);
-        this->program.setBlockCount(this->numBlocks);
-        this->lastHash = block.getHash();
-        this->updateDifficulty();
-    }
-    return status;
+    return this->program.executeBlock(block);
 }
 
 
@@ -290,22 +201,22 @@ ExecutionStatus VirtualChain::startChainSync() {
     if (this->hosts.getTotalWork() > this->getTotalWork()) {
         // iterate through our current chain until a hash diverges from trusted chain
         uint64_t toPop = 0;
-        for(uint64_t i = 1; i <= this->numBlocks; i++) {
+        for(uint64_t i = 1; i <= this->program.getBlockCount(); i++) {
             SHA256Hash trustedHash = this->hosts.getBlockHash(bestHost, i);
             SHA256Hash myHash = this->getBlock(i).getHash();
             if (trustedHash != myHash) {
-                toPop = this->numBlocks - i + 1;
+                toPop = this->program.getBlockCount() - i + 1;
                 break;
             }
         }
         // pop all subsequent blocks
         for (uint64_t i = 0; i < toPop; i++) {
-            if (this->numBlocks == 1) break;
+            if (this->program.getBlockCount() == 1) break;
             this->popBlock();
         }
     }
 
-    int startCount = this->numBlocks;
+    int startCount = this->program.getBlockCount();
 
     int needed = this->targetBlockCount - startCount;
 

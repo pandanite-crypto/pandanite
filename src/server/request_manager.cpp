@@ -4,24 +4,35 @@
 #include <math.h>
 #include "../core/helpers.hpp"
 #include "../core/logger.hpp"
+#include "../core/api.hpp"
 #include "../core/merkle_tree.hpp"
 #include "request_manager.hpp"
+
 using namespace std;
 
 #define NEW_BLOCK_PEER_FANOUT 8
 
-RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath) : hosts(hosts) {
+RequestManager::RequestManager(json config) {
+    this->hosts = std::make_shared<HostManager>(config);
+
+    // start downloading headers from peers
+    this->hosts->syncHeadersWithPeers();
+
+    // start pinging other peers about ourselves
+    this->hosts->startPingingPeers();
+
+    this->defaultProgram = std::make_shared<Program>();
     this->blockchain = std::make_shared<BlockChain>(hosts, ledgerPath, blockPath, txdbPath);
     this->mempool = std::make_shared<MemPool>(hosts, *this->blockchain);
     this->rateLimiter = std::make_shared<RateLimiter>(30,5); // max of 30 requests over 5 sec period 
     this->programs = std::make_shared<ProgramStore>();
-    this->programs->init(programStorePath);
+    this->programs->init("programs");
     this->limitRequests = true;
-    if (!hosts.isDisabled()) {
+    if (!this->hosts->isDisabled()) {
         this->blockchain->sync();
      
         // initialize the mempool with a random peers transactions:
-        auto randomHost = hosts.sampleFreshHosts(1);
+        auto randomHost = hosts->sampleFreshHosts(1);
         if (randomHost.size() > 0) {
             try {
                 string host = *randomHost.begin();
@@ -50,14 +61,14 @@ json RequestManager::getPeerStats() {
 }
 
 void RequestManager::exit() {
-    this->blockchain->closeDB();
+    this->defaultProgram->closeDB();
 }
 
 RequestManager::~RequestManager() {
 }
 
 void RequestManager::deleteDB() {
-    this->blockchain->deleteDB();
+    this->defaultProgram->deleteDB();
 }
 
 json RequestManager::getTransactionsForWallet(PublicWalletAddress addr) {
@@ -94,7 +105,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
     
     if (status == SUCCESS) {
         //pick random neighbor hosts and forward the new block to:
-        set<string> neighbors = this->hosts.sampleFreshHosts(NEW_BLOCK_PEER_FANOUT);
+        set<string> neighbors = this->hosts->sampleFreshHosts(NEW_BLOCK_PEER_FANOUT);
         vector<future<void>> reqs;
         for(auto neighbor : neighbors) {
             std::thread{[neighbor, newBlock](){
@@ -214,7 +225,7 @@ json RequestManager::getProofOfWork() {
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
     result["chainLength"] = this->blockchain->getBlockCount();
-    result["miningFee"] = this->blockchain->getCurrentMiningFee(this->blockchain->getBlockCount());
+    result["miningFee"] = this->blockchain->getCurrentMiningFee();
     BlockHeader last = this->blockchain->getBlockHeader(this->blockchain->getBlockCount());
     result["lastTimestamp"] = uint64ToString(last.timestamp);
     return result;
@@ -246,14 +257,14 @@ json RequestManager::getBlock(uint32_t blockId) {
 
 json RequestManager::getPeers() {
     json peers = json::array();
-    for(auto h : this->hosts.getHosts()) {
+    for(auto h : this->hosts->getHosts()) {
         peers.push_back(h);
     }
     return peers;
 }
 
 json RequestManager::addPeer(string address, uint64_t time, string version, string network) {
-    this->hosts.addPeer(address, time, version, network);
+    this->hosts->addPeer(address, time, version, network);
     json ret;
     ret["status"] = executionStatusAsString(SUCCESS);
     return ret;
@@ -262,11 +273,10 @@ json RequestManager::addPeer(string address, uint64_t time, string version, stri
 
 json RequestManager::getLedger(PublicWalletAddress w) {
     json result;
-    Ledger& ledger = this->blockchain->getLedger();
-    if (!ledger.hasWallet(w)) {
+    try {
+        result["balance"] = this->blockchain->getWalletValue(w);
+    } catch(...) {
         result["error"] = "Wallet not found";
-    } else {
-        result["balance"] = ledger.getWalletValue(w);
     }
     return result;
 }

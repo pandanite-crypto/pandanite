@@ -11,7 +11,7 @@ using namespace std;
 
 class VirtualChain {
     public:
-        VirtualChain(Program& program);
+        VirtualChain(Program& program, HostManager& hosts);
         ~VirtualChain();
 
         // init, reset or start synchronization
@@ -22,14 +22,14 @@ class VirtualChain {
         // look up information regarding the chain
         Block getBlock(uint32_t blockId);
         Bigint getTotalWork();
-        uint8_t getDifficulty();
+        int getDifficulty();
         uint32_t getBlockCount();
-        uint32_t getCurrentMiningFee(uint64_t blockId);
+        TransactionAmount getCurrentMiningFee();
         SHA256Hash getLastHash();
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         BlockHeader getBlockHeader(uint32_t blockId);
         TransactionAmount getWalletValue(PublicWalletAddress addr);
-        vector<Transaction> getTransactionsForWallet(PublicWalletAddress addr);
+        vector<Transaction> getTransactionsForWallet(const PublicWalletAddress& addr) const;
         virtual ProgramID getProgramForWallet(PublicWalletAddress addr);
         Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);
@@ -46,10 +46,6 @@ class VirtualChain {
         // chain state
         bool isSyncing;
         bool shutdown;
-        int numBlocks;
-        Bigint totalWork;
-        SHA256Hash lastHash;
-        int difficulty;
         int targetBlockCount;
 
         Program& program;

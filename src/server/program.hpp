@@ -6,15 +6,16 @@
 #include "tx_store.hpp"
 #include "block_store.hpp"
 #include "program.hpp"
-#include "executor.hpp"
 
 using namespace std;
 
+class Executor;
+
 class Program {
     public:
-        Program(vector<uint8_t>& byteCode, HostManager& hosts);
-        Program(json obj, HostManager& hosts);
-        Program(HostManager& hosts);
+        Program(vector<uint8_t>& byteCode);
+        Program(json obj);
+        Program();
 
         // get program info
         ProgramID getId() const;
@@ -27,18 +28,26 @@ class Program {
         void deleteDB();
 
         // data access methods
+        uint64_t getBlockCount() const;
+        Bigint getTotalWork() const;
+        bool hasBlockCount() const;
         Block getGenesis() const;
+        uint64_t blockForTransaction(const Transaction& t) const;
+        vector<SHA256Hash> getTransactionsForWallet(const PublicWalletAddress& wallet) const;
         uint32_t blockForTransactionId(SHA256Hash txid) const;
         Block getBlock(uint64_t blockId) const;
         std::pair<uint8_t*, size_t> getRawBlock(uint64_t blockId) const;
         BlockHeader getBlockHeader(uint64_t blockId) const;
         TransactionAmount getWalletValue(PublicWalletAddress& wallet) const;
+        SHA256Hash getLastHash() const;
+        bool getDifficulty() const;
+        TransactionAmount getCurrentMiningFee() const;
         bool hasTransaction(Transaction& t) const;
         bool hasWalletProgram(PublicWalletAddress& wallet) const;
-        Program getWalletProgram(PublicWalletAddress& wallet) const;
+        ProgramID getWalletProgram(PublicWalletAddress& wallet) const;
 
         // update methods
-        ExecutionStatus executeBlock(Block& block, LedgerState& deltasFromBlock);
+        ExecutionStatus executeBlock(Block& block);
         ExecutionStatus executeTransaction(const Transaction& t, LedgerState& deltas);
         void rollback(LedgerState& deltas);
         void rollbackBlock(Block& block);
@@ -46,14 +55,16 @@ class Program {
         void setBlockCount(uint64_t count);
     protected:
         void removeBlockWalletTransactions(Block& b);
-        HostManager& hosts;
         std::shared_ptr<Executor> executor;
         ProgramID id;
         BlockStore blockStore;
         Ledger ledger;
         TransactionStore txdb;
         vector<uint8_t> byteCode;
-        
+        int numBlocks;
+        Bigint totalWork;
+        SHA256Hash lastHash;
+        int difficulty;
         friend bool operator==(const Program& a, const Program& b);
 };
 

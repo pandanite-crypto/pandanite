@@ -51,5 +51,6 @@ class RequestManager {
         std::shared_ptr<BlockChain> blockchain;
         std::shared_ptr<MemPool> mempool;
         std::shared_ptr<HostManager> hosts;
+        std::shared_ptr<Program> defaultProgram;
         std::shared_ptr<ProgramStore> programs;
 };

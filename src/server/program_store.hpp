@@ -2,7 +2,7 @@
 #include <string>
 #include "leveldb/db.h"
 #include "data_store.hpp"
-#include "../core/program.hpp"
+#include "program.hpp"
 using namespace std;
 
 

@@ -19,7 +19,7 @@ class BlockStore : public DataStore {
         Bigint getTotalWork() const;
         bool hasBlockCount() const;
 
-        vector<SHA256Hash> getTransactionsForWallet(PublicWalletAddress& wallet) const;
+        vector<SHA256Hash> getTransactionsForWallet(const PublicWalletAddress& wallet) const;
         void removeBlockWalletTransactions(Block& block);
     protected:
         vector<TransactionInfo> getBlockTransactions(BlockHeader& block) const;
