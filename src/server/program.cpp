@@ -17,12 +17,21 @@ Program::Program(){
     this->id = NULL_SHA256_HASH;
     // use the default executor
     this->executor = std::make_shared<Executor>();
+    this->lastHash = NULL_SHA256_HASH;
+    this->difficulty = this->getGenesis().getDifficulty();
     std::string basePath = "./data/prog_";
     basePath += SHA256toString(this->id).substr(0,5);
     basePath += "_";
     this->ledger.init(basePath + "ledger");
     this->blockStore.init(basePath + "blocks");
     this->txdb.init(basePath + "txdb");
+    if (this->blockStore.hasBlockCount()) {
+        this->numBlocks = this->blockStore.getBlockCount();
+        this->totalWork = this->blockStore.getTotalWork();
+        Block last = this->blockStore.getBlock(this->numBlocks);
+        this->lastHash = last.getHash();
+        this->difficulty = last.getDifficulty();
+    }
 }
 
 vector<uint8_t> Program::getByteCode() const {

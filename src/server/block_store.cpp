@@ -101,7 +101,7 @@ vector<TransactionInfo> BlockStore::getBlockTransactions(BlockHeader& block) con
 
 std::pair<uint8_t*, size_t> BlockStore::getRawData(uint32_t blockId) const {
     BlockHeader block = this->getBlockHeader(blockId);
-    size_t numBytes = BLOCKHEADER_BUFFER_SIZE + (TRANSACTIONINFO_BUFFER_SIZE * block.numTransactions);
+    size_t numBytes = BLOCKHEADER_BUFFER_SIZE + (transactionInfoBufferSize() * block.numTransactions);
     char* buffer = (char*)malloc(numBytes);
     blockHeaderToBuffer(block, buffer);
     char* transactionBuffer = buffer + BLOCKHEADER_BUFFER_SIZE;
@@ -117,7 +117,7 @@ std::pair<uint8_t*, size_t> BlockStore::getRawData(uint32_t blockId) const {
         TransactionInfo txinfo = *(TransactionInfo*)(value.c_str());
         transactionInfoToBuffer(txinfo, currTransactionPtr);
         if (!status.ok()) throw std::runtime_error("Could not read transaction from BlockStore db : " + status.ToString());
-        currTransactionPtr += TRANSACTIONINFO_BUFFER_SIZE;
+        currTransactionPtr += transactionInfoBufferSize();
     }
     return std::pair<uint8_t*, size_t>((uint8_t*)buffer, numBytes);
 }
