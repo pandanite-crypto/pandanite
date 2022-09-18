@@ -1,7 +1,7 @@
 #include "blockchain.hpp"
 
 BlockChain::BlockChain(Program& program, HostManager& hosts) : VirtualChain(program, hosts) {
-
+    this->memPool = nullptr;
 }
 
 ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
@@ -34,7 +34,7 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     ExecutionStatus status = VirtualChain::addBlock(block);
-    if (status == SUCCESS) {
+    if (status == SUCCESS && this->memPool) {
         this->memPool->finishBlock(block);
     }
     return status;

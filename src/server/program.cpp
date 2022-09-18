@@ -17,6 +17,12 @@ Program::Program(){
     this->id = NULL_SHA256_HASH;
     // use the default executor
     this->executor = std::make_shared<Executor>();
+    std::string basePath = "./data/prog_";
+    basePath += SHA256toString(this->id).substr(0,5);
+    basePath += "_";
+    this->ledger.init(basePath + "ledger");
+    this->blockStore.init(basePath + "blocks");
+    this->txdb.init(basePath + "txdb");
 }
 
 vector<uint8_t> Program::getByteCode() const {
@@ -43,7 +49,7 @@ ProgramID Program::getId() const{
 
 void Program::clearState() {
     this->lastHash = NULL_SHA256_HASH;
-    this->difficulty = 0;
+    this->difficulty = this->getGenesis().getDifficulty();
     this->numBlocks = 0;
     this->totalWork = 0;
     this->ledger.clear();
@@ -73,6 +79,7 @@ bool Program::hasBlockCount() const {
 }
 
 uint64_t Program::getBlockCount() const {
+    if (!this->hasBlockCount()) return 0;
     return this->blockStore.getBlockCount();
 }
 
@@ -104,7 +111,7 @@ bool Program::hasTransaction(Transaction& t) const {
     return this->txdb.hasTransaction(t);
 }
 
-bool Program::getDifficulty() const {
+int Program::getDifficulty() const {
     return this->difficulty;
 }
 
@@ -157,12 +164,14 @@ uint64_t Program::blockForTransaction(const Transaction& t) const {
 }
 
 void Program::rollbackBlock(Block& block) {
-    this->executor->rollbackBlock(block, this->ledger, this->txdb);
+    this->executor->rollbackBlock(block, this->ledger, this->txdb, this->blockStore);
     this->numBlocks--;
     Block last = this->getBlock(this->numBlocks);
     Bigint base = 2;
     this->totalWork -= base.pow((int)last.getDifficulty());
     this->difficulty = last.getDifficulty();
+    this->blockStore.setTotalWork(totalWork);
+    this->blockStore.setBlockCount(this->numBlocks);
 }
 
 void Program::setTotalWork(Bigint total) {
@@ -175,6 +184,15 @@ void Program::setBlockCount(uint64_t count) {
 
 void Program::removeBlockWalletTransactions(Block& b) {
     this->blockStore.removeBlockWalletTransactions(b);
+}
+
+void Program::deleteData() {
+    this->blockStore.closeDB();
+    this->txdb.closeDB();
+    this->ledger.closeDB();
+    this->blockStore.deleteDB();
+    this->txdb.deleteDB();
+    this->ledger.deleteDB();
 }
 
 bool operator==(const Program& a, const Program& b) {

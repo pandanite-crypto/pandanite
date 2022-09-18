@@ -31,7 +31,6 @@ class VirtualChain {
         TransactionAmount getWalletValue(PublicWalletAddress addr);
         vector<Transaction> getTransactionsForWallet(const PublicWalletAddress& addr) const;
         virtual ProgramID getProgramForWallet(PublicWalletAddress addr);
-        Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);
         uint32_t findBlockForTransactionId(SHA256Hash txid);
 
