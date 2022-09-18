@@ -32,4 +32,4 @@ RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make server
 
 RUN cp /bamboo/bin/* /usr/local/bin
 
-COPY genesis.json blacklist.txt ./
+COPY genesis.json ./
