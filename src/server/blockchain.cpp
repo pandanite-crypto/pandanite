@@ -1,34 +1,8 @@
-#include "../external/http.hpp"
-#include <map>
-#include <iostream>
-#include <stdexcept>
-#include <stdlib.h>
-#include <map>
-#include <algorithm>
-#include <mutex>
-#include <functional>
-#include <thread>
-#include <cstring>
-#include <cmath>
-#include <fstream>
-#include <algorithm>
-#include <mutex>
-#include "../core/merkle_tree.hpp"
-#include "../core/logger.hpp"
-#include "../core/helpers.hpp"
-#include "../core/api.hpp"
-#include "../core/user.hpp"
 #include "blockchain.hpp"
-#include "mempool.hpp"
-#include "genesis.hpp"
 
-#define FORK_CHAIN_POP_COUNT 1
-#define FORK_RESET_RETRIES 3
-#define MAX_DISCONNECTS_BEFORE_RESET 10
-#define FAILURES_BEFORE_POP_ATTEMPT 1
 
-using namespace std;
 
+<<<<<<< HEAD
 void chain_sync(BlockChain& blockchain) {
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
@@ -184,27 +158,33 @@ Bigint BlockChain::getTotalWork() {
 Block BlockChain::getBlock(uint32_t blockId) {
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore->getBlock(blockId);
+=======
+ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
+    if (this->program.hasWalletProgram(addr)) return this->program.getWalletProgram(addr).getId();
+    return NULL_SHA256_HASH;
+}
+
+void BlockChain::setMemPool(MemPool * memPool) {
+    this->memPool = memPool;
+>>>>>>> 4a35b88... major refactor of blockchain class
 }
 
 ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     if (this->isSyncing) return IS_SYNCING;
     if (t.isFee()) return EXTRA_MINING_FEE;
     if (!t.signatureValid()) return INVALID_SIGNATURE;
-    LedgerState deltas;
+    
     // verify the transaction is consistent with ledger
     std::unique_lock<std::mutex> ul(lock);
-    ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
+    LedgerState deltas;
+    ExecutionStatus status = this->program.executeTransaction(t, deltas);
 
     //roll back the ledger to it's original state:
-    Executor::Rollback(this->getLedger(), deltas);
-
-    if (this->txdb.hasTransaction(t)) {
-        status = EXPIRED_TRANSACTION;
-    }
-
+    this->program.rollback(deltas);
     return status;
 }
 
+<<<<<<< HEAD
 SHA256Hash BlockChain::getLastHash() {
     return this->lastHash;
 }
@@ -432,50 +412,11 @@ ExecutionStatus BlockChain::startChainSync() {
             if (this->numBlocks == 1) break;
             this->popBlock();
         }
+=======
+ExecutionStatus BlockChain::addBlock(Block& block) {
+    ExecutionStatus status = VirtualChain::addBlock(block);
+    if (status == SUCCESS) {
+        this->memPool->finishBlock(block);
+>>>>>>> 4a35b88... major refactor of blockchain class
     }
-
-    int startCount = this->numBlocks;
-
-    int needed = this->targetBlockCount - startCount;
-    if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
-    // download any remaining blocks in batches
-    uint64_t start = std::time(0);
-    for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
-        try {
-            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
-            bool failure = false;
-            ExecutionStatus status;
-            BlockChain &bc = *this;
-            int count = 0;
-            vector<Block> blocks;
-            readRawBlocks(bestHost, i, end, blocks);
-            for(auto & b : blocks) {   
-                ExecutionStatus addResult = bc.addBlock(b);
-                if (addResult != SUCCESS) {
-                    failure = true;
-                    status = addResult;
-                    Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
-                    break;
-                }
-            }
-            if (failure) {
-                Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
-                this->isSyncing = false;
-                return status;
-            }
-        } catch (const std::exception &e) {
-            this->isSyncing = false;
-            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
-            return UNKNOWN_ERROR;
-        }
-    }
-    uint64_t final = std::time(0);
-    uint64_t d = final - start;
-    stringstream s;
-    s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
-    if (needed > 1) Logger::logStatus(s.str());
-    this->isSyncing = false;
-    return SUCCESS;
 }
-
-

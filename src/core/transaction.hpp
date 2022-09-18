@@ -44,7 +44,7 @@ class Transaction {
         void makeLayer2(ProgramID programId, TransactionData data);
         TransactionAmount getTransactionFee() const;
         void setAmount(TransactionAmount amt);
-        PublicKey getSigningKey();
+        PublicKey getSigningKey() const;
         PublicWalletAddress fromWallet() const;
         PublicWalletAddress toWallet() const;
         TransactionAmount getAmount() const;

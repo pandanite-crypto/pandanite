@@ -16,7 +16,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="", string programStorePath="");
+        RequestManager(json config);
         ~RequestManager();
         bool acceptRequest(std::string& ip);
         json addTransaction(Transaction& t);
@@ -50,5 +50,6 @@ class RequestManager {
         std::shared_ptr<RateLimiter> rateLimiter;
         std::shared_ptr<BlockChain> blockchain;
         std::shared_ptr<MemPool> mempool;
+        std::shared_ptr<HostManager> hosts;
         std::shared_ptr<ProgramStore> programs;
 };

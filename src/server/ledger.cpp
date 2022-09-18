@@ -26,13 +26,13 @@ leveldb::Slice amountToSlice(const TransactionAmount& t) {
     return s2;
 }
 
-bool Ledger::hasWallet(const PublicWalletAddress& wallet) {
+bool Ledger::hasWallet(const PublicWalletAddress& wallet) const{
     std::string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), walletToSlice(wallet), &value);
     return (status.ok());
 }
 
-bool Ledger::hasWalletProgram(const PublicWalletAddress& wallet) {
+bool Ledger::hasWalletProgram(const PublicWalletAddress& wallet) const {
     std::string value;
     std::array<uint8_t, 26> buf; // TODO: This is ugly, but leveldb::Slice needs membuffer to point into
     leveldb::Status status = db->Get(leveldb::ReadOptions(), walletProgramStatus(wallet, buf), &value);
@@ -46,7 +46,7 @@ void Ledger::removeWalletProgram(const PublicWalletAddress& wallet) {
     if(!status.ok()) throw std::runtime_error("Could not remove wallet program " + status.ToString());
 }
 
-ProgramID Ledger::getWalletProgram(const PublicWalletAddress& wallet) {
+ProgramID Ledger::getWalletProgram(const PublicWalletAddress& wallet) const {
     std::string value;
     std::array<uint8_t, 26> buf; // TODO: This is ugly, but leveldb::Slice needs membuffer to point into
     leveldb::Status status = db->Get(leveldb::ReadOptions(), walletProgramStatus(wallet, buf), &value);
@@ -71,7 +71,7 @@ void Ledger::setWalletValue(const PublicWalletAddress& wallet, TransactionAmount
     if (!status.ok()) throw std::runtime_error("Write failed: " + status.ToString());
 }
 
-TransactionAmount Ledger::getWalletValue(const PublicWalletAddress& wallet) {
+TransactionAmount Ledger::getWalletValue(const PublicWalletAddress& wallet) const{
     std::string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), walletToSlice(wallet), &value);
     if(!status.ok()) throw std::runtime_error("Tried fetching wallet value for non-existant wallet");

@@ -260,7 +260,7 @@ bool Transaction::signatureValid() const {
 
 }
 
-PublicKey Transaction::getSigningKey() {
+PublicKey Transaction::getSigningKey() const {
     return this->signingKey;
 }
 
