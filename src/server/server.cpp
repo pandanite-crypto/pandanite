@@ -60,17 +60,9 @@ void BambooServer::run(json config) {
     }
 
     Logger::logStatus("Starting server...");
-    HostManager hosts(config);
 
     
-    RequestManager manager(hosts);
-
-    // start downloading headers from peers
-    hosts.syncHeadersWithPeers();
-
-    // start pinging other peers about ourselves
-    hosts.startPingingPeers();
-
+    RequestManager manager(config);
 
     shutdown_handler = [&](int signal) {
         Logger::logStatus("Shutting down server.");
@@ -912,9 +904,9 @@ void BambooServer::run(json config) {
         .options("/verify_transaction", corsHandler)
         
         
-        .listen((int)config["port"], [&hosts](auto *token) {
+        .listen((int)config["port"], [](auto *token) {
             Logger::logStatus("==========================================");
-            Logger::logStatus("Started server: " + hosts.getAddress());
+            Logger::logStatus("Started server");
             Logger::logStatus("==========================================");
         }).run();
 }

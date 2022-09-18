@@ -1,14 +1,20 @@
 #include "blockchain.hpp"
 
+BlockChain::BlockChain(Program& program, HostManager& hosts) : VirtualChain(program, hosts) {
 
+}
 
 ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
-    if (this->program.hasWalletProgram(addr)) return this->program.getWalletProgram(addr).getId();
+    if (this->program.hasWalletProgram(addr)) return this->program.getWalletProgram(addr);
     return NULL_SHA256_HASH;
 }
 
 void BlockChain::setMemPool(MemPool * memPool) {
     this->memPool = memPool;
+}
+
+map<string, uint64_t> BlockChain::getHeaderChainStats() const {
+    return this->hosts.getHeaderChainStats();
 }
 
 ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
@@ -31,4 +37,5 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (status == SUCCESS) {
         this->memPool->finishBlock(block);
     }
+    return status;
 }

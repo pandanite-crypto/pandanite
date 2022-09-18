@@ -133,7 +133,7 @@ Block BlockStore::getBlock(uint32_t blockId) const {
     return ret;
 }
 
-vector<SHA256Hash> BlockStore::getTransactionsForWallet(PublicWalletAddress& wallet) const {
+vector<SHA256Hash> BlockStore::getTransactionsForWallet(const PublicWalletAddress& wallet) const {
     struct {
         uint8_t addr[25];
         uint8_t txId[32];

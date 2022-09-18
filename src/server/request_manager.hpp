@@ -49,5 +49,6 @@ class RequestManager {
         RateLimiter* rateLimiter;
         BlockChain* blockchain;
         MemPool* mempool;
+        std::shared_ptr<Program> defaultProgram;
         std::shared_ptr<ProgramStore> programs;
 };
