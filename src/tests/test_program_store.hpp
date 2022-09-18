@@ -1,5 +1,5 @@
 #include "../core/crypto.hpp"
-#include "../core/program.hpp"
+#include "../server/program.hpp"
 #include "../server/program_store.hpp"
 using namespace std;
 

@@ -42,8 +42,9 @@ string executionStatusAsString(ExecutionStatus s);
 
 class Executor {
     public:
-        static void Rollback(Ledger& ledger, LedgerState& deltas);
-        static void RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb);
-        static ExecutionStatus ExecuteBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount miningFee);
-        static ExecutionStatus ExecuteTransaction(Ledger& ledger, Transaction t, LedgerState& deltas);
+        Block getGenesis() const;
+        void rollback(Ledger& ledger, LedgerState& deltas) const;
+        void rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb) const;
+        ExecutionStatus executeBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas) const;
+        ExecutionStatus executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas) const;
 };

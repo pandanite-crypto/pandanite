@@ -8,15 +8,15 @@ using namespace std;
 class Ledger : public DataStore {
     public:
         Ledger();
-        bool hasWallet(const PublicWalletAddress& wallet);
-        TransactionAmount getWalletValue(const PublicWalletAddress& wallet);
+        bool hasWallet(const PublicWalletAddress& wallet) const;
+        TransactionAmount getWalletValue(const PublicWalletAddress& wallet) const;
         void createWallet(const PublicWalletAddress& wallet);
         void withdraw(const PublicWalletAddress& wallet, TransactionAmount amt);
         void revertSend(const PublicWalletAddress& wallet, TransactionAmount amt);
         void revertDeposit(PublicWalletAddress to, TransactionAmount amt);
         void deposit(const PublicWalletAddress& wallet, TransactionAmount amt);
-        bool hasWalletProgram(const PublicWalletAddress& wallet);
-        ProgramID getWalletProgram(const PublicWalletAddress& wallet);
+        bool hasWalletProgram(const PublicWalletAddress& wallet) const;
+        ProgramID getWalletProgram(const PublicWalletAddress& wallet) const;
         void setWalletProgram(const PublicWalletAddress& wallet, const ProgramID& program);
         void removeWalletProgram(const PublicWalletAddress& wallet);
     protected:
