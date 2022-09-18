@@ -12,9 +12,6 @@
 
 
 // Files
-#define LEDGER_FILE_PATH "./data/ledger"
-#define TXDB_FILE_PATH "./data/txdb"
-#define BLOCK_STORE_FILE_PATH "./data/blocks"
 #define PUFFERFISH_CACHE_FILE_PATH "./data/pufferfish"
 
 // Blocks

@@ -40,7 +40,7 @@ class Program {
         BlockHeader getBlockHeader(uint64_t blockId) const;
         TransactionAmount getWalletValue(PublicWalletAddress& wallet) const;
         SHA256Hash getLastHash() const;
-        bool getDifficulty() const;
+        int getDifficulty() const;
         TransactionAmount getCurrentMiningFee() const;
         bool hasTransaction(Transaction& t) const;
         bool hasWalletProgram(PublicWalletAddress& wallet) const;
@@ -53,6 +53,7 @@ class Program {
         void rollbackBlock(Block& block);
         void setTotalWork(Bigint total);
         void setBlockCount(uint64_t count);
+        void deleteData();
     protected:
         void removeBlockWalletTransactions(Block& b);
         std::shared_ptr<Executor> executor;
