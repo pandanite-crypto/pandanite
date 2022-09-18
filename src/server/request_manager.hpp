@@ -15,7 +15,7 @@ using namespace std;
 
 class RequestManager {
     public:
-        RequestManager(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="", string programStorePath="");
+        RequestManager(json config);
         ~RequestManager();
         bool acceptRequest(std::string& ip);
         json addTransaction(Transaction& t);
@@ -45,7 +45,7 @@ class RequestManager {
         void enableRateLimiting(bool enabled);
     protected:
         bool limitRequests;
-        HostManager& hosts;
+        std::shared_ptr<HostManager> hosts;
         RateLimiter* rateLimiter;
         BlockChain* blockchain;
         MemPool* mempool;

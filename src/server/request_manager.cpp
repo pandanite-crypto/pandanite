@@ -10,8 +10,9 @@ using namespace std;
 
 #define NEW_BLOCK_PEER_FANOUT 8
 
-RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blockPath, string txdbPath, string programStorePath) : hosts(hosts) {
-    this->blockchain = new BlockChain(hosts, ledgerPath, blockPath, txdbPath);
+RequestManager::RequestManager(json config) : {
+    this->hosts = std::make_shared<HostManager>(config);
+    this->blockchain = new BlockChain(hosts);
     this->mempool = new MemPool(hosts, *this->blockchain);
     this->rateLimiter = new RateLimiter(30,5); // max of 30 requests over 5 sec period 
     this->programs = std::make_shared<ProgramStore>();

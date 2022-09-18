@@ -128,7 +128,20 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     }
 }
 
-ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
+Block Executor::getGenesis() const {
+    json genesisJson;
+    try {
+        genesisJson = readJsonFromFile("genesis.json");
+    } catch(...) {
+        Logger::logError(RED + "[FATAL]" + RESET, "Could not load genesis.json file.");
+        exit(-1);
+    }
+
+    Block genesis(genesisJson);
+    return genesis;
+}
+
+ExecutionStatus updateLedger(const Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
     if (t.isProgramExecution()) {
         ledger.setWalletProgram(t.fromWallet(), t.getProgramId());
         return SUCCESS;
@@ -204,13 +217,13 @@ void rollbackLedger(Transaction& t,  PublicWalletAddress& miner, Ledger& ledger)
     }
 }
 
-void Executor::Rollback(Ledger& ledger, LedgerState& deltas) {
+void Executor::rollback(Ledger& ledger, LedgerState& deltas) const{
     for(auto it : deltas) {
         ledger.withdraw(it.first, it.second);
     }
 }
 
-void Executor::RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb) {
+void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb) const{
     PublicWalletAddress miner;
     for(auto t : curr.getTransactions()) {
         if (t.isFee()) {
@@ -227,7 +240,7 @@ void Executor::RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txd
     }
 }
 
-ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  LedgerState& deltas) {
+ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t,  LedgerState& deltas) const{
     if (!t.isFee() && !t.signatureValid()) {
         return INVALID_SIGNATURE;
     }
@@ -240,7 +253,25 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
     return updateLedger(t, miner, ledger, deltas, BMB(0), 0); // ExecuteTransaction is only used on non-fee transactions
 }
 
-ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee) {
+
+ExecutionStatus Executor::executeBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas) const{
+    // compute the fee based on blockId:
+    // NOTE:
+    // The chain was forked three times, once at 7,750 and again at 125,180, then at 18k
+    // Thus we push the chain ahead by this count.
+    // SEE: https://bitcointalk.org/index.php?topic=5372707.msg58965610#msg58965610
+    uint64_t logicalBlock = curr.getId() + 125180 + 7750 + 18000;
+    TransactionAmount blockMiningFee;
+    if (logicalBlock < 1000000) {
+        blockMiningFee = BMB(50.0);
+    } else if (logicalBlock < 2000000) {
+        blockMiningFee = BMB(25.0);
+    }  else if (logicalBlock < 4000000) {
+        blockMiningFee = BMB(12.5);
+    } else {
+        blockMiningFee = BMB(0.0);
+    }
+    
     // try executing each transaction
     bool foundFee = false;
     PublicWalletAddress miner;
