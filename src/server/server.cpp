@@ -60,17 +60,9 @@ void BambooServer::run(json config) {
     }
 
     Logger::logStatus("Starting server...");
-    HostManager hosts(config);
 
     
-    RequestManager manager(hosts);
-
-    // start downloading headers from peers
-    hosts.syncHeadersWithPeers();
-
-    // start pinging other peers about ourselves
-    hosts.startPingingPeers();
-
+    RequestManager manager(config);
 
     shutdown_handler = [&](int signal) {
         Logger::logStatus("Shutting down server.");
@@ -261,6 +253,55 @@ void BambooServer::run(json config) {
         }
     };
 
+    auto getProgramHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            if (req->getQuery("wallet").length() == 0) {
+                json err;
+                err["error"] = "No query parameters specified";
+                res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                return;
+            }
+            PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
+            json program = manager.getProgram(w);
+            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(program.dump());
+        } catch(const std::exception &e) {
+            Logger::logError("/get_program", e.what());
+        } catch(...) {
+            Logger::logError("/get_program", "unknown");
+        }
+    };
+
+    auto setProgramHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        std::string buffer;
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
+            if (last) {
+                try {
+                    json parsed = json::parse(string(buffer));
+                    if (req->getQuery("wallet").length() == 0) {
+                        json err;
+                        err["error"] = "No query parameters specified";
+                        res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                        return;
+                    }
+                    PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
+                    Program p(parsed);
+                    json result = manager.setProgram(w,p);
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/set_program", e.what());
+                } catch(...) {
+                    Logger::logError("/set_program", "unknown");
+                }
+            }
+        });
+    };
+
     auto walletHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
@@ -395,7 +436,7 @@ void BambooServer::run(json config) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE) {
+                    if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed block";
                         Logger::logError("/submit","Malformed block");
@@ -404,7 +445,7 @@ void BambooServer::run(json config) {
                         char * ptr = (char*)buffer.c_str();
                         BlockHeader blockH = blockHeaderFromBuffer(ptr);
                         ptr += BLOCKHEADER_BUFFER_SIZE;
-                        if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
+                        if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*transactionInfoBufferSize()) {
                             json response;
                             response["error"] = "Malformed block";
                             Logger::logError("/submit","Malformed block");
@@ -421,7 +462,7 @@ void BambooServer::run(json config) {
                         } else {
                             for(int j = 0; j < blockH.numTransactions; j++) {
                                 TransactionInfo t = transactionInfoFromBuffer(ptr);
-                                ptr += TRANSACTIONINFO_BUFFER_SIZE;
+                                ptr += transactionInfoBufferSize();
                                 Transaction tx(t);
                                 transactions.push_back(tx);
                             }
@@ -667,13 +708,13 @@ void BambooServer::run(json config) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    if (buffer.length() < TRANSACTIONINFO_BUFFER_SIZE) {
+                    if (buffer.length() < transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed transaction";
                         Logger::logError("/add_transaction","Malformed transaction");
                         res->end(response.dump());
                     } else {
-                        uint32_t numTransactions = buffer.length() / TRANSACTIONINFO_BUFFER_SIZE;
+                        uint32_t numTransactions = buffer.length() / transactionInfoBufferSize();
                         const char* buf = buffer.c_str();
                         json response = json::array();
                         for (int i = 0; i < numTransactions; i++) {
@@ -863,9 +904,9 @@ void BambooServer::run(json config) {
         .options("/verify_transaction", corsHandler)
         
         
-        .listen((int)config["port"], [&hosts](auto *token) {
+        .listen((int)config["port"], [&manager](auto *token) {
             Logger::logStatus("==========================================");
-            Logger::logStatus("Started server: " + hosts.getAddress());
+            Logger::logStatus("Started server " + manager.getHostAddress());
             Logger::logStatus("==========================================");
         }).run();
 }

@@ -48,7 +48,7 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
 
 json submitBlock(string host_url, Block& block) {
     BlockHeader b = block.serialize();
-    vector<uint8_t> bytes(BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE * b.numTransactions);
+    vector<uint8_t> bytes(BLOCKHEADER_BUFFER_SIZE + transactionInfoBufferSize() * b.numTransactions);
 
     char* ptr = (char*) bytes.data();
     blockHeaderToBuffer(b, ptr);
@@ -57,7 +57,7 @@ json submitBlock(string host_url, Block& block) {
     for(auto t : block.getTransactions()) {
         TransactionInfo tx = t.serialize();
         transactionInfoToBuffer(tx, ptr);
-        ptr += TRANSACTIONINFO_BUFFER_SIZE;
+        ptr += transactionInfoBufferSize();
     }
     http::Request request(host_url + "/submit");
     const auto response = request.send("POST", bytes, {
@@ -73,11 +73,18 @@ json getMiningProblem(string host_url) {
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
+json getProgram(string host_url, PublicWalletAddress& w) {
+    string url = host_url + "/get_program?wallet=" + walletAddressToString(w);
+    http::Request request(url);
+    const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
+    return json::parse(std::string{response.body.begin(), response.body.end()});
+}
+
 json sendTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/add_transaction");
 
     TransactionInfo info = t.serialize();
-    vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE);
+    vector<uint8_t> bytes(transactionInfoBufferSize());
     transactionInfoToBuffer(info, (char*)bytes.data());
     
     const auto response = request.send("POST", bytes, {
@@ -90,10 +97,10 @@ json sendTransaction(string host_url, Transaction& t) {
 json sendTransactions(string host_url, vector<Transaction>& transactionList) {
     http::Request request(host_url + "/add_transaction");
 
-    vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE * transactionList.size());
+    vector<uint8_t> bytes(transactionInfoBufferSize() * transactionList.size());
     for(int i = 0; i < transactionList.size(); i++) {
         TransactionInfo tx = transactionList[i].serialize();
-        transactionInfoToBuffer(tx, (char*)bytes.data() + i*TRANSACTIONINFO_BUFFER_SIZE);
+        transactionInfoToBuffer(tx, (char*)bytes.data() + i*transactionInfoBufferSize());
     }
 
     const auto response = request.send("POST", bytes, {
@@ -155,8 +162,8 @@ void readRawBlocks(string host_url, int startId, int endId, vector<Block>& block
         for(int i = 0; i < b.numTransactions; i++) {
             TransactionInfo tmp = transactionInfoFromBuffer((char*)currPtr);
             transactions.push_back(Transaction(tmp));
-            currPtr += TRANSACTIONINFO_BUFFER_SIZE;
-            bytesRead += TRANSACTIONINFO_BUFFER_SIZE;
+            currPtr += transactionInfoBufferSize();
+            bytesRead += transactionInfoBufferSize();
         }
         numBlocks++;
         blocks.push_back(Block(b, transactions));
@@ -172,10 +179,10 @@ void readRawTransactions(string host_url, vector<Transaction>& transactions) {
     
     std::vector<char> bytes(response.body.begin(), response.body.end());
     uint8_t* curr = (uint8_t*)bytes.data();
-    int numTx = bytes.size() / TRANSACTIONINFO_BUFFER_SIZE;
+    int numTx = bytes.size() / transactionInfoBufferSize();
     for(int i =0; i < numTx; i++){
         TransactionInfo t = transactionInfoFromBuffer((char*)curr);
         transactions.push_back(Transaction(t));
-        curr+= TRANSACTIONINFO_BUFFER_SIZE;
+        curr+= transactionInfoBufferSize();
     }
 }

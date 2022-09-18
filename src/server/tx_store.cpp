@@ -5,7 +5,7 @@
 TransactionStore::TransactionStore() {
 }
 
-bool TransactionStore::hasTransaction(const Transaction &t) {
+bool TransactionStore::hasTransaction(const Transaction &t) const {
     SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
@@ -13,7 +13,7 @@ bool TransactionStore::hasTransaction(const Transaction &t) {
     return (status.ok());
 }
 
-uint32_t TransactionStore::blockForTransaction(Transaction &t) {
+uint32_t TransactionStore::blockForTransaction(const Transaction &t) const {
     SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
@@ -23,7 +23,7 @@ uint32_t TransactionStore::blockForTransaction(Transaction &t) {
     return val;
 }
 
-uint32_t TransactionStore::blockForTransactionId(SHA256Hash txHash) {
+uint32_t TransactionStore::blockForTransactionId(SHA256Hash txHash) const {
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
@@ -32,7 +32,7 @@ uint32_t TransactionStore::blockForTransactionId(SHA256Hash txHash) {
     return val;
 }
 
-void TransactionStore::insertTransaction(Transaction& t, uint32_t blockId) {
+void TransactionStore::insertTransaction(const Transaction& t, uint32_t blockId) {
     SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     uint32_t dummy = blockId;
@@ -41,7 +41,7 @@ void TransactionStore::insertTransaction(Transaction& t, uint32_t blockId) {
     if(!status.ok()) throw std::runtime_error("Could not write transaction hash to tx db : " + status.ToString());
 }
 
-void TransactionStore::removeTransaction(Transaction& t) {
+void TransactionStore::removeTransaction(const Transaction& t) {
     SHA256Hash txHash = t.hashContents();
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     leveldb::Status status = db->Delete(leveldb::WriteOptions(), key);
