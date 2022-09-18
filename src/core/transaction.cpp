@@ -9,7 +9,7 @@
 using namespace std;
 
 
-TransactionInfo transactionInfoFromBuffer(const char* buffer) {
+TransactionInfo transactionInfoFromBuffer(const char* buffer, bool useV0) {
     TransactionInfo t;
     readNetworkNBytes(buffer, t.signature, 64);
     readNetworkNBytes(buffer, t.signingKey, 32);
@@ -26,12 +26,17 @@ TransactionInfo transactionInfoFromBuffer(const char* buffer) {
     } else {
         t.from = NULL_ADDRESS;
     }
-    t.programId = readNetworkSHA256(buffer);
-    readNetworkNBytes(buffer, (char*)t.data.data(), 128);
+    if (!useV0) {
+        t.programId = readNetworkSHA256(buffer);
+        readNetworkNBytes(buffer, (char*)t.data.data(), 128);
+    } else {
+        t.programId = NULL_SHA256_HASH;
+        t.data.fill(0);
+    }
     return t;
 }
 
-void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
+void transactionInfoToBuffer(TransactionInfo& t, char* buffer, bool useV0) {
     writeNetworkNBytes(buffer, t.signature, 64);
     writeNetworkNBytes(buffer, t.signingKey, 32);
     writeNetworkUint64(buffer, t.nonce);
@@ -41,8 +46,18 @@ void transactionInfoToBuffer(TransactionInfo& t, char* buffer) {
     uint32_t flag = 0;
     if (t.isTransactionFee) flag = 1;
     writeNetworkUint32(buffer, flag);
-    writeNetworkSHA256(buffer,t.programId);
-    writeNetworkNBytes(buffer, (char*)t.data.data(), 128);
+    if (!useV0) {
+        writeNetworkSHA256(buffer,t.programId);
+        writeNetworkNBytes(buffer, (char*)t.data.data(), 128);
+    }
+}
+
+uint64_t transactionInfoBufferSize(bool useV0) {
+    if (useV0) {
+        return TRANSACTIONINFO_BUFFER_SIZE_V0;
+    } else {
+        return TRANSACTIONINFO_BUFFER_SIZE;
+    }
 }
 
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee) {

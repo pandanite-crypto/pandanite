@@ -26,8 +26,9 @@ RequestManager::RequestManager(json config) {
     this->mempool = new MemPool(*this->hosts, *this->blockchain);
     this->rateLimiter = new RateLimiter(30,5); // max of 30 requests over 5 sec period 
     this->programs = std::make_shared<ProgramStore>();
-    this->programs->init("programs");
+    this->programs->init("data/programs");
     this->limitRequests = true;
+
     if (!this->hosts->isDisabled()) {
         this->blockchain->sync();
      
@@ -50,6 +51,10 @@ RequestManager::RequestManager(json config) {
 
 void RequestManager::enableRateLimiting(bool enabled) {
     this->limitRequests = enabled;
+}
+
+string RequestManager::getHostAddress() {
+    return this->hosts->getAddress();
 }
 
 json RequestManager::getPeerStats() {

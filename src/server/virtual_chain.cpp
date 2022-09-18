@@ -189,7 +189,8 @@ ExecutionStatus VirtualChain::addBlock(Block& block) {
     m.setItems(block.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
-    return this->program.executeBlock(block);
+    ExecutionStatus status = this->program.executeBlock(block);
+    return status;
 }
 
 
