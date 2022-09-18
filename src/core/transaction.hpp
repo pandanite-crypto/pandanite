@@ -8,7 +8,7 @@ using namespace std;
 struct TransactionInfo {
     char signature[64];
     char signingKey[32];
-    uint64_t timestamp;
+    uint64_t nonce;
     PublicWalletAddress to;
     PublicWalletAddress from;
     TransactionAmount amount;
@@ -19,11 +19,14 @@ struct TransactionInfo {
 };
 
 #define LAYER_2_TX_FLAG -1
+#define PROGRAM_CREATE_TX_FLAG -2
 
 #define TRANSACTIONINFO_BUFFER_SIZE 309
+#define TRANSACTIONINFO_BUFFER_SIZE_V0 149
 
-TransactionInfo transactionInfoFromBuffer(const char* buffer);
-void transactionInfoToBuffer(TransactionInfo& t, char* buffer);
+TransactionInfo transactionInfoFromBuffer(const char* buffer, bool useV0=true);
+void transactionInfoToBuffer(TransactionInfo& t, char* buffer, bool useV0 = true);
+uint64_t transactionInfoBufferSize(bool useV0 = true);
 
 class Transaction {
     public:
@@ -34,6 +37,7 @@ class Transaction {
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee=0);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, ProgramID programId, TransactionData data);
+        Transaction(PublicWalletAddress from, PublicKey signingKey, TransactionAmount fee, ProgramID programId);
         Transaction(const TransactionInfo& t);
         TransactionInfo serialize();
         json toJson();
@@ -42,12 +46,12 @@ class Transaction {
         void makeLayer2(ProgramID programId, TransactionData data);
         TransactionAmount getTransactionFee() const;
         void setAmount(TransactionAmount amt);
-        PublicKey getSigningKey();
+        PublicKey getSigningKey() const;
         PublicWalletAddress fromWallet() const;
         PublicWalletAddress toWallet() const;
         TransactionAmount getAmount() const;
         TransactionAmount getFee() const;
-        void setTimestamp(uint64_t t);
+        void setNonce(uint64_t t);
         uint64_t getNonce();
         SHA256Hash getHash() const;
         SHA256Hash hashContents() const;
@@ -55,12 +59,13 @@ class Transaction {
         bool signatureValid() const;
         bool isFee() const;
         bool isLayer2() const;
+        bool isProgramExecution() const;
         ProgramID getProgramId() const;
         TransactionData getData() const;
     protected:
         TransactionSignature signature;
         PublicKey signingKey;
-        uint64_t timestamp;
+        uint64_t nonce;
         ProgramID programId;
         TransactionData data;
         PublicWalletAddress to;

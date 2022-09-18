@@ -14,8 +14,17 @@ TEST(check_transaction_json_serialization) {
 
     Transaction t = miner.mine();
     Transaction t2 = miner.send(receiver, BMB(30.0));
+    
+    // test layer-2 transaction
     Transaction t3 = t2;
-    t3.makeLayer2(NULL_SHA256_HASH, std::array<uint8_t, 128>());
+
+    SHA256Hash testProgramId;
+
+    t3.makeLayer2(testProgramId, std::array<uint8_t, 128>());
+
+    // test program execution transaction
+    Transaction t4 = Transaction(receiver.getAddress(), receiver.getPublicKey(), 0, testProgramId);
+    
     
     ASSERT_TRUE(t2.signatureValid());
 
@@ -44,8 +53,19 @@ TEST(check_transaction_json_serialization) {
     parsed = json::parse(serialized);
     deserialized = Transaction(parsed);
     ts = t3.getNonce();
+    ASSERT_EQUAL(t3.getNonce(), LAYER_2_TX_FLAG);
     ASSERT_TRUE(t3.hashContents() == deserialized.hashContents());
     ASSERT_TRUE(t3 == deserialized);
+    ASSERT_EQUAL(ts, deserialized.getNonce());
+
+    // test program execution transaction
+    serialized = t4.toJson().dump();
+    parsed = json::parse(serialized);
+    deserialized = Transaction(parsed);
+    ts = t4.getNonce();
+    ASSERT_EQUAL(t4.getNonce(), PROGRAM_CREATE_TX_FLAG);
+    ASSERT_TRUE(t4.hashContents() == deserialized.hashContents());
+    ASSERT_TRUE(t4 == deserialized);
     ASSERT_EQUAL(ts, deserialized.getNonce());
 }
 
