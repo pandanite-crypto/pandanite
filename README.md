@@ -93,7 +93,7 @@ docker run -d --name bamboo -p 3000:3000 -v $(pwd)/bamboo-data:/bamboo/data ghcr
 docker logs -f bamboo
 ```
 
-NOTE: currently server startup prints out Panda logo and then stays silent for a while - you can follow the progress from `http://localhost:3000`
+You can follow the progress of server sync from `http://localhost:3000`
 
 Running with `docker-compose` is recommended to easily add more options like cpu usage limits and a health checks:
 
@@ -125,4 +125,12 @@ Clone this repository and then
 ```shell
 docker build . -t bamboo
 docker run [OPTIONS] bamboo server
+```
+
+Running CI build locally
+```shell
+docker run --privileged --rm tonistiigi/binfmt --install all
+docker buildx create --use
+
+GITHUB_REPOSITORY=NeedsSomeValue GITHUB_SHA=NeedsSomeValue docker buildx bake --progress=plain
 ```
