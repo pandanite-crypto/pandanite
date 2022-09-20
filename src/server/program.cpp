@@ -1,16 +1,17 @@
 #include "program.hpp"
 #include "executor.hpp"
+#include "wasm_executor.hpp"
 
 Program::Program(vector<uint8_t>& byteCode) {
     this->byteCode = byteCode;
     this->id = SHA256((char*)byteCode.data(), byteCode.size());
-    //this->executor = std::make_shared<WasmExecutor>(this->byteCode);
+    this->executor = std::make_shared<WasmExecutor>(this->byteCode);
 }
 
 Program::Program(json obj){
     this->byteCode = hexDecode(obj["byteCode"]);
     this->id = SHA256((char*)byteCode.data(), byteCode.size());
-    //this->executor = std::make_shared<WasmExecutor>(this->byteCode);
+    this->executor = std::make_shared<WasmExecutor>(this->byteCode);
 }
 
 Program::Program(){
