@@ -22,9 +22,9 @@ RequestManager::RequestManager(json config) {
     this->hosts->startPingingPeers();
 
     this->defaultProgram = std::make_shared<Program>();
-    this->blockchain = new BlockChain(*this->defaultProgram, *this->hosts);
-    this->mempool = new MemPool(*this->hosts, *this->blockchain);
-    this->rateLimiter = new RateLimiter(30,5); // max of 30 requests over 5 sec period 
+    this->blockchain = std::make_shared<BlockChain>(*this->defaultProgram, *this->hosts);
+    this->mempool = std::make_shared<MemPool>(*this->hosts, *this->blockchain);
+    this->rateLimiter = std::make_shared<RateLimiter>(30,5); // max of 30 requests over 5 sec period 
     this->programs = std::make_shared<ProgramStore>();
     this->programs->init("data/programs");
     this->limitRequests = true;
@@ -70,9 +70,6 @@ void RequestManager::exit() {
 }
 
 RequestManager::~RequestManager() {
-    //delete mempool; TODO: figure out why this destructor causes segfault
-    delete rateLimiter;
-    delete blockchain;
 }
 
 void RequestManager::deleteDB() {
