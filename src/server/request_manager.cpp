@@ -76,7 +76,7 @@ void RequestManager::deleteDB() {
     this->defaultProgram->deleteDB();
 }
 
-json RequestManager::getTransactionsForWallet(PublicWalletAddress addr) {
+json RequestManager::getTransactionsForWallet(PublicWalletAddress addr, ProgramID program) {
     json ret = json::array();
     vector<Transaction> txs = this->blockchain->getTransactionsForWallet(addr);
     for(auto tx : txs) {
@@ -90,13 +90,13 @@ bool RequestManager::acceptRequest(std::string& ip) {
     return this->rateLimiter->limit(ip);
 }
 
-json RequestManager::addTransaction(Transaction& t) {
+json RequestManager::addTransaction(Transaction& t, ProgramID program) {
     json result;
     result["status"] = executionStatusAsString(this->mempool->addTransaction(t));
     return result;
 }
 
-json RequestManager::submitProofOfWork(Block& newBlock) {
+json RequestManager::submitProofOfWork(Block& newBlock, ProgramID program) {
     json result;
 
     if (newBlock.getId() <= this->blockchain->getBlockCount()) {
@@ -139,7 +139,7 @@ json hashTreeToJson(shared_ptr<HashTree> root) {
     return ret;
 }
 
-json RequestManager::getTransactionStatus(SHA256Hash txid) {
+json RequestManager::getTransactionStatus(SHA256Hash txid, ProgramID program) {
     json response;
     Block b;
     try {
@@ -154,7 +154,7 @@ json RequestManager::getTransactionStatus(SHA256Hash txid) {
     return response;  
 }
 
-json RequestManager::verifyTransaction(Transaction& t) {
+json RequestManager::verifyTransaction(Transaction& t, ProgramID program) {
     json response;
     Block b;
     try {
@@ -175,7 +175,7 @@ json RequestManager::verifyTransaction(Transaction& t) {
     return response;
 }
 
-json RequestManager::getMineStatus(uint32_t blockId) {
+json RequestManager::getMineStatus(uint32_t blockId, ProgramID program) {
     json result;
     Block b = this->blockchain->getBlock(blockId).toJson();
     PublicWalletAddress minerAddress;
@@ -225,7 +225,7 @@ json RequestManager::setProgram(PublicWalletAddress& wallet, Program& program) {
     return result;
 }
 
-json RequestManager::getProofOfWork() {
+json RequestManager::getProofOfWork(ProgramID program) {
     json result;
     result["lastHash"] = SHA256toString(this->blockchain->getLastHash());
     result["challengeSize"] = this->blockchain->getDifficulty();
@@ -244,11 +244,11 @@ json RequestManager::getTransactionQueue() {
     return ret;
 }
 
-std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId) {
+std::pair<uint8_t*, size_t> RequestManager::getRawBlockData(uint32_t blockId, ProgramID program) {
     return this->blockchain->getRaw(blockId);
 }
 
-BlockHeader RequestManager::getBlockHeader(uint32_t blockId) {
+BlockHeader RequestManager::getBlockHeader(uint32_t blockId, ProgramID program) {
     return this->blockchain->getBlockHeader(blockId);
 }
 
@@ -256,7 +256,7 @@ std::pair<char*, size_t> RequestManager::getRawTransactionData() {
     return this->mempool->getRaw();
 }
 
-json RequestManager::getBlock(uint32_t blockId) {
+json RequestManager::getBlock(uint32_t blockId, ProgramID program) {
     return this->blockchain->getBlock(blockId).toJson();
 }
 
@@ -276,7 +276,7 @@ json RequestManager::addPeer(string address, uint64_t time, string version, stri
 }
 
 
-json RequestManager::getLedger(PublicWalletAddress w) {
+json RequestManager::getLedger(PublicWalletAddress w, ProgramID program) {
     json result;
     try {
         result["balance"] = this->blockchain->getWalletValue(w);
@@ -285,12 +285,12 @@ json RequestManager::getLedger(PublicWalletAddress w) {
     }
     return result;
 }
-string RequestManager::getBlockCount() {
+string RequestManager::getBlockCount(ProgramID program) {
     uint32_t count = this->blockchain->getBlockCount();
     return std::to_string(count);
 }
 
-string RequestManager::getTotalWork() {
+string RequestManager::getTotalWork(ProgramID program) {
     Bigint totalWork = this->blockchain->getTotalWork();
     return to_string(totalWork);
 }
