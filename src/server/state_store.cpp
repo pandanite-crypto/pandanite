@@ -60,29 +60,26 @@ void StateStore::addBlock() {
 }
 
 void StateStore::popBlock() {
-    cout<<"HERE"<<endl;
-    for(auto variable : this->currentVariables) {
+    auto currentVars = this->currentVariables;
+    for(auto variable : currentVars) {
         State s;
-        cout<<"A: "<< variable << endl;
         this->getKey(variable, s);
         if (s.lastBlockId >= 0) {
             // point variable to previous blocks instance
-            cout<<"B"<<endl;
             this->variablesBlockIds[variable] = s.lastBlockId;
         } else {
             // variable no longer exists
-            cout<<"C"<<endl;
             this->variablesBlockIds.erase(this->variablesBlockIds.find(variable));
         }
-        cout<<"FOO"<<endl;
         this->deleteKey(variable);
-        cout<<"BAR"<<endl;
     }
-    cout<<"D"<<endl;
     this->currBlockId--;
-    cout<<"E"<<endl;
-    this->loadCurrentVariables();
-    cout<<"A"<<endl;
+    if (currBlockId > 0) {
+        this->loadCurrentVariables();
+    } else {
+        this->currentVariables.clear();
+        this->variablesBlockIds.clear();
+    }
 }
 
 void StateStore::saveCurrentVariables() {
@@ -120,6 +117,10 @@ void StateStore::loadCurrentVariables() {
     }
 }
 
+set<string> StateStore::getCurrentVariables() const {
+    return this->currentVariables;
+}
+
 bool StateStore::hasKey(const string& key) const{
     leveldb::Slice s = variableToSlice(key, this->currBlockId);
     string value;
@@ -139,6 +140,9 @@ void StateStore::deleteKey(const string& key) {
     State curr;
     this->getKey(key, curr);
     this->variablesBlockIds[key] = curr.lastBlockId;
+    if (currentVariables.find(key) == currentVariables.end()) {
+        throw std::runtime_error("Inconsistent current variables");
+    }
     currentVariables.erase(currentVariables.find(key));
     this->saveCurrentVariables();
     leveldb::Slice s = variableToSlice(key, this->currBlockId);
@@ -170,6 +174,7 @@ void StateStore::putKey(const string& key, const State& state) {
     leveldb::Slice s = variableToSlice(key, this->currBlockId);
     if (currentVariables.find(key) == currentVariables.end()) {
         currentVariables.insert(key);
+        this->saveCurrentVariables();
     }
     this->variablesBlockIds[key] = this->currBlockId;
     vector<uint8_t> buf = stateToBuffer(state);
@@ -193,14 +198,14 @@ void StateStore::setBytes(const string& key, const vector<uint8_t>& bytes, const
         if (idx < 0 || idx > sz) throw std::runtime_error("Item index is greater than length of current array");
         if (sz == idx) {
             // append to vector
-            for (auto item : curr.bytes) {
+            for (auto item : bytes) {
                 curr.bytes.push_back(item);
             }
         } else {
             // overwrite vector item
             uint64_t startBuf = curr.itemSize * idx;
             uint64_t i = 0;
-            for (auto item : curr.bytes) {
+            for (auto item : bytes) {
                 curr.bytes[startBuf + i] = item;
                 i++;
             }
@@ -309,7 +314,7 @@ void StateStore::remove(const string& key, const uint64_t idx) {
     uint64_t numItems = curr.bytes.size() / curr.itemSize;
     if (idx >= numItems) throw std::runtime_error("Tried to remove from non-existent index");
 
-    curr.bytes.erase(curr.bytes.begin() + (idx * numItems), curr.bytes.begin() + ((idx + 1) * numItems));
+    curr.bytes.erase(curr.bytes.begin() + (idx * curr.itemSize), curr.bytes.begin() + ((idx + 1) * curr.itemSize));
 
     this->putKey(key, curr);
 }
