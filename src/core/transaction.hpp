@@ -62,7 +62,7 @@ class Transaction {
         bool isProgramExecution() const;
         ProgramID getProgramId() const;
         TransactionData getData() const;
-        static Transaction createGenesisTransaction(PublicWallletAddress to, TransactionAmount amount);
+        static Transaction createGenesisTransaction(PublicWalletAddress to, TransactionAmount amount);
     protected:
         TransactionSignature signature;
         PublicKey signingKey;

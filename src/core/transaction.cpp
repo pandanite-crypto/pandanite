@@ -342,7 +342,7 @@ Transaction Transaction::createGenesisTransaction(PublicWalletAddress to, Transa
     t.nonce = 0;
     t.fee = 0;
     t.programId = NULL_SHA256_HASH;
-    memset(t.data, 0, 128);
+    t.data.fill(0);
     memset(t.signature, 0, 64);
     memset(t.signingKey, 0, 32);
     return Transaction(t);

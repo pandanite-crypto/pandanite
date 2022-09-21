@@ -61,7 +61,6 @@ void BambooServer::run(json config) {
 
     Logger::logStatus("Starting server...");
 
-    
     RequestManager manager(config);
 
     shutdown_handler = [&](int signal) {
@@ -77,8 +76,6 @@ void BambooServer::run(json config) {
 
     if (config["rateLimiter"] == false) manager.enableRateLimiting(false);
     
-    Logger::logStatus("RequestManager ready...");
-
     Logger::logStatus("Server Ready.");
 
     auto corsHandler = [&manager](auto *res, auto *req) {
@@ -322,21 +319,6 @@ void BambooServer::run(json config) {
         }
     };
 
-    // TODO: remove this once all nodes and clients migrated
-    auto ledgerHandlerDeprecated = [&manager](auto *res, auto *req) {
-        rateLimit(manager, res);
-        sendCorsHeaders(res);
-        try {
-            PublicWalletAddress w = stringToWalletAddress(string(req->getParameter(0)));
-            json ledger = manager.getLedger(w);
-            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
-        } catch(const std::exception &e) {
-            Logger::logError("/ledger", e.what());
-        } catch(...) {
-            Logger::logError("/ledger", "unknown");
-        }
-    };
-
     auto createWalletHandler = [&manager](auto *res, auto* readJsonFromFile) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
@@ -519,113 +501,6 @@ void BambooServer::run(json config) {
             Logger::logError("/mine", "unknown");
         }
     };
-
-    /************* BEGIN DEPRECATED ***************/
-
-    auto syncHandlerDeprecated = [&manager](auto *res, auto *req) {
-        rateLimit(manager, res);
-        sendCorsHeaders(res);
-        try {
-            int start = std::stoi(string(req->getParameter(0)));
-            int end = std::stoi(string(req->getParameter(1)));
-            if ((end-start) > BLOCKS_PER_FETCH) {
-                Logger::logError("/sync", "invalid range requested");
-                res->end("");
-            }
-            res->writeHeader("Content-Type", "application/octet-stream");
-            for (int i = start; i <=end; i++) {
-                std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i);
-                std::string_view str((char*)buffer.first, buffer.second);
-                res->write(str);
-                delete buffer.first;
-            }
-            res->end("");
-        } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
-        } catch(...) {
-            Logger::logError("/sync", "unknown");
-        }
-        res->onAborted([res]() {
-            res->end("ABORTED");
-        });
-    };
-
-    auto blockHeaderHandlerDeprecated = [&manager](auto *res, auto *req) {
-        rateLimit(manager, res);
-        sendCorsHeaders(res);
-        try {
-            int start = std::stoi(string(req->getParameter(0)));
-            int end = std::stoi(string(req->getParameter(1)));
-            if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
-                Logger::logError("/block_headers", "invalid range requested");
-                res->end("");
-            }
-            res->writeHeader("Content-Type", "application/octet-stream");
-            for (int i = start; i <=end; i++) {
-                BlockHeader b = manager.getBlockHeader(i);
-                char bhBytes[BLOCKHEADER_BUFFER_SIZE];
-                blockHeaderToBuffer(b, bhBytes);
-                std::string_view str(bhBytes, BLOCKHEADER_BUFFER_SIZE);
-                res->write(str);
-            }
-            res->end("");
-        } catch(const std::exception &e) {
-            Logger::logError("/block_headers", e.what());
-        } catch(...) {
-            Logger::logError("/block_headers", "unknown");
-        }
-        res->onAborted([res]() {
-            res->end("ABORTED");
-        });
-    };
-
-    auto blockHandlerDeprecated = [&manager](auto *res, auto *req) {
-        rateLimit(manager, res);
-        sendCorsHeaders(res);
-        json result;
-        try {
-            int blockId= std::stoi(string(req->getParameter(0)));
-            int count = std::stoi(manager.getBlockCount());
-            if (blockId<= 0 || blockId > count) {
-                result["error"] = "Invalid Block";
-            } else {
-                result = manager.getBlock(blockId);
-            }
-            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
-        } catch(const std::exception &e) {
-            result["error"] = "Unknown error";
-            Logger::logError("/block", e.what());
-            res->end("");
-        } catch(...) {
-            Logger::logError("/block", "unknown");
-            res->end("");
-        }
-    };
-
-    auto mineStatusHandlerDeprecated = [&manager](auto *res, auto *req) {
-        rateLimit(manager, res);
-        sendCorsHeaders(res);
-        json result;
-        try {
-            int blockId = std::stoi(string(req->getParameter(0)));
-            int count = std::stoi(manager.getBlockCount());
-            if (blockId <= 0 || blockId > count) {
-                result["error"] = "Invalid Block";
-            } else {
-                result = manager.getMineStatus(blockId);
-            }
-            res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
-        } catch(const std::exception &e) {
-            result["error"] = "Unknown error";
-            Logger::logError("/block", e.what());
-            res->end("");
-        } catch(...) {
-            Logger::logError("/block", "unknown");
-            res->end("");
-        }
-    };
-
-    /************* END DEPRECATED ***************/
 
     auto syncHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
@@ -861,11 +736,6 @@ void BambooServer::run(json config) {
         .get("/ledger", ledgerHandler)
         .get("/wallet_transactions", walletHandler)
         .get("/gettx/:blockId", getTxHandler) // DEPRECATED
-        .get("/mine_status/:b", mineStatusHandlerDeprecated) // DEPRECATED
-        .get("/ledger/:user", ledgerHandlerDeprecated) // DEPRECATED
-        .get("/sync/:start/:end", syncHandlerDeprecated) // DEPRECATED
-        .get("/block_headers/:start/:end", blockHeaderHandlerDeprecated) // DEPRECATED
-        .get("/block/:b", blockHandlerDeprecated) // DEPRECATED
         .get("/mine", mineHandler)
         .get("/getnetworkhashrate", getNetworkHashrateHandler)
         .post("/add_peer", addPeerHandler)
