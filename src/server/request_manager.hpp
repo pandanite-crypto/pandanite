@@ -36,7 +36,7 @@ class RequestManager {
         json addPeer(string address, uint64_t time, string version, string network);
         BlockHeader getBlockHeader(uint32_t blockId, ProgramID program = NULL_SHA256_HASH);
         std::pair<uint8_t*, size_t> getRawBlockData(uint32_t blockId, ProgramID program = NULL_SHA256_HASH);
-        std::pair<char*, size_t> getRawTransactionData(ProgramID program = NULL_SHA256_HASH);
+        std::pair<char*, size_t> getRawTransactionData();
         string getHostAddress();
         string getBlockCount(ProgramID program = NULL_SHA256_HASH);
         string getTotalWork(ProgramID program = NULL_SHA256_HASH);

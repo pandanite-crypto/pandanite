@@ -116,7 +116,11 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
-            std::string count = manager.getTotalWork();
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
+            std::string count = manager.getTotalWork(programID);
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
         } catch(const std::exception &e) {
             Logger::logError("/total_work", e.what());
@@ -146,7 +150,11 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
-            std::string count = manager.getBlockCount();
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
+            std::string count = manager.getBlockCount(programID);
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
         } catch(const std::exception &e) {
             Logger::logError("/block_count", e.what());
@@ -177,6 +185,10 @@ void BambooServer::run(json config) {
         sendCorsHeaders(res);
         json result;
         try {
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
             if (req->getQuery("blockId").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
@@ -184,7 +196,7 @@ void BambooServer::run(json config) {
                 return;
             }
             int blockId= std::stoi(string(req->getQuery("blockId")));
-            int count = std::stoi(manager.getBlockCount());
+            int count = std::stoi(manager.getBlockCount(programID));
             if (blockId<= 0 || blockId > count) {
                 result["error"] = "Invalid Block";
             } else {
@@ -206,6 +218,10 @@ void BambooServer::run(json config) {
         sendCorsHeaders(res);
         json result;
         try {
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
             if (req->getQuery("blockId").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
@@ -217,7 +233,7 @@ void BambooServer::run(json config) {
             if (blockId <= 0 || blockId > count) {
                 result["error"] = "Invalid Block";
             } else {
-                result = manager.getMineStatus(blockId);
+                result = manager.getMineStatus(blockId, programID);
             }
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
@@ -234,6 +250,10 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
             if (req->getQuery("wallet").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
@@ -241,7 +261,7 @@ void BambooServer::run(json config) {
                 return;
             }
             PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
-            json ledger = manager.getLedger(w);
+            json ledger = manager.getLedger(w, programID);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
         } catch(const std::exception &e) {
             Logger::logError("/ledger", e.what());
@@ -303,6 +323,10 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
             if (req->getQuery("wallet").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
@@ -310,7 +334,7 @@ void BambooServer::run(json config) {
                 return;
             }
             PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
-            json ret = manager.getTransactionsForWallet(w);
+            json ret = manager.getTransactionsForWallet(w, programID);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ret.dump());
         } catch(const std::exception &e) {
             Logger::logError("/wallet", e.what());
@@ -319,7 +343,7 @@ void BambooServer::run(json config) {
         }
     };
 
-    auto createWalletHandler = [&manager](auto *res, auto* readJsonFromFile) {
+    auto createWalletHandler = [&manager](auto *res, auto* req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
@@ -342,14 +366,14 @@ void BambooServer::run(json config) {
         }
     };
 
-    auto createTransactionHandler = [&manager](auto *res, auto* readJsonFromFile) {
+    auto createTransactionHandler = [&manager](auto *res, auto* req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         res->onAborted([res]() {
             res->end("ABORTED");
         });
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             json txInfo;
@@ -384,7 +408,7 @@ void BambooServer::run(json config) {
             res->end("ABORTED");
         });
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             json peerInfo;
@@ -413,11 +437,15 @@ void BambooServer::run(json config) {
             res->end("ABORTED");
         });
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             if (last) {
                 try {
+                    SHA256Hash programID = NULL_SHA256_HASH;
+                    if (string(req->getQuery("program")).length() != 0) {
+                        programID = stringToSHA256(string(req->getQuery("program")));
+                    }
                     if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed block";
@@ -449,7 +477,7 @@ void BambooServer::run(json config) {
                                 transactions.push_back(tx);
                             }
                             Block block(blockH, transactions);
-                            json response = manager.submitProofOfWork(block);
+                            json response = manager.submitProofOfWork(block, programID);
                             res->end(response.dump());
                         }
                     }
@@ -493,7 +521,11 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
-            json response = manager.getProofOfWork();
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
+            json response = manager.getProofOfWork(programID);
             res->end(response.dump());
         } catch(const std::exception &e) {
             Logger::logError("/mine", e.what());
@@ -506,6 +538,10 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
             if (req->getQuery("start").length() == 0 || req->getQuery("end").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
@@ -520,7 +556,7 @@ void BambooServer::run(json config) {
             }
             res->writeHeader("Content-Type", "application/octet-stream");
             for (int i = start; i <=end; i++) {
-                std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i);
+                std::pair<uint8_t*, size_t> buffer = manager.getRawBlockData(i, programID);
                 std::string_view str((char*)buffer.first, buffer.second);
                 res->write(str);
                 delete buffer.first;
@@ -540,6 +576,10 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            SHA256Hash programID = NULL_SHA256_HASH;
+            if (string(req->getQuery("program")).length() != 0) {
+                programID = stringToSHA256(string(req->getQuery("program")));
+            }
             if (req->getQuery("start").length() == 0 || req->getQuery("end").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
@@ -554,7 +594,7 @@ void BambooServer::run(json config) {
             }
             res->writeHeader("Content-Type", "application/octet-stream");
             for (int i = start; i <=end; i++) {
-                BlockHeader b = manager.getBlockHeader(i);
+                BlockHeader b = manager.getBlockHeader(i, programID);
                 char bhBytes[BLOCKHEADER_BUFFER_SIZE];
                 blockHeaderToBuffer(b, bhBytes);
                 std::string_view str(bhBytes, BLOCKHEADER_BUFFER_SIZE);
@@ -578,11 +618,15 @@ void BambooServer::run(json config) {
             res->end("ABORTED");
         });
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             if (last) {
                 try {
+                    SHA256Hash programID = NULL_SHA256_HASH;
+                    if (string(req->getQuery("program")).length() != 0) {
+                        programID = stringToSHA256(string(req->getQuery("program")));
+                    }
                     if (buffer.length() < transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed transaction";
@@ -595,7 +639,7 @@ void BambooServer::run(json config) {
                         for (int i = 0; i < numTransactions; i++) {
                             TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
                             Transaction tx(t);
-                            response.push_back(manager.addTransaction(tx));
+                            response.push_back(manager.addTransaction(tx, programID));
                         }
                         res->end(response.dump());
                     }
@@ -615,11 +659,15 @@ void BambooServer::run(json config) {
             res->end("ABORTED");
         });
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             if (last) {
                 try {
+                    SHA256Hash programID = NULL_SHA256_HASH;
+                    if (string(req->getQuery("program")).length() != 0) {
+                        programID = stringToSHA256(string(req->getQuery("program")));
+                    }
                     json parsed = json::parse(string(buffer));
                     json response = json::array();
                     if (parsed.is_array()) {
@@ -627,7 +675,7 @@ void BambooServer::run(json config) {
                             Transaction tx(item);
                             json result;
                             result["txid"] = SHA256toString(tx.hashContents());
-                            result["status"] = manager.addTransaction(tx)["status"];
+                            result["status"] = manager.addTransaction(tx, programID)["status"];
                             response.push_back(result);
                             // only add a maximum of 100 transactions per request
                             if (response.size() > 100) break;
@@ -656,16 +704,20 @@ void BambooServer::run(json config) {
             res->end("ABORTED");
         });
         std::string buffer;
-        res->onData([res, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
             checkBuffer(buffer, res);
             if (last) {
                 try {
+                    SHA256Hash programID = NULL_SHA256_HASH;
+                    if (string(req->getQuery("program")).length() != 0) {
+                        programID = stringToSHA256(string(req->getQuery("program")));
+                    }
                     json parsed = json::parse(string(buffer));
                     json response = json::array();
                     if (parsed.is_array()) {
                         for (auto& item : parsed) {
-                            response.push_back(manager.getTransactionStatus(stringToSHA256(item["txid"])));
+                            response.push_back(manager.getTransactionStatus(stringToSHA256(item["txid"]), programID));
                             // only add a maximum of 100 transactions per request
                             if (response.size() > 100) break;
                         }
@@ -735,7 +787,6 @@ void BambooServer::run(json config) {
         .get("/mine_status", mineStatusHandler)
         .get("/ledger", ledgerHandler)
         .get("/wallet_transactions", walletHandler)
-        .get("/gettx/:blockId", getTxHandler) // DEPRECATED
         .get("/mine", mineHandler)
         .get("/getnetworkhashrate", getNetworkHashrateHandler)
         .post("/add_peer", addPeerHandler)
@@ -743,7 +794,6 @@ void BambooServer::run(json config) {
         .get("/gettx", getTxHandler)
         .get("/sync", syncHandler)
         .get("/block_headers", blockHeaderHandler)
-        .get("/synctx", getTxHandler)
         .get("/create_wallet", createWalletHandler)
         .post("/create_transaction", createTransactionHandler)
         .post("/add_transaction", addTransactionHandler)
@@ -765,10 +815,8 @@ void BambooServer::run(json config) {
         .options("/add_peer", corsHandler)
         .options("/submit", corsHandler)
         .options("/gettx", corsHandler)
-        .options("/gettx", corsHandler)
         .options("/sync", corsHandler)
         .options("/block_headers", corsHandler)
-        .options("/synctx", corsHandler)
         .options("/add_transaction", corsHandler)
         .options("/add_transaction_json", corsHandler)
         .options("/verify_transaction", corsHandler)

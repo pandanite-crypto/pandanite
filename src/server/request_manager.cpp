@@ -260,7 +260,7 @@ json RequestManager::getBlock(uint32_t blockId, ProgramID program) {
     return this->blockchain->getBlock(blockId).toJson();
 }
 
-json RequestManager::getPeers() {
+json RequestManager::getPeers(ProgramID program) {
     json peers = json::array();
     for(auto h : this->hosts->getHosts()) {
         peers.push_back(h);
