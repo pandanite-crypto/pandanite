@@ -334,6 +334,20 @@ void Transaction::sign(PublicKey pubKey, PrivateKey signingKey) {
     this->signature = signature;
 }
 
+Transaction Transaction::createGenesisTransaction(PublicWalletAddress to, TransactionAmount amount) {
+    TransactionInfo t;
+    t.amount = amount;
+    t.to = to;
+    t.from = NULL_ADDRESS;
+    t.nonce = 0;
+    t.fee = 0;
+    t.programId = NULL_SHA256_HASH;
+    t.data.fill(0);
+    memset(t.signature, 0, 64);
+    memset(t.signingKey, 0, 32);
+    return Transaction(t);
+}
+
 bool operator<(const Transaction& a, const Transaction& b) {
     return a.signature < b.signature;
 }

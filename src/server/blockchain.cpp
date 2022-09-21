@@ -9,7 +9,7 @@ ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
     return NULL_SHA256_HASH;
 }
 
-void BlockChain::setMemPool(MemPool * memPool) {
+void BlockChain::setMemPool(std::shared_ptr<MemPool> memPool) {
     this->memPool = memPool;
 }
 
