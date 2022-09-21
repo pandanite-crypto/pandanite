@@ -42,6 +42,7 @@ class StateStore : public DataStore {
         PublicWalletAddress getWallet(const string& key, uint64_t index = 0) const;
         vector<uint8_t> getBytes(const string& key, uint64_t index = 0) const;
         void getKeyAtBlock(const string& key, State& buf, uint64_t blockId) const;
+        set<string> getCurrentVariables() const;
     protected:
         map<string,uint64_t> variablesBlockIds;
         void putKey(const string& key, const State& buf);
