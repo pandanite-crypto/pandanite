@@ -144,7 +144,7 @@ TEST(test_structs) {
     for(int i = 0; i < 100; i++) {
         testVector.push_back(i);
     }
-    store.setBytes("test", testVector):
+    store.setBytes("test", testVector);
 
     vector<uint8_t> ret = store.getBytes("test");
 
