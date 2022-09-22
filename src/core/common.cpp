@@ -89,5 +89,8 @@ string executionStatusAsString(ExecutionStatus status) {
         case WALLET_LOCKED:
             return "WALLET_LOCKED";
         break;
+        case WASM_ERROR:
+            return "WASM_ERROR";
+        break;
     }
 }

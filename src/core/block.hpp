@@ -9,15 +9,6 @@
 #include "merkle_tree.hpp"
 using namespace std;
 
-struct BlockHeader {
-    uint32_t id;
-    uint64_t timestamp; 
-    uint32_t difficulty;
-    uint32_t numTransactions;
-    SHA256Hash lastBlockHash;
-    SHA256Hash merkleRoot;
-    SHA256Hash nonce;
-};
 
 #define BLOCKHEADER_BUFFER_SIZE 116
 

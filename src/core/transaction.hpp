@@ -5,19 +5,6 @@
 #include <optional>
 using namespace std;
 
-struct TransactionInfo {
-    char signature[64];
-    char signingKey[32];
-    uint64_t nonce;
-    PublicWalletAddress to;
-    PublicWalletAddress from;
-    TransactionAmount amount;
-    TransactionAmount fee;
-    bool isTransactionFee;
-    ProgramID programId;
-    TransactionData data;
-};
-
 #define LAYER_2_TX_FLAG -1
 #define PROGRAM_CREATE_TX_FLAG -2
 

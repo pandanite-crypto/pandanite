@@ -124,6 +124,13 @@ void writeJsonToFile(json data, string filepath) {
     output.close();
 }
 
+vector<uint8_t> readBytes(string filepath) {
+    std::ifstream file(filepath, std::ios::binary);
+    if (!file.good()) throw std::runtime_error("Could not open file: " + filepath);
+    return std::vector<uint8_t>((std::istreambuf_iterator<char>(file)),
+                              std::istreambuf_iterator<char>());
+}
+
 json readJsonFromFile(string filepath) {
     ifstream input(filepath);
     stringstream buffer;
