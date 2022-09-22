@@ -37,10 +37,13 @@ void print_num(uint64_t n) { std::cout << "Number : " << n << "\n"; }
 
 struct host_methods {
    // example of a host "method"
-   void print_name(const char* nm) { std::cout << "Name : " << nm << " " << field << "\n"; }
+   void print_name(const char* nm) { std::cout << "Name : " << nm <<  "\n"; }
    // example of another type of host function
    static void* memset(void* ptr, int x, size_t n) { return ::memset(ptr, x, n); }
-   std::string  field = "";
+   void setUint32(const char* key, uint32_t value) {
+        state->setUint32(key, value);
+   }
+   StateStore* state;
 };
 
 
@@ -68,7 +71,8 @@ void WasmExecutor::rollback(Ledger& ledger, LedgerState& deltas, StateStore& sto
 ExecutionStatus WasmExecutor::executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas, StateStore& store) const {
     store.addBlock();
     Block b;
-    this->executeBlockWasm(b, store);
+    b.addTransaction(t);
+    return this->executeBlockWasm(b, store);
 }
 
 void WasmExecutor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) const{
@@ -90,22 +94,18 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& store) cons
    rhf_t::add<nullptr_t, &eosio_assert, wasm_allocator>("env", "eosio_assert");
    // register print_name
    rhf_t::add<host_methods, &host_methods::print_name, wasm_allocator>("env", "print_name");
+   rhf_t::add<host_methods, &host_methods::setUint32, wasm_allocator>("env", "setUint32");
    // finally register memset
    rhf_t::add<nullptr_t, &host_methods::memset, wasm_allocator>("env", "memset");
    watchdog wd{std::chrono::seconds(3)};
    try {
-    //   vector<uint8_t> bytes = this->byteCode;
-    //   cout<<hexEncode((char*) bytes.data(), bytes.size());
-        auto bytes = backend_t::read_wasm( "src/wasm/program.wasm");
+      vector<uint8_t> bytes = this->byteCode;
       backend_t bkend(bytes, rhf_t{});
       bkend.set_wasm_allocator(&wa);
       bkend.initialize();
       host_methods ehm;
-      ehm.field = "TEST";
-      uint64_t arg1 = 0;
-      uint64_t arg2 = 1;
-      uint64_t arg3 = 1;
-      bkend(&ehm, "env", "apply");
+      ehm.state = &store;
+      bkend(&ehm, "env", "executeBlock");
 
    } catch (std::exception& e) { 
         std::cerr << e.what(); 

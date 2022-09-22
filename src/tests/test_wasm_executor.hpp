@@ -8,11 +8,11 @@
 using namespace std;
 
 TEST(test_simple_program) {
-    vector<uint8_t> byteCode = readBytes("src/wasm/simple_example.wasm");
+    vector<uint8_t> byteCode = readBytes("src/wasm/program.wasm");
     WasmExecutor wasm(byteCode);
     StateStore store;
     store.init("./test-data/tmpdb");
     Block curr;
     wasm.executeBlockWasm(curr, store);
-    ASSERT_EQUAL(store.getUint32("test"), 100);
+    ASSERT_EQUAL(store.getUint32("foobar"), 100);
 }
