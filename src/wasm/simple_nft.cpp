@@ -1,15 +1,10 @@
 #include <stdint.h>
 #include <emscripten/emscripten.h>
-// #include "../external/json.hpp"
-#include "../core/types.hpp"
-// #include "../core/transaction.hpp"
-// #include "../core/block.hpp"
-// #include "../core/crypto.hpp"
+
 
 extern "C" {
-    // #include "external_calls.hpp"
-
-    void getInfo(const char* args) {
+    
+    void getInfo() {
         // json req = json::parse(string(args));
         // json ret;
         // ret["owner"] = walletAddressToString(getWallet("owner"));
@@ -17,7 +12,9 @@ extern "C" {
         // setReturnValue(output.c_str());
     }
 
-    ExecutionStatus executeBlock(const char* args) {
+    void executeBlock() {
+        uint32_t x = 0;
+        x = x + 10;
         // Block block = getBlock(args);
         // // parse data into block header + transactions
         // if (block.getId() == 1) {
@@ -43,6 +40,6 @@ extern "C" {
         //         }
         //     }
         // }
-        return SUCCESS;
+        // return SUCCESS;
     }
 }

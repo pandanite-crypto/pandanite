@@ -18,6 +18,6 @@ TEST(test_simple_program) {
     ASSERT_EQUAL(store.getWallet("owner"), NULL_ADDRESS);
 
     json args;
-    json result = wasm.getInfo(args, store);
-    cout<<result.dump()<<endl;
+    // json result = wasm.getInfo(args, store);
+    // cout<<result.dump()<<endl;
 }

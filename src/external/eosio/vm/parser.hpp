@@ -16,6 +16,8 @@
 #include <variant>
 #include <vector>
 
+#include <iostream>
+
 namespace eosio { namespace vm {
 
    template <typename Writer>
@@ -135,7 +137,7 @@ namespace eosio { namespace vm {
             highest_section_id = std::max(highest_section_id, id);
 
             auto section_guard = code_ptr.scoped_consume_items(len);
-
+            
             switch (id) {
                case section_id::custom_section: parse_custom(code_ptr); break;
                case section_id::type_section: parse_section<section_id::type_section>(code_ptr, mod.types); break;
@@ -156,7 +158,8 @@ namespace eosio { namespace vm {
                   break;
                case section_id::code_section: parse_section<section_id::code_section>(code_ptr, mod.code); break;
                case section_id::data_section: parse_section<section_id::data_section>(code_ptr, mod.data); break;
-               default: EOS_VM_ASSERT(false, wasm_parse_exception, "error invalid section id");
+               default: 
+                  EOS_VM_ASSERT(false, wasm_parse_exception, "error invalid section id");
             }
          }
          EOS_VM_ASSERT(_mod->code.size() == _mod->functions.size(), wasm_parse_exception, "code section must have the same size as the function section" );
