@@ -1,3 +1,4 @@
+#ifndef WASM_BUILD
 #include <chrono>
 #include <iostream>
 #include <sstream>
@@ -186,3 +187,4 @@ void readRawTransactions(string host_url, vector<Transaction>& transactions) {
         curr+= transactionInfoBufferSize();
     }
 }
+#endif

@@ -3951,7 +3951,9 @@ T conditional_static_cast(U value)
 
 
 #ifdef JSON_HAS_CPP_17
+#ifndef WASM_BUILD
     #include <experimental/filesystem>
+#endif
 #endif
 
 namespace nlohmann
@@ -4627,7 +4629,9 @@ class tuple_element<N, ::nlohmann::detail::iteration_proxy_value<IteratorType >>
 
 
 #ifdef JSON_HAS_CPP_17
+#ifndef WASM_BUILD
     #include <experimental/filesystem>
+#endif
 #endif
 
 namespace nlohmann
@@ -5434,8 +5438,10 @@ std::size_t hash(const BasicJsonType& j)
 #include <utility> // pair, declval
 
 #ifndef JSON_NO_IO
+#ifndef WASM_BUILD
     #include <cstdio>   // FILE *
     #include <istream>  // istream
+#endif
 #endif                  // JSON_NO_IO
 
 // #include <nlohmann/detail/iterators/iterator_traits.hpp>

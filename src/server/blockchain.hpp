@@ -14,4 +14,5 @@ class BlockChain : public VirtualChain {
         map<string, uint64_t> getHeaderChainStats() const;
     protected:
         std::shared_ptr<MemPool> memPool;
+        vector<std::shared_ptr<VirtualChain>> subchains;
 };

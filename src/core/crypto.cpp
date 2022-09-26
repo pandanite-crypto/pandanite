@@ -10,18 +10,23 @@
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
 #include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
 #include "../external/sha256/sha2.hpp" 
+
+#ifndef WASM_BUILD
 #include "../server/pufferfish_cache.hpp"
+PufferfishCache* pufferfishCache = NULL;
+std::mutex pufferfishCacheLock;
+#endif
 using namespace std;
 
 
-PufferfishCache * pufferfishCache = NULL;
-std::mutex pufferfishCacheLock;
 
 SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     SHA256Hash inputHash;
+#ifndef WASM_BUILD
     if (useCache) {
         std::unique_lock<std::mutex> ul(pufferfishCacheLock);
         memcpy(inputHash.data(), buffer, 32);
+
         if (!pufferfishCache) {
             pufferfishCache = new PufferfishCache();
             pufferfishCache->init(PUFFERFISH_CACHE_FILE_PATH);
@@ -32,6 +37,7 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
             return h;
         } catch(...) {}
     }
+#endif
     char hash[PF_HASHSPACE];
     memset(hash, 0, PF_HASHSPACE);
     int ret = 0;
@@ -41,11 +47,12 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     size_t sz = PF_HASHSPACE;
 
     auto finalHash =  SHA256(hash, sz);
-
+#ifndef WASM_BUILD
     if (useCache) {
         std::unique_lock<std::mutex> ul(pufferfishCacheLock);
         pufferfishCache->setHash(inputHash, finalHash);
     }
+#endif
     return finalHash;
 }
 

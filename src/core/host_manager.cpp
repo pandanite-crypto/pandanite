@@ -4,6 +4,7 @@
 #include "constants.hpp"
 #include "logger.hpp"
 #include "header_chain.hpp"
+#include "crypto.hpp"
 #include "../external/http.hpp"
 #include <iostream>
 #include <sstream>
@@ -64,6 +65,7 @@ string HostManager::computeAddress() {
     nodes current IP 
 */  
 void peer_sync(HostManager& hm) {
+#ifndef WASM_BUILD
     while(true) {
         for(auto host : hm.hosts) {
             try {
@@ -72,6 +74,7 @@ void peer_sync(HostManager& hm) {
         }
         std::this_thread::sleep_for(std::chrono::minutes(5));
     }
+#endif
 }
 
 /*
@@ -315,6 +318,7 @@ set<string> HostManager::sampleFreshHosts(int count) {
     Adds a peer to the host list, 
 */
 void HostManager::addPeer(string addr, uint64_t time, string version, string network) {
+#ifndef WASM_BUILD
     if (network != this->networkName) return;
     if (version < this->minHostVersion) return;
 
@@ -373,11 +377,14 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
     for(int i =0 ; i < reqs.size(); i++) {
         reqs[i].get();
     }   
+#endif
 }
 
+#ifndef WASM_BUILD
 void HostManager::setBlockstore(std::shared_ptr<BlockStore> blockStore) {
     this->blockStore = blockStore;
 }
+#endif
 
 
 bool HostManager::isDisabled() {
@@ -415,6 +422,7 @@ void HostManager::refreshHostList() {
     // iterate through all listed peer hosts
     vector<std::thread> threads;
     std::mutex lock;
+#ifndef WASM_BUILD
     for(auto hostJson : fullHostList) {
         // if we've already added this host skip
         string hostUrl = string(hostJson);
@@ -423,7 +431,6 @@ void HostManager::refreshHostList() {
 
         // if host is in blacklist skip:
         if (this->blacklist.find(hostUrl) != this->blacklist.end()) continue;
-
         // otherwise try connecting to the host to confirm it's up
         HostManager & hm = *this;
         threads.emplace_back(
@@ -448,6 +455,7 @@ void HostManager::refreshHostList() {
         );
     }
     for (auto& th : threads) th.join();
+#endif
 }
 
 void HostManager::syncHeadersWithPeers() {
@@ -459,7 +467,15 @@ void HostManager::syncHeadersWithPeers() {
     set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
 
     for (auto h : hosts) {
+<<<<<<< HEAD
         this->currPeers.push_back(std::make_shared<HeaderChain>(h, this->checkpoints, this->bannedHashes, this->blockStore));
+=======
+#ifndef WASM_BUILD
+        this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes, this->blockStore));
+#else
+        this->currPeers.push_back(new HeaderChain(h, this->checkpoints, this->bannedHashes));
+#endif
+>>>>>>> 7ea4221... checkpoint
     }
 }
 

@@ -1,11 +1,14 @@
 #pragma once
 #include "common.hpp"
 #include "header_chain.hpp"
-#include "../server/block_store.hpp"
 #include <set>
 #include <mutex>
-#include <memory>
+
+#ifndef WASM_BUILD
 #include <thread>
+#include <memory>
+#include "../server/block_store.hpp"
+#endif
 using namespace std;
 
 class HostManager {
@@ -29,15 +32,17 @@ class HostManager {
         set<string> sampleAllHosts(int count);
         string getAddress();
         uint64_t getNetworkTimestamp();
+#ifndef WASM_BUILD
         void setBlockstore(std::shared_ptr<BlockStore> blockStore);
-        
+#endif
         void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
         void syncHeadersWithPeers();
     protected:
-        vector<std::shared_ptr<HeaderChain>> currPeers; 
+        vector<HeaderChain*> currPeers; 
+#ifndef WASM_BUILD
         std::shared_ptr<BlockStore> blockStore;
-
+#endif
         std::mutex lock;
         bool disabled;
         bool firewall;

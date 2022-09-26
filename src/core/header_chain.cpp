@@ -10,6 +10,7 @@ using namespace std;
 
 void chain_sync(HeaderChain& chain) {
     while(true) {
+#ifndef WASM_BUILD
         if (!chain.triedBlockStoreCache && chain.blockStore) {
             uint64_t chainLength = chain.blockStore->getBlockCount();
             for(uint64_t i = 1; i <= chainLength; i++) {
@@ -22,12 +23,20 @@ void chain_sync(HeaderChain& chain) {
         } else {
             chain.load();
         }
+#else
+            chain.load();
+#endif
         std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 }
 
+<<<<<<< HEAD
 
 HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, std::shared_ptr<BlockStore> blockStore) {
+=======
+#ifndef WASM_BUILD
+HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, BlockStore* blockStore) {
+>>>>>>> 7ea4221... checkpoint
     this->host = host;
     this->failed = false;
     this->offset = 0;
@@ -39,6 +48,19 @@ HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, ma
     this->checkPoints = checkpoints;
     this->bannedHashes = bannedHashes;
 }
+#else
+HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes) {
+    this->host = host;
+    this->failed = false;
+    this->offset = 0;
+    this->totalWork = 0;
+    this->chainLength = 0;
+    this->triedBlockStoreCache = false;
+    this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
+    this->checkPoints = checkpoints;
+    this->bannedHashes = bannedHashes;
+}
+#endif
 
 SHA256Hash HeaderChain::getHash(uint64_t blockId) {
     if (blockId >= this->blockHashes.size()) return NULL_SHA256_HASH;
@@ -75,6 +97,7 @@ uint64_t HeaderChain::getCurrentDownloaded() {
 }
 
 void HeaderChain::load() {
+#ifndef WASM_BUILD
     uint64_t targetBlockCount;
     try {
         targetBlockCount = getCurrentBlockCount(this->host);
@@ -152,6 +175,7 @@ void HeaderChain::load() {
     if (numBlocks != startBlocks) {
         // Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
     }
+#endif
 }
 
 

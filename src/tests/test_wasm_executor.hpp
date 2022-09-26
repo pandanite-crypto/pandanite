@@ -8,11 +8,16 @@
 using namespace std;
 
 TEST(test_simple_program) {
-    vector<uint8_t> byteCode = readBytes("src/wasm/program.wasm");
+    vector<uint8_t> byteCode = readBytes("src/wasm/simple_nft.wasm");
     WasmExecutor wasm(byteCode);
     StateStore store;
     store.init("./test-data/tmpdb");
     Block curr;
+    curr.setId(1);
     wasm.executeBlockWasm(curr, store);
-    ASSERT_EQUAL(store.getUint32("foobar"), 100);
+    ASSERT_EQUAL(store.getWallet("owner"), NULL_ADDRESS);
+
+    json args;
+    json result = wasm.getInfo(args, store);
+    cout<<result.dump()<<endl;
 }

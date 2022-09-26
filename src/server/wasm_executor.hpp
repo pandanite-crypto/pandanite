@@ -13,6 +13,7 @@ using namespace std;
 class WasmExecutor : public Executor {
     public:
         WasmExecutor(vector<uint8_t> byteCode);
+        json getInfo(json args, StateStore& store) const;
         Block getGenesis() const;
         void rollback(Ledger& ledger, LedgerState& deltas, StateStore& store) const;
         void rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) const;
@@ -23,4 +24,5 @@ class WasmExecutor : public Executor {
         ExecutionStatus executeBlockWasm(Block& b, StateStore& store) const;
     protected:
         vector<uint8_t> byteCode;
+        
 };

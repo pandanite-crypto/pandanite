@@ -3,7 +3,9 @@
 #include <vector>
 #include <string>
 #include <array>
+#include "../external/bigint/bigint.h"
 using namespace std;
+using namespace Dodecahedron;
 
 typedef std::array<uint8_t, 25> PublicWalletAddress;
 typedef uint64_t TransactionAmount;
@@ -46,8 +48,6 @@ struct TransactionInfo {
     ProgramID programId;
     TransactionData data;
 };
-
-
 
 enum ExecutionStatus {
     SENDER_DOES_NOT_EXIST,

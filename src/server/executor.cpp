@@ -226,7 +226,6 @@ ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t
 
 
 ExecutionStatus Executor::executeBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas) const{
-    
     TransactionAmount blockMiningFee = this->getMiningFee(curr.getId());
     // try executing each transaction
     bool foundFee = false;
