@@ -5,7 +5,9 @@
 #include "logger.hpp"
 #include "header_chain.hpp"
 #include "crypto.hpp"
+#ifndef WASM_BUILD
 #include "../external/http.hpp"
+#endif
 #include <iostream>
 #include <sstream>
 #include <thread>
