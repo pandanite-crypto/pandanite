@@ -19,7 +19,7 @@ include_directories(/usr/local/include/)
 
 file(GLOB CORE_SOURCES "src/core/*.cpp"  "src/shared/*.cpp" )
 file(GLOB SERVER_SOURCES "src/server/*.cpp")
-file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/murmurhash3/*.cpp" "src/external/sha256/*.cpp" "src/external/bigint/*.cpp")
+file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/bigint/*.cpp")
 
 
 set (WAMR_BUILD_PLATFORM "darwin")

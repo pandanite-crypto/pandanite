@@ -6,7 +6,6 @@
 #include "../core/crypto.hpp"
 using namespace std;
 
-void print_str(const char* str);
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +16,8 @@ extern "C" {
     }
 
     uint32_t executeBlock(const char* args) {
-        Block b;
-        print_str("hello");
+        PublicWalletAddress ownerAddress = NULL_ADDRESS;
+        setWallet("owner", ownerAddress);
         // Block block = getBlock(args);
         // // parse data into block header + transactions
         // if (block.getId() == 1) {

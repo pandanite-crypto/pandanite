@@ -15,66 +15,91 @@
 using namespace std;
 
 
-struct host_methods {
-    void setUint32(const char* key, uint32_t value) {
-        state->setUint32(key, value);
-    }
-    void setUint64(const char* key, uint32_t value) {
-        state->setUint64(key, value);
-    }
-    void pop(const char* key) {
-        state->pop(key);
-    }
-    void removeItem(const char* key, const uint64_t idx) {
-        state->remove(key, idx);
-    }
-    uint64_t count(const char* key) {
-        return state->count(key);
-    }
-    void _setSha256(const char* key, const char* val, const uint64_t idx = 0) {
-        state->setSha256(key, stringToSHA256(string(val)), idx);
-    }
-    void _setWallet(const char* key, const char* val, const uint64_t idx = 0) {
-        state->setWallet(key, stringToWalletAddress(string(val)), idx);
-    }
-    void _setBytes(const char* key, const char* bytes, const uint64_t idx = 0) {
-        // state->setBytes(key, bytes, idx);
-    }
-    void _setBigint(const char* key, const char* val, const uint64_t idx = 0) {
-        // state->setBigint(key, val, idx);
-    }
-    uint64_t getUint64(const char* key, uint64_t index = 0) {
-        return state->getUint64(key, index);
-    }
-    uint32_t getUint32(const char* key, uint64_t index = 0) {
-        return state->getUint32(key, index);
-    }
-    void _getSha256(const char* key, int64_t index = 0) {
-        const char* ret = SHA256toString(state->getSha256(key, index)).c_str();
-        strcpy((char*)returnValue, ret);
-    }
-    void _getBigint(const char* key, uint64_t index = 0) {
-        const char* ret = to_string(state->getBigint(key, index)).c_str();
-        strcpy((char*)returnValue, ret);
-    }
-    void _getWallet(const char* key, uint64_t index = 0) {
-        const char* ret = walletAddressToString(state->getWallet(key, index)).c_str();
-        strcpy((char*)returnValue, ret);
-    }
-    
-    void _getBytes(const char* key, uint64_t index = 0) const {
-        auto bytes = state->getBytes(key, index);
-        const char* ret = hexEncode((char*)bytes.data(), bytes.size()).c_str();
-        strcpy((char*)returnValue, ret);
-    }
 
-    void setReturnValue(const char* val) {
-        strcpy(returnValue, val);
-    }
+void print_str(wasm_exec_env_t exec_env, char* str, int sz) {
+    printf("%s\n", str);
+}
 
-    StateStore* state;
-    char returnValue[4096];
-};
+void setUint32(wasm_exec_env_t exec_env, char* key, uint32_t value, uint32_t idx) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    state->setUint32(key, value, idx);
+}
+void setUint64(wasm_exec_env_t exec_env, char* key, uint64_t value, uint32_t idx) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    state->setUint64(key, value, idx);
+}
+void pop(wasm_exec_env_t exec_env, char* key) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    state->pop(string(key));
+}
+void removeItem(wasm_exec_env_t exec_env, char* key, uint32_t idx) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    state->remove(string(key), idx);
+}
+uint32_t itemCount(wasm_exec_env_t exec_env, char* key) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    return state->count(string(key));
+}
+
+void setSha256(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    state->setSha256(key, stringToSHA256(string(val)), idx);
+}
+void setWallet(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    state->setWallet(key, stringToWalletAddress(string(val)), idx);
+}
+void setBytes(wasm_exec_env_t exec_env, char* key, char* bytes, uint32_t sz, uint32_t idx = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    // TODO: CLEANUP
+    vector<uint8_t> vecbytes;
+    for (int i = 0; i < sz; i ++) {
+        vecbytes.push_back(bytes[i]);
+    }
+    state->setBytes(key, vecbytes, idx);
+}
+void setBigint(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    Bigint final = Bigint(string(val));
+    state->setBigint(key, final, idx);
+}
+
+uint64_t getUint64(wasm_exec_env_t exec_env, char* key, uint32_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    return state->getUint64(key, index);
+}
+uint32_t getUint32(wasm_exec_env_t exec_env, char* key, uint32_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    return state->getUint32(key, index);
+}
+void getSha256(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, int64_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    char* ret = (char*)SHA256toString(state->getSha256(key, index)).c_str();
+    strcpy((char*)out, ret);
+}
+void getBigint(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    char* ret = (char*)to_string(state->getBigint(key, index)).c_str();
+    strcpy((char*)out, ret);
+}
+void getWallet(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    char* ret = (char*)walletAddressToString(state->getWallet(key, index)).c_str();
+    strcpy((char*)out, ret);
+}
+
+void getBytes(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    auto bytes = state->getBytes(key, index);
+    memcpy(out, bytes.data(), bytes.size());
+}
+
+void setReturnValue(wasm_exec_env_t exec_env, char* out, uint32_t sz) {
+    vector<uint8_t>* buf = (vector<uint8_t>*) wasm_runtime_get_function_attachment(exec_env);
+    for(int i = 0; i < sz; i++) {
+        buf->push_back(out[i]);
+    }
+}
 
 WasmExecutor::WasmExecutor(vector<uint8_t> byteCode) {
     this->byteCode = byteCode;
@@ -116,29 +141,113 @@ ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, Transact
     /** NOTE: WasmExecutor does not use ledger, txdb, or blockStore and stores all data in store **/
     return this->executeBlockWasm(curr, store);
 }
-#define own
-own wasm_trap_t* hello_callback(
-  const wasm_val_vec_t* args, wasm_val_vec_t* results
-) {
-  printf("HELLO HELLO HELLO");
-  printf("> Hello World!\n");
-  return NULL;
-}
-
-void print_str(wasm_exec_env_t exec_env, char* str) {
-    printf("FOOBAR1\n");
-}
-
-static NativeSymbol native_symbols[] = {
-    {
-        "print_str", // the name of WASM function name
-        (void*)print_str,   // the native function pointer
-        "(i)",  // the function prototype signature, avoid to use i32
-        NULL        // attachment is NULL
-    },
-};
-
 ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) const {
+    char ret[4096];
+    static NativeSymbol native_symbols[] = {
+        {
+            "print_str",
+            (void*)print_str,
+            "(*~)",
+            NULL
+        },
+        {
+            "pop",
+            (void*)pop,
+            "($)",
+            (void*)&state
+        },
+        {
+            "removeItem",
+            (void*)removeItem,
+            "($i)",
+            (void*)&state
+        },
+        {
+            "count",
+            (void*)itemCount,
+            "($)i",
+            (void*)&state
+        },
+        {
+            "_setWallet",
+            (void*)setWallet,
+            "($$i)",
+            (void*)&state
+        },
+        {
+            "_setSha256",
+            (void*)setSha256,
+            "($$i)",
+            (void*)&state
+        },
+        {
+            "_setBytes",
+            (void*)setBytes,
+            "($$i)",
+            (void*)&state
+        },
+        {
+            "_setBigint",
+            (void*)setBigint,
+            "($$i)",
+            (void*)&state
+        },
+        {
+            "setUint32",
+            (void*)setUint32,
+            "($ii)",
+            (void*)&state
+        },
+        {
+            "setUint64",
+            (void*)setUint64,
+            "($Ii)",
+            (void*)&state
+        },
+        {
+            "getUint32",
+            (void*)setUint32,
+            "($i)i",
+            (void*)&state
+        },
+        {
+            "getUint64",
+            (void*)setUint64,
+            "($i)I",
+            (void*)&state
+        },
+        {
+            "_getSha256",
+            (void*)getSha256,
+            "($*~i)",
+            (void*)&state
+        },
+        {
+            "_getBigint",
+            (void*)getBigint,
+            "($*~i)",
+            (void*)&state
+        },
+        {
+            "_getWallet",
+            (void*)getBigint,
+            "($*~i)",
+            (void*)&state
+        },
+        {
+            "_getBytes",
+            (void*)getBytes,
+            "($*~i)",
+            (void*)&state
+        },
+        {
+            "setReturnValue",
+            (void*)setReturnValue,
+            "(*~)",
+            (void*)ret
+        }
+    };
+
     char error[4096];
     static char global_heap_buf[512 * 1024];
     RuntimeInitArgs init_args;

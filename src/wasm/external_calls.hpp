@@ -1,42 +1,44 @@
 #pragma once
 
-void setUint32(const char* name, uint32_t value);
-void setUint32(const char* key, uint32_t value);
-void setUint64(const char* key, uint32_t value);
-void pop(const char* key);
-void removeItem(const char* key, const uint64_t idx);
-uint64_t count(const char* key);
-uint64_t getUint64(const char* key, uint64_t index = 0);
-uint32_t getUint32(const char* key, uint64_t index = 0);
-void _setSha256(const char* key, const char* val, const uint64_t idx = 0);
-void _setWallet(const char* key, const char* val, const uint64_t idx = 0);
-void _setBytes(const char* key, const char* val, const uint64_t idx = 0);
-void _setBigint(const char* key, const char* val, const uint64_t idx = 0);
-void _getSha256(const char* key, char* buf, uint64_t index = 0);
-void _getBigint(const char* key, char* buf, uint64_t index = 0);
-void _getWallet(const char* key, char* buf, uint64_t index = 0);
-void _getBytes(const char* key, char* buf, uint64_t index = 0);
-void setReturnValue(const char* val);
 
-PublicWalletAddress getWallet(const char* key, const uint64_t idx = 0) {
+void print_str(char* str, int sz);
+void setUint32(char* name, uint32_t value);
+void setUint32(char* key, uint32_t value);
+void setUint64(char* key, uint32_t value);
+void pop(char* key);
+void removeItem(char* key, uint32_t idx);
+uint64_t count(char* key);
+uint64_t getUint64(char* key, uint32_t index = 0);
+uint32_t getUint32(char* key, uint32_t index = 0);
+void _setSha256(char* key, char* val, uint32_t idx = 0);
+void _setWallet(char* key, char* val, uint32_t idx = 0);
+void _setBytes(char* key, char* val, uint32_t idx = 0);
+void _setBigint(char* key, char* val, uint32_t idx = 0);
+void _getSha256(char* key, char* buf, uint32_t index = 0);
+void _getBigint(char* key, char* buf, uint32_t index = 0);
+void _getWallet(char* key, char* buf, uint32_t index = 0);
+void _getBytes(char* key, char* buf, uint32_t index = 0);
+void setReturnValue(char* val, uint32_t sz);
+
+PublicWalletAddress getWallet(const char* key, uint32_t idx = 0) {
     char buf[4096];
     _getWallet(key, buf, idx);
     return stringToWalletAddress(string(buf));
 }
 
-SHA256Hash getSha256(const char* key, const uint64_t idx = 0) {
+SHA256Hash getSha256(const char* key, uint32_t idx = 0) {
     char buf[4096];
     _getSha256(key, buf, idx);
     return stringToSHA256(string(buf));
 }
 
-void setSha256(const char* key, SHA256Hash& val, const uint64_t idx = 0) {
+void setSha256(const char* key, SHA256Hash& val, uint32_t idx = 0) {
     const char* buf = SHA256toString(val).c_str();
     _setSha256(key, buf, idx);
 }
-void setWallet(const char* key, PublicWalletAddress& val, const uint64_t idx = 0) {
+void setWallet(char* key, PublicWalletAddress& val, uint32_t idx = 0) {
     const char* buf = walletAddressToString(val).c_str();
-    _setWallet(key, buf, idx);
+    _setWallet(key, (char*) buf, idx);
 }
 
 // void setBytes(const char* key,  vector<uint8_t>& val, const uint64_t idx = 0);
