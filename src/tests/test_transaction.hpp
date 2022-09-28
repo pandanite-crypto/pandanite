@@ -1,4 +1,4 @@
-#include "../core/user.hpp"
+#include "../shared/user.hpp"
 #include "../core/transaction.hpp"
 #include "../core/block.hpp"
 #include "../core/common.hpp"

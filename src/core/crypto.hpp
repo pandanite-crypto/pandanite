@@ -2,7 +2,9 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include "common.hpp"
 #include "constants.hpp"
+#ifndef WASM_BUILD
 #include <mutex>
+#endif
 using namespace std;
 
 SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish=false, bool useCache=false);
@@ -14,7 +16,10 @@ std::vector<uint8_t> hexDecode(const string& hex);
 string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish = false, bool useCache = false);
 bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize);
+
+#ifndef WASM_BUILD
 Bigint addWork(Bigint previousWork, uint32_t challengeSize);
+#endif
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);
 string walletAddressToString(PublicWalletAddress p);

@@ -1,7 +1,6 @@
 #include "merkle_tree.hpp"
 #include <queue>
 #include <algorithm>
-#include <iostream>
 using namespace std;
 
 

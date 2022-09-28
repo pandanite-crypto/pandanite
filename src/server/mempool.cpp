@@ -2,7 +2,7 @@
 #include <sstream>
 #include <future>
 #include "../core/logger.hpp"
-#include "../core/api.hpp"
+#include "../shared/api.hpp"
 #include "mempool.hpp"
 #include "blockchain.hpp"
 using namespace std;

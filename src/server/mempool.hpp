@@ -6,7 +6,7 @@
 #include <mutex>
 #include <list>
 #include <map>
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../core/transaction.hpp"
 #include "executor.hpp"
 using namespace std;

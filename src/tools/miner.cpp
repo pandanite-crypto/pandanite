@@ -1,12 +1,12 @@
 #include "../core/crypto.hpp"
 #include "../core/helpers.hpp"
-#include "../core/api.hpp"
+#include "../shared/api.hpp"
 #include "../core/crypto.hpp"
 #include "../core/merkle_tree.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../core/logger.hpp"
-#include "../core/user.hpp"
-#include "../core/config.hpp"
+#include "../shared/user.hpp"
+#include "../shared/config.hpp"
 #include <iostream>
 #include <mutex>
 #include <set>

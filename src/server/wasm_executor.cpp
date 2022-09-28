@@ -9,42 +9,11 @@
 #include "../core/logger.hpp"
 #include "../core/helpers.hpp"
 #include "../core/types.hpp"
-#include "../external/eosio/vm/backend.hpp"
-#include "../external/eosio/vm/error_codes.hpp"
-#include "../external/eosio/vm/host_function.hpp"
-#include "../external/eosio/vm/watchdog.hpp"
 #include "executor.hpp"
-using namespace eosio;
-using namespace eosio::vm;
+#include "/Users/saliksyed/src/wasm-micro-runtime/core/iwasm/include/wasm_c_api.h"
+#include "/Users/saliksyed/src/wasm-micro-runtime/core/iwasm/include/wasm_export.h"
 using namespace std;
 
-namespace eosio { namespace vm {
-    template <>
-    struct wasm_type_converter<const char*> : linear_memory_access {
-        const char* from_wasm(const void* val) { validate_c_str(val); return static_cast<const char*>(val); }
-        void to_wasm(const char* val) {}
-    };
-
-    template<typename T>
-    struct wasm_type_converter<T*> {
-        static T* from_wasm(void* val) {
-            return (T*)val;
-        }
-        static void* to_wasm(T* val) {
-            return (void*)val;
-        }
-    };
-
-    template<typename T>
-    struct wasm_type_converter<T&> {
-        static T& from_wasm(T* val) {
-            return *val;
-        }
-        static T* to_wasm(T& val) {
-        return std::addressof(val);
-        }
-    };
-}}
 
 struct host_methods {
     void setUint32(const char* key, uint32_t value) {
@@ -116,44 +85,6 @@ Block WasmExecutor::getGenesis() const {
 }
 
 json WasmExecutor::getInfo(json args, StateStore& store) const {
-    wasm_allocator wa;
-    using backend_t = eosio::vm::backend<host_methods>;
-    using rhf_t     = eosio::vm::registered_host_functions<host_methods>;
-    rhf_t::add<host_methods, &host_methods::setUint32, wasm_allocator>("env", "setUint32");
-    rhf_t::add<host_methods, &host_methods::setUint64, wasm_allocator>("env", "setUint64");
-    rhf_t::add<host_methods, &host_methods::pop, wasm_allocator>("env", "pop");
-    rhf_t::add<host_methods, &host_methods::removeItem, wasm_allocator>("env", "removeItem");
-    rhf_t::add<host_methods, &host_methods::count, wasm_allocator>("env", "count");
-    rhf_t::add<host_methods, &host_methods::_setSha256, wasm_allocator>("env", "setSha256");
-    rhf_t::add<host_methods, &host_methods::_setWallet, wasm_allocator>("env", "setWallet");
-    rhf_t::add<host_methods, &host_methods::_setBytes, wasm_allocator>("env", "setBytes");
-    rhf_t::add<host_methods, &host_methods::_setBigint, wasm_allocator>("env", "setBigint");
-    rhf_t::add<host_methods, &host_methods::getUint64, wasm_allocator>("env", "getUint64");
-    rhf_t::add<host_methods, &host_methods::setUint32, wasm_allocator>("env", "getUint32");
-    rhf_t::add<host_methods, &host_methods::getUint64, wasm_allocator>("env", "getUint64");
-    rhf_t::add<host_methods, &host_methods::_getSha256, wasm_allocator>("env", "getSha256");
-    rhf_t::add<host_methods, &host_methods::_getBigint, wasm_allocator>("env", "getBigint");
-    rhf_t::add<host_methods, &host_methods::_getWallet, wasm_allocator>("env", "getWallet");
-    rhf_t::add<host_methods, &host_methods::_getBytes, wasm_allocator>("env", "getBytes");
-    watchdog wd{std::chrono::seconds(3)};
-    try {
-        vector<uint8_t> bytes = this->byteCode;
-        backend_t bkend(bytes, rhf_t{});
-        bkend.set_wasm_allocator(&wa);
-        bkend.initialize();
-        
-        host_methods ehm;
-        ehm.state = &store;
-        char jsonBuffer[4096];
-        strcpy(jsonBuffer, args.dump().c_str());
-        bkend.call_with_return(&ehm, "env", "getInfo", jsonBuffer);
-        return json::parse(string(ehm.returnValue));
-    } catch (std::exception& e) { 
-        std::cerr << e.what(); 
-        json ret;
-        ret["error"] = "WASM execution failed";
-        return ret;
-    }
 }
 
 TransactionAmount WasmExecutor::getMiningFee(uint64_t blockId, StateStore& store) const {
@@ -185,43 +116,110 @@ ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, Transact
     /** NOTE: WasmExecutor does not use ledger, txdb, or blockStore and stores all data in store **/
     return this->executeBlockWasm(curr, store);
 }
+#define own
+own wasm_trap_t* hello_callback(
+  const wasm_val_vec_t* args, wasm_val_vec_t* results
+) {
+  printf("HELLO HELLO HELLO");
+  printf("> Hello World!\n");
+  return NULL;
+}
 
-ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& store) const {
-    wasm_allocator wa;
-    using backend_t = eosio::vm::backend<host_methods>;
-    using rhf_t     = eosio::vm::registered_host_functions<host_methods>;
-    // rhf_t::add<host_methods, &host_methods::setUint32, wasm_allocator>("env", "setUint32");
-    // rhf_t::add<host_methods, &host_methods::setUint64, wasm_allocator>("env", "setUint64");
-    // rhf_t::add<host_methods, &host_methods::pop, wasm_allocator>("env", "pop");
-    // rhf_t::add<host_methods, &host_methods::removeItem, wasm_allocator>("env", "removeItem");
-    // rhf_t::add<host_methods, &host_methods::count, wasm_allocator>("env", "count");
-    // rhf_t::add<host_methods, &host_methods::setReturnValue, wasm_allocator>("env", "setReturnValue");
-    // rhf_t::add<host_methods, &host_methods::_setSha256, wasm_allocator>("env", "setSha256");
-    // rhf_t::add<host_methods, &host_methods::_setWallet, wasm_allocator>("env", "setWallet");
-    // rhf_t::add<host_methods, &host_methods::_setBytes, wasm_allocator>("env", "setBytes");
-    // rhf_t::add<host_methods, &host_methods::_setBigint, wasm_allocator>("env", "setBigint");
-    // rhf_t::add<host_methods, &host_methods::getUint64, wasm_allocator>("env", "getUint64");
-    // rhf_t::add<host_methods, &host_methods::setUint32, wasm_allocator>("env", "getUint32");
-    // rhf_t::add<host_methods, &host_methods::getUint64, wasm_allocator>("env", "getUint64");
-    // rhf_t::add<host_methods, &host_methods::_getSha256, wasm_allocator>("env", "getSha256");
-    // rhf_t::add<host_methods, &host_methods::_getBigint, wasm_allocator>("env", "getBigint");
-    // rhf_t::add<host_methods, &host_methods::_getWallet, wasm_allocator>("env", "getWallet");
-    // rhf_t::add<host_methods, &host_methods::_getBytes, wasm_allocator>("env", "getBytes");
-    watchdog wd{std::chrono::seconds(3)};
-    try {
-        vector<uint8_t> bytes = this->byteCode;
-        backend_t bkend(bytes, rhf_t{});
-        bkend.set_wasm_allocator(&wa);
-        bkend.initialize();
-        host_methods ehm;
-        ehm.state = &store;
-        auto ret = bkend.call_with_return(&ehm, "env", "executeBlock");
-        //return (ExecutionStatus) ret->to_ui32();
-        return SUCCESS;
-    } catch (std::exception& e) { 
-        std::cerr << e.what(); 
-        return WASM_ERROR;
+void print_str(wasm_exec_env_t exec_env, char* str) {
+    printf("FOOBAR1\n");
+}
+
+static NativeSymbol native_symbols[] = {
+    {
+        "print_str", // the name of WASM function name
+        (void*)print_str,   // the native function pointer
+        "(i)",  // the function prototype signature, avoid to use i32
+        NULL        // attachment is NULL
+    },
+};
+
+ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) const {
+    char error[4096];
+    static char global_heap_buf[512 * 1024];
+    RuntimeInitArgs init_args;
+    memset(&init_args, 0, sizeof(RuntimeInitArgs));
+    init_args.mem_alloc_type = Alloc_With_Pool;
+    init_args.mem_alloc_option.pool.heap_buf = global_heap_buf;
+    init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
+    init_args.n_native_symbols = sizeof(native_symbols) / sizeof(NativeSymbol);
+    init_args.native_module_name = "env";
+    init_args.native_symbols = native_symbols;
+    
+    wasm_runtime_full_init(&init_args);
+
+    wasm_module_t module = wasm_runtime_load((uint8_t*)this->byteCode.data(), this->byteCode.size(),error, 4096);
+    wasm_module_inst_t runtime = wasm_runtime_instantiate(module, 1000000, 1000000,error, 4096);
+    wasm_function_inst_t func = wasm_runtime_lookup_function(runtime, "executeBlock", "none");
+    wasm_exec_env_t exec_env = wasm_runtime_create_exec_env(runtime, 100000);
+
+    char native_buffer[100];
+    const char* str  = "hello world";
+    strcpy(native_buffer, str);
+    uint32_t wasm_buffer = wasm_runtime_module_malloc(runtime, 100, (void **)&native_buffer);
+    uint32_t args[1];
+    args[0] = wasm_buffer;
+    if (wasm_runtime_call_wasm(exec_env, func, 1, args)) {
+        std::cout<<"SUCCESS"<<endl;
     }
+    
+    //wasm_byte_vec_delete(&binary);
 
-   return SUCCESS;
+    // // Instantiate.
+    // printf("Instantiating module...\n");
+    // wasm_extern_t* externs[] = {  };
+    // wasm_extern_vec_t imports = WASM_EMPTY_VEC;
+    // own wasm_instance_t* instance = wasm_instance_new(store, module, &imports, NULL);
+    // if (!instance) {
+    //     printf("> Error instantiating module!\n");
+    //     return WASM_ERROR;
+    // }
+
+    // // Extract export.
+    // printf("Extracting export...\n");
+    // own wasm_extern_vec_t exports;
+    // wasm_instance_exports(instance, &exports);
+    // if (exports.size == 0) {
+    //     printf("> Error accessing exports!\n");
+    //     return WASM_ERROR;
+    // }
+
+    // const wasm_func_t* add_func = wasm_extern_as_func(exports.data[0]);
+    // if (add_func == NULL) {
+    //     printf("> Error accessing export!\n");
+    //     return WASM_ERROR;
+    // }
+
+    // wasm_module_delete(module);
+    // wasm_instance_delete(instance);
+
+    // // Call.
+    // printf("Calling export...\n");
+    // wasm_val_t args[2] = { WASM_I32_VAL(3), WASM_I32_VAL(4) };
+    // wasm_val_vec_t args_vec = WASM_ARRAY_VEC(args);
+
+    // wasm_val_t results[1] = { WASM_INIT_VAL };
+    // wasm_val_vec_t results_vec = WASM_ARRAY_VEC(results);
+
+    // if (wasm_func_call(add_func, &args_vec, &results_vec)
+    //     || results_vec.data[0].of.i32 != 7) {
+    //     printf("> Error calling function!\n");
+    //     return WASM_ERROR;
+    // }
+
+    // wasm_extern_vec_delete(&exports);
+
+    // // Shut down.
+    // printf("Shutting down...\n");
+    // wasm_store_delete(store);
+    // wasm_engine_delete(engine);
+
+    // // All done.
+    // printf("Done.\n");
+
+    return SUCCESS;
 }

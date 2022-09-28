@@ -2,8 +2,6 @@
 #include "helpers.hpp"
 #include "crypto.hpp"
 #include "openssl/sha.h"
-#include <sstream>
-#include <iostream>
 #include <stdexcept>
 #include <ctime>
 #include <cstring>
@@ -53,7 +51,7 @@ Block::Block(const Block& b) {
         this->transactions.push_back(t);
     }
 }
-
+#ifndef WASM_BUILD
 Block::Block(json block) {
     this->nonce = stringToSHA256(block["nonce"]);
     this->merkleRoot = stringToSHA256(block["merkleRoot"]);
@@ -66,6 +64,7 @@ Block::Block(json block) {
         this->transactions.push_back(curr);
     }
 }
+#endif
 
 Block::Block(const BlockHeader&b, vector<Transaction>& transactions) {
     this->id = b.id;
@@ -91,6 +90,7 @@ BlockHeader Block::serialize() {
     return b;
 }
 
+#ifndef WASM_BUILD
 json Block::toJson() {
     json result;
     result["id"] = this->id;
@@ -106,6 +106,7 @@ json Block::toJson() {
     }
     return result;
 }
+#endif
 
 
 void Block::setTimestamp(uint64_t t) {

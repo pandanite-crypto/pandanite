@@ -1,4 +1,4 @@
-#include "../core/user.hpp"
+#include "../shared/user.hpp"
 #include "../core/crypto.hpp"
 #include "../core/transaction.hpp"
 #include "../core/merkle_tree.hpp"

@@ -1,12 +1,12 @@
 #include <map>
 #include <iostream>
 #include <thread>
-#include "../core/user.hpp"
-#include "../core/api.hpp"
+#include "../shared/user.hpp"
+#include "../shared/api.hpp"
 #include "../core/helpers.hpp"
 #include "../core/common.hpp"
-#include "../core/host_manager.hpp"
-#include "../core/config.hpp"
+#include "../shared/host_manager.hpp"
+#include "../shared/config.hpp"
 using namespace std;
 
 int main(int argc, char** argv) {

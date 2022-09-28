@@ -5,14 +5,18 @@
 using namespace std;
 
 string randomString(int length);
+
+#ifndef WASM_BUILD
 void writeJsonToFile(json data, string filepath);
 json readJsonFromFile(string filepath);
 vector<uint8_t> readBytes(string filepath);
-TransactionAmount BMB(double amount);
-std::uint64_t getCurrentTime();
 std::string uint64ToString(const std::uint64_t& t);
 std::uint64_t stringToUint64(const std::string& input);
 std::string exec(const char* cmd);
+#endif
+
+TransactionAmount BMB(double amount);
+std::uint64_t getCurrentTime();
 
 uint32_t readNetworkUint32(const char*& buffer);
 uint64_t readNetworkUint64(const char*& buffer);

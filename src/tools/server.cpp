@@ -1,5 +1,5 @@
 #include "../server/server.hpp"
-#include "../core/config.hpp"
+#include "../shared/config.hpp"
 
 int main(int argc, char **argv) {  
     srand(time(0));

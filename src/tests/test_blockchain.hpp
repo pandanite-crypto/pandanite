@@ -1,8 +1,8 @@
 #include "../core/helpers.hpp"
 #include "../core/merkle_tree.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../core/constants.hpp"
-#include "../core/user.hpp"
+#include "../shared/user.hpp"
 #include "../server/blockchain.hpp"
 #include "../server/program.hpp"
 #include <chrono>

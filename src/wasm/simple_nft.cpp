@@ -1,20 +1,24 @@
-#include <stdint.h>
 #include <emscripten/emscripten.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "../core/transaction.hpp"
+#include "../core/block.hpp"
+#include "../core/crypto.hpp"
+using namespace std;
 
+void print_str(const char* str);
 
+#ifdef __cplusplus
 extern "C" {
-    
-    void getInfo() {
-        // json req = json::parse(string(args));
-        // json ret;
-        // ret["owner"] = walletAddressToString(getWallet("owner"));
-        // string output = ret.dump();
-        // setReturnValue(output.c_str());
+#endif
+    #include "external_calls.hpp"
+    void getInfo(const char* args) {
+
     }
 
-    void executeBlock() {
-        uint32_t x = 0;
-        x = x + 10;
+    uint32_t executeBlock(const char* args) {
+        Block b;
+        print_str("hello");
         // Block block = getBlock(args);
         // // parse data into block header + transactions
         // if (block.getId() == 1) {
@@ -40,6 +44,9 @@ extern "C" {
         //         }
         //     }
         // }
-        // return SUCCESS;
+        return 0;
     }
+
+#ifdef __cplusplus
 }
+#endif

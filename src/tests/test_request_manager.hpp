@@ -1,8 +1,8 @@
-#include "../core/user.hpp"
+#include "../shared/user.hpp"
 #include "../core/block.hpp"
 #include "../core/merkle_tree.hpp"
 #include "../core/transaction.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../server/request_manager.hpp"
 #include <thread>
 using namespace std;

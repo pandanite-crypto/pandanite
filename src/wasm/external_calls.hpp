@@ -1,6 +1,5 @@
 #pragma once
 
-
 void setUint32(const char* name, uint32_t value);
 void setUint32(const char* key, uint32_t value);
 void setUint64(const char* key, uint32_t value);

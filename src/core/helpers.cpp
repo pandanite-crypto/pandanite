@@ -1,9 +1,6 @@
 
 #include "helpers.hpp"
 #include "constants.hpp"
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <random>
 #include <climits>
 #include <cstdio>
@@ -11,6 +8,12 @@
 #include <stdexcept>
 #include <string>
 #include <array>
+
+#ifndef WASM_BUILD
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#endif
 
 // windows port for popen/pclose 
 #ifdef WIN32
@@ -116,6 +119,7 @@ string randomString(int len) {
     return tmp_s;
 }
 
+#ifndef WASM_BUILD
 void writeJsonToFile(json data, string filepath) {
     string dataStr = data.dump();
     ofstream output;
@@ -138,10 +142,6 @@ json readJsonFromFile(string filepath) {
     return json::parse(buffer.str());
 }
 
-std::uint64_t getCurrentTime() {
-    // HACK: return representable time
-    return std::time(0);
-}
 
 std::string uint64ToString(const std::uint64_t& t) {
     std::ostringstream oss;
@@ -168,6 +168,13 @@ std::string exec(const char* cmd) {
         result += buffer.data();
     }
     return result;
+}
+
+#endif
+
+std::uint64_t getCurrentTime() {
+    // HACK: return representable time
+    return std::time(0);
 }
 
 size_t writeFunction(void *ptr, size_t size, size_t nmemb, std::string* data) {

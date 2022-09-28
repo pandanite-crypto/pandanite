@@ -1,5 +1,5 @@
 #include "../core/common.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../server/blockchain.hpp"
 
 #include <fstream>

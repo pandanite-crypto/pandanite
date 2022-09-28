@@ -1,0 +1,1 @@
+cmake -DWASI_SDK_PREFIX=/opt/wasi-sdk-11 -DCMAKE_TOOLCHAIN_FILE=/opt/wasi-sdk-11/share/cmake/wasi-sdk.cmake -DCMAKE_SYSROOT=/opt/wasi-sdk-11/share/wasi-sysroot .

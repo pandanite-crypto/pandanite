@@ -10,11 +10,11 @@
 #include <filesystem>
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../core/helpers.hpp"
-#include "../core/api.hpp"
+#include "../shared/api.hpp"
 #include "../core/crypto.hpp"
-#include "../core/config.hpp"
+#include "../shared/config.hpp"
 #include "request_manager.hpp"
 #include "server.hpp"
 using namespace std;

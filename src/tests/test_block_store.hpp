@@ -1,5 +1,5 @@
 #include "../core/crypto.hpp"
-#include "../core/user.hpp"
+#include "../shared/user.hpp"
 #include "../server/block_store.hpp"
 using namespace std;
 

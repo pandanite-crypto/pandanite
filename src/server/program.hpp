@@ -1,7 +1,7 @@
 #pragma once
 #include "../core/common.hpp"
 #include "../core/crypto.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "ledger.hpp"
 #include "tx_store.hpp"
 #include "block_store.hpp"

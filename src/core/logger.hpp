@@ -1,12 +1,14 @@
 #pragma once
+#ifndef WASM_BUILD
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <sstream>
 #include <iomanip>
 #include <list>
 #include <ctime>
 #include <mutex>
+#endif
+#include <string>
 using namespace std;
 
 #define TIME_FORMAT "%m-%d-%Y %H:%M:%S"
@@ -18,18 +20,23 @@ using namespace std;
 
 class Logger {
     public:
+#ifndef WASM_BUILD
         static list<string> buffer;
         static ofstream file;
         inline static std::mutex console_lock;
-        
+#endif
+
         static void logToBuffer(string message) {
+#ifndef WASM_BUILD
             if (Logger::buffer.size() > MAX_LINES) {
                 Logger::buffer.pop_front();
             }
             Logger::buffer.push_back(message);
+#endif
         }
 
         static void logError(string endpoint, string message) {
+#ifndef WASM_BUILD
             auto t = std::time(0);
             auto tm = *std::localtime(&t);
             stringstream s;
@@ -42,9 +49,11 @@ class Logger {
                 file.flush();
             }
             Logger::logToBuffer(s.str());
+#endif
         }
 
         static void logStatus(string message) {
+#ifndef WASM_BUILD
             auto t = std::time(0);
             auto tm = *std::localtime(&t);
             stringstream s;
@@ -57,5 +66,6 @@ class Logger {
                 file.flush();
             }  
             Logger::logToBuffer(s.str());
+#endif
         }
 };

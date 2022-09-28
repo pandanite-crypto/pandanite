@@ -4,7 +4,7 @@
 #include <math.h>
 #include "../core/helpers.hpp"
 #include "../core/logger.hpp"
-#include "../core/api.hpp"
+#include "../shared/api.hpp"
 #include "../core/merkle_tree.hpp"
 #include "request_manager.hpp"
 

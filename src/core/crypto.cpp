@@ -3,15 +3,14 @@
 #include "helpers.hpp"
 #include "logger.hpp"
 #include "constants.hpp"
-#include <iostream>
-#include <atomic>
-#include <thread>
-#include <random>
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
 #include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
-#include "../external/sha256/sha2.hpp" 
 
 #ifndef WASM_BUILD
+#include <iostream>
+#include <random>
+#include <thread>
+#include <atomic>
 #include "../server/pufferfish_cache.hpp"
 PufferfishCache* pufferfishCache = NULL;
 std::mutex pufferfishCacheLock;
@@ -66,15 +65,6 @@ SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish, bool useCa
     return ret;
 }
 
-
-std::array<uint8_t, 32> SHA256Fast(const char* buffer, size_t len) {
-    std::array<uint8_t, 32> ret;
-    sha256_ctx sha256;
-    sha256_init(&sha256);
-    sha256_update(&sha256, (const unsigned char*) buffer, len);
-    sha256_final(&sha256, ret.data());
-    return ret;
-}
 
 RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
     RIPEMD160Hash ret;
@@ -246,11 +236,13 @@ bool checkLeadingZeroBits(SHA256Hash& hash, uint8_t challengeSize) {
     else return true;
 }
 
+#ifndef WASM_BUILD
 Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
     Bigint base = 2;
     previousWork+= base.pow((int) challengeSize);
     return previousWork;
 }
+#endif
 
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish, bool useCache) {
     SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish, useCache);
@@ -259,14 +251,15 @@ bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bo
 
 
 SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePufferFish) {
-
+    SHA256Hash solution;
+#ifndef WASM_BUILD
     int hashes = 0;
     int threadId = 0;
     int64_t st = getTimeMilliseconds();
 
     // By @Shifu!
     vector<uint8_t> concat;
-    SHA256Hash solution;
+    
     std::random_device t_rand;
     uint32_t i = 0;
 
@@ -294,6 +287,6 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
             break;
         }
     };
-
+#endif
     return solution;
 }

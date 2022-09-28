@@ -18,11 +18,13 @@ void blockHeaderToBuffer(BlockHeader& t, char* buffer);
 class Block {
     public:
         Block();
+#ifndef WASM_BUILD
         Block(json data);
+        json toJson();
+#endif
         Block(const Block& b);
         Block(const BlockHeader&b, vector<Transaction>& transactions);
         BlockHeader serialize();
-        json toJson();
         void addTransaction(Transaction t);
         void setNonce(SHA256Hash s);
         void setMerkleRoot(SHA256Hash s);

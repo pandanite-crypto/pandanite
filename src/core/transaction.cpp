@@ -2,10 +2,12 @@
 #include "helpers.hpp"
 #include "block.hpp"
 #include "openssl/sha.h"
+ #include <cstring>
+#ifndef WASM_BUILD
+#include <ctime>
 #include <sstream>
 #include <iostream>
- #include <cstring>
-#include <ctime>
+#endif
 using namespace std;
 
 
@@ -178,6 +180,7 @@ Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
     this->fee = 0;
 }
 
+#ifndef WASM_BUILD
 Transaction::Transaction(json obj) {
     PublicWalletAddress to;
     this->nonce = stringToUint64(obj["nonce"]);
@@ -207,6 +210,7 @@ Transaction::Transaction(json obj) {
         this->signingKey = stringToPublicKey(obj["signingKey"]);
     }
 }
+#endif
 
 void Transaction::setTransactionFee(TransactionAmount amount) {
     this->fee = amount;
@@ -221,6 +225,7 @@ void Transaction::makeLayer2(ProgramID programId, TransactionData data) {
     this->data = data;
 }
 
+#ifndef WASM_BUILD
 json Transaction::toJson() {
     json result;
     result["to"] = walletAddressToString(this->toWallet());
@@ -246,6 +251,7 @@ json Transaction::toJson() {
     
     return result;
 }
+#endif
 
 
 bool Transaction::isFee() const {

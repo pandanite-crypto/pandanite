@@ -5,7 +5,7 @@
 #include <memory>
 #include <list>
 #include "../core/transaction.hpp"
-#include "../core/host_manager.hpp"
+#include "../shared/host_manager.hpp"
 #include "../core/common.hpp"
 #include "program_store.hpp"
 #include "blockchain.hpp"

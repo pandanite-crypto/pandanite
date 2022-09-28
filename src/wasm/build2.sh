@@ -1,0 +1,1 @@
+/opt/wasi-sdk/bin/clang -O3 -o simple_nft.wasm simple_nft.cpp -Wl,--allow-undefined

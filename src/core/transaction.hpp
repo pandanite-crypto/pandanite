@@ -17,7 +17,10 @@ uint64_t transactionInfoBufferSize(bool useV0 = true);
 
 class Transaction {
     public:
+#ifndef WASM_BUILD
         Transaction(json t);
+        json toJson();
+#endif
         Transaction();
         Transaction(const Transaction & t);
         Transaction(PublicWalletAddress to, TransactionAmount fee);
@@ -27,7 +30,6 @@ class Transaction {
         Transaction(PublicWalletAddress from, PublicKey signingKey, TransactionAmount fee, ProgramID programId);
         Transaction(const TransactionInfo& t);
         TransactionInfo serialize();
-        json toJson();
         void sign(PublicKey pubKey, PrivateKey signingKey);
         void setTransactionFee(TransactionAmount amount);
         void makeLayer2(ProgramID programId, TransactionData data);

@@ -3,9 +3,12 @@
 #include <vector>
 #include <string>
 #include <array>
-#include "../external/bigint/bigint.h"
 using namespace std;
+
+#ifndef WASM_BUILD
+#include "../external/bigint/bigint.h"
 using namespace Dodecahedron;
+#endif
 
 typedef std::array<uint8_t, 25> PublicWalletAddress;
 typedef uint64_t TransactionAmount;
