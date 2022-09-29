@@ -18,18 +18,18 @@ uint32_t getUint32(char* key, uint32_t index = 0);
 void _setSha256(char* key, char* val, uint32_t idx = 0);
 void _setWallet(char* key, char* val, uint32_t idx = 0);
 void _setBytes(char* key, char* val, uint32_t sz, uint32_t idx = 0);
-void _setBigint(char* key, char* val, uint32_t sz, uint32_t idx = 0);
-void _getSha256(char* key, char* buf, uint32_t sz, uint32_t index = 0);
+void _setBigint(char* key, char* val, uint32_t idx = 0);
 void _getBigint( char* key, char* buf, uint32_t sz, uint32_t index = 0);
+void _getSha256(char* key, char* buf, uint32_t sz, uint32_t index = 0);
 void _getWallet(char* key, char* buf, uint32_t sz, uint32_t index = 0);
 uint32_t _getBytes(const char* key, char* buf, uint32_t sz, uint32_t index = 0);
 void setReturnValue(char* val, uint32_t sz);
 
 
 void setBigint(char* key, const Bigint& val, uint32_t idx = 0) {
-    string s = to_string(val);
+    string s = "111"; //Dodecahedron::to_string(val);
     char* buf = (char*)s.c_str();
-    _setBigint(key, (char*) buf, strlen(buf) + 1,  idx);
+    _setBigint(key, (char*) buf, idx);
 }
 
 Bigint getBigint(char* key, uint32_t idx = 0) {

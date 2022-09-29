@@ -90,12 +90,12 @@ extern "C" {
         print("sha256 passed");
         print("testing bigint");
         Bigint bigint = 100000000;
-        setBigint("bigint", bigint);
-        if (getBigint("bigint") != bigint) {
-            print("bigint failed");
-            setReturnValue((char*)&err, sizeof(ExecutionStatus));
-            return;
-        }
+        //setBigint("bigint", bigint);
+        // if (getBigint("bigint") != bigint) {
+        //     print("bigint failed");
+        //     setReturnValue((char*)&err, sizeof(ExecutionStatus));
+        //     return;
+        // }
 
         print("testing bytes");
         vector<uint8_t> bytes;

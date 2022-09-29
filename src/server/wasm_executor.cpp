@@ -61,10 +61,11 @@ void setBytes(wasm_exec_env_t exec_env, char* key, char* bytes, uint32_t sz, uin
     }
     state->setBytes(key, vecbytes, idx);
 }
+
 void setBigint(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    Bigint final = Bigint(string(val));
-    state->setBigint(key, final, idx);
+    // Bigint final = Bigint(string(val));
+    // state->setBigint(key, final, idx);
 }
 
 uint64_t getUint64(wasm_exec_env_t exec_env, char* key, uint32_t index = 0) {
@@ -78,17 +79,20 @@ uint32_t getUint32(wasm_exec_env_t exec_env, char* key, uint32_t index = 0) {
 
 void getSha256(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, int64_t index = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    char* ret = (char*)SHA256toString(state->getSha256(key, index)).c_str();
+    string s = SHA256toString(state->getSha256(key, index));
+    char* ret = (char*)s.c_str();
     strcpy((char*)out, ret);
 }
 void getBigint(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
-    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    char* ret = (char*)to_string(state->getBigint(key, index)).c_str();
-    strcpy((char*)out, ret);
+    // StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    // string s = to_string(state->getBigint(key, index));
+    // char* ret = (char*)s.c_str();
+    // strcpy((char*)out, ret);
 }
 void getWallet(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    char* ret = (char*)walletAddressToString(state->getWallet(key, index)).c_str();
+    string s = walletAddressToString(state->getWallet(key, index));
+    char* ret = (char*)s.c_str();
     strcpy((char*)out, ret);
 }
 
@@ -115,6 +119,8 @@ Block WasmExecutor::getGenesis() const {
 }
 
 json WasmExecutor::getInfo(json args, StateStore& store) const {
+    json result;
+    return result;
 }
 
 TransactionAmount WasmExecutor::getMiningFee(uint64_t blockId, StateStore& store) const {
@@ -228,14 +234,14 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
             (void*)&state
         },
         {
-            "_getSha256",
-            (void*)getSha256,
+            "_getBigint",
+            (void*)getBigint,
             "($*~i)",
             (void*)&state
         },
         {
-            "_getBigint",
-            (void*)getBigint,
+            "_getSha256",
+            (void*)getSha256,
             "($*~i)",
             (void*)&state
         },
