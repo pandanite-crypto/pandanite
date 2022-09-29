@@ -10,13 +10,13 @@
 #include "../core/helpers.hpp"
 #include "../core/types.hpp"
 #include "executor.hpp"
-#include "/Users/saliksyed/src/wasm-micro-runtime/core/iwasm/include/wasm_c_api.h"
-#include "/Users/saliksyed/src/wasm-micro-runtime/core/iwasm/include/wasm_export.h"
+#include "../external/iwasm/wasm_c_api.h"
+#include "../external/iwasm/wasm_export.h"
 using namespace std;
 
+#define STACK_SZ 1000000
 
-
-void print_str(wasm_exec_env_t exec_env, char* str, int sz) {
+void print_str(wasm_exec_env_t exec_env, char* str, uint32_t sz) {
     printf("%s\n", str);
 }
 
@@ -26,11 +26,12 @@ void setUint32(wasm_exec_env_t exec_env, char* key, uint32_t value, uint32_t idx
 }
 void setUint64(wasm_exec_env_t exec_env, char* key, uint64_t value, uint32_t idx) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    state->setUint64(key, value, idx);
+    string fkey = string(key);
+    state->setUint64(fkey, value, idx);
 }
 void pop(wasm_exec_env_t exec_env, char* key) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    state->pop(string(key));
+    state->pop(key);
 }
 void removeItem(wasm_exec_env_t exec_env, char* key, uint32_t idx) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
@@ -38,18 +39,20 @@ void removeItem(wasm_exec_env_t exec_env, char* key, uint32_t idx) {
 }
 uint32_t itemCount(wasm_exec_env_t exec_env, char* key) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    return state->count(string(key));
+    string fkey = string(key);
+    return state->count(fkey);
 }
 
 void setSha256(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    state->setSha256(key, stringToSHA256(string(val)), idx);
+    state->setSha256(key, stringToSHA256(string(val, 64)), idx);
 }
 void setWallet(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    state->setWallet(key, stringToWalletAddress(string(val)), idx);
+    state->setWallet(key, stringToWalletAddress(string(val, 50)), idx);
 }
 void setBytes(wasm_exec_env_t exec_env, char* key, char* bytes, uint32_t sz, uint32_t idx = 0) {
+    if (sz >= 4096) throw std::runtime_error("Max 4kb byte size limit");
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
     // TODO: CLEANUP
     vector<uint8_t> vecbytes;
@@ -72,6 +75,7 @@ uint32_t getUint32(wasm_exec_env_t exec_env, char* key, uint32_t index = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
     return state->getUint32(key, index);
 }
+
 void getSha256(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, int64_t index = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
     char* ret = (char*)SHA256toString(state->getSha256(key, index)).c_str();
@@ -88,10 +92,11 @@ void getWallet(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint
     strcpy((char*)out, ret);
 }
 
-void getBytes(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
+int getBytes(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
     auto bytes = state->getBytes(key, index);
     memcpy(out, bytes.data(), bytes.size());
+    return (int)bytes.size();
 }
 
 void setReturnValue(wasm_exec_env_t exec_env, char* out, uint32_t sz) {
@@ -142,13 +147,37 @@ ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, Transact
     return this->executeBlockWasm(curr, store);
 }
 ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) const {
-    char ret[4096];
+    vector<uint8_t> ret;
     static NativeSymbol native_symbols[] = {
         {
             "print_str",
             (void*)print_str,
             "(*~)",
             NULL
+        },
+        {
+            "setUint32",
+            (void*)setUint32,
+            "($ii)",
+            (void*)&state
+        },
+        {
+            "setUint64",
+            (void*)setUint64,
+            "($Ii)",
+            (void*)&state
+        },
+        {
+            "getUint32",
+            (void*)getUint32,
+            "($i)i",
+            (void*)&state
+        },
+        {
+            "setReturnValue",
+            (void*)setReturnValue,
+            "(*~)",
+            (void*)&ret
         },
         {
             "pop",
@@ -163,9 +192,15 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
             (void*)&state
         },
         {
-            "count",
+            "itemCount",
             (void*)itemCount,
             "($)i",
+            (void*)&state
+        },
+        {
+            "getUint64",
+            (void*)getUint64,
+            "($i)I",
             (void*)&state
         },
         {
@@ -183,37 +218,13 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
         {
             "_setBytes",
             (void*)setBytes,
-            "($$i)",
+            "($$ii)",
             (void*)&state
         },
         {
             "_setBigint",
             (void*)setBigint,
             "($$i)",
-            (void*)&state
-        },
-        {
-            "setUint32",
-            (void*)setUint32,
-            "($ii)",
-            (void*)&state
-        },
-        {
-            "setUint64",
-            (void*)setUint64,
-            "($Ii)",
-            (void*)&state
-        },
-        {
-            "getUint32",
-            (void*)setUint32,
-            "($i)i",
-            (void*)&state
-        },
-        {
-            "getUint64",
-            (void*)setUint64,
-            "($i)I",
             (void*)&state
         },
         {
@@ -230,21 +241,15 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
         },
         {
             "_getWallet",
-            (void*)getBigint,
+            (void*)getWallet,
             "($*~i)",
             (void*)&state
         },
         {
             "_getBytes",
             (void*)getBytes,
-            "($*~i)",
+            "($*~i)i",
             (void*)&state
-        },
-        {
-            "setReturnValue",
-            (void*)setReturnValue,
-            "(*~)",
-            (void*)ret
         }
     };
 
@@ -259,76 +264,47 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
     init_args.native_module_name = "env";
     init_args.native_symbols = native_symbols;
     
-    wasm_runtime_full_init(&init_args);
+    if(!wasm_runtime_full_init(&init_args)) {
+        std::cout<<"Failed to init runtime"<<std::endl;
+        return WASM_ERROR;
+    }
 
-    wasm_module_t module = wasm_runtime_load((uint8_t*)this->byteCode.data(), this->byteCode.size(),error, 4096);
-    wasm_module_inst_t runtime = wasm_runtime_instantiate(module, 1000000, 1000000,error, 4096);
-    wasm_function_inst_t func = wasm_runtime_lookup_function(runtime, "executeBlock", "none");
+    wasm_module_t module = wasm_runtime_load((uint8_t*)this->byteCode.data(), this->byteCode.size(), error, 4096);
+
+    if (!module) {
+        std::cout<<"Failed to init module"<<std::endl;
+        return WASM_ERROR;
+    }
+    wasm_module_inst_t runtime = wasm_runtime_instantiate(module, STACK_SZ, STACK_SZ, error, 4096);
+    if (!runtime) {
+        std::cout<<"Failed to init runtime"<<std::endl;
+        return WASM_ERROR;
+    }
     wasm_exec_env_t exec_env = wasm_runtime_create_exec_env(runtime, 100000);
+    if (!exec_env) {
+        std::cout<<"Failed to init execution environment"<<std::endl;
+        return WASM_ERROR;
+    }
 
-    char native_buffer[100];
-    const char* str  = "hello world";
-    strcpy(native_buffer, str);
-    uint32_t wasm_buffer = wasm_runtime_module_malloc(runtime, 100, (void **)&native_buffer);
+    wasm_function_inst_t func = wasm_runtime_lookup_function(runtime, "executeBlock", "none");
+
+
+    uint64_t sz = BLOCKHEADER_BUFFER_SIZE + b.getTransactions().size() * transactionInfoBufferSize();
+    char* buf = (char*) malloc(sz);
+    char* ptr = buf;
+    BlockHeader header = b.serialize();
+    blockHeaderToBuffer(header, ptr);
+    ptr += transactionInfoBufferSize();
+    for(auto tx : b.getTransactions()) {
+        TransactionInfo txinfo = tx.serialize();
+        transactionInfoToBuffer(txinfo, ptr, false);
+        ptr += transactionInfoBufferSize();
+    }
+    uint32_t wasm_buffer = wasm_runtime_module_malloc(runtime, sz, (void **)&buf);
     uint32_t args[1];
     args[0] = wasm_buffer;
-    if (wasm_runtime_call_wasm(exec_env, func, 1, args)) {
-        std::cout<<"SUCCESS"<<endl;
+    if (wasm_runtime_call_wasm(exec_env, func, 1, args)) {   
+        return *(ExecutionStatus*)(ret.data());
     }
-    
-    //wasm_byte_vec_delete(&binary);
-
-    // // Instantiate.
-    // printf("Instantiating module...\n");
-    // wasm_extern_t* externs[] = {  };
-    // wasm_extern_vec_t imports = WASM_EMPTY_VEC;
-    // own wasm_instance_t* instance = wasm_instance_new(store, module, &imports, NULL);
-    // if (!instance) {
-    //     printf("> Error instantiating module!\n");
-    //     return WASM_ERROR;
-    // }
-
-    // // Extract export.
-    // printf("Extracting export...\n");
-    // own wasm_extern_vec_t exports;
-    // wasm_instance_exports(instance, &exports);
-    // if (exports.size == 0) {
-    //     printf("> Error accessing exports!\n");
-    //     return WASM_ERROR;
-    // }
-
-    // const wasm_func_t* add_func = wasm_extern_as_func(exports.data[0]);
-    // if (add_func == NULL) {
-    //     printf("> Error accessing export!\n");
-    //     return WASM_ERROR;
-    // }
-
-    // wasm_module_delete(module);
-    // wasm_instance_delete(instance);
-
-    // // Call.
-    // printf("Calling export...\n");
-    // wasm_val_t args[2] = { WASM_I32_VAL(3), WASM_I32_VAL(4) };
-    // wasm_val_vec_t args_vec = WASM_ARRAY_VEC(args);
-
-    // wasm_val_t results[1] = { WASM_INIT_VAL };
-    // wasm_val_vec_t results_vec = WASM_ARRAY_VEC(results);
-
-    // if (wasm_func_call(add_func, &args_vec, &results_vec)
-    //     || results_vec.data[0].of.i32 != 7) {
-    //     printf("> Error calling function!\n");
-    //     return WASM_ERROR;
-    // }
-
-    // wasm_extern_vec_delete(&exports);
-
-    // // Shut down.
-    // printf("Shutting down...\n");
-    // wasm_store_delete(store);
-    // wasm_engine_delete(engine);
-
-    // // All done.
-    // printf("Done.\n");
-
-    return SUCCESS;
+    return WASM_ERROR;
 }
