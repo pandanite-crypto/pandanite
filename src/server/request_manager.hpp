@@ -47,7 +47,6 @@ class RequestManager {
         void enableRateLimiting(bool enabled);
     protected:
         bool limitRequests;
-        HostManager& hosts;
         std::shared_ptr<RateLimiter> rateLimiter;
         std::shared_ptr<BlockChain> blockchain;
         std::shared_ptr<MemPool> mempool;

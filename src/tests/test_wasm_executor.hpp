@@ -21,15 +21,15 @@ TEST(test_simple_program) {
 
 }
 
-TEST(test_simple_nft) {
-    vector<uint8_t> byteCode = readBytes("src/wasm/simple_nft.wasm");
-    WasmExecutor wasm(byteCode);
-    StateStore store;
-    store.init("./test-data/tmpdb");
-    Block curr;
-    curr.setId(1);
-    ExecutionStatus status = wasm.executeBlockWasm(curr, store);
-    ASSERT_EQUAL(store.getWallet("owner"), NULL_ADDRESS);
-    store.closeDB();
-    store.deleteDB();
-}
+// TEST(test_simple_nft) {
+//     vector<uint8_t> byteCode = readBytes("src/wasm/simple_nft.wasm");
+//     WasmExecutor wasm(byteCode);
+//     StateStore store;
+//     store.init("./test-data/tmpdb");
+//     Block curr;
+//     curr.setId(1);
+//     ExecutionStatus status = wasm.executeBlockWasm(curr, store);
+//     ASSERT_EQUAL(store.getWallet("owner"), NULL_ADDRESS);
+//     store.closeDB();
+//     store.deleteDB();
+// }

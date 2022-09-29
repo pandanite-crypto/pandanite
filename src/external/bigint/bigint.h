@@ -22,6 +22,9 @@ public:
     Bigint(long long);
     Bigint(std::string);
     Bigint(const Bigint& b);
+    
+    std::vector<uint8_t> toBuffer() const;
+    static Bigint fromBuffer(char* buf, uint32_t sz);
 
     //Adding
     Bigint operator+(Bigint const &) const;

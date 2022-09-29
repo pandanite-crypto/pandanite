@@ -11,15 +11,7 @@ using namespace std;
 
 class HeaderChain {
     public:
-<<<<<<< HEAD
-        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, std::shared_ptr<BlockStore> blockStore = nullptr);
-=======
-#ifndef WASM_BUILD
-        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, BlockStore* blockStore = NULL);
-#else
-        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes);
-#endif
->>>>>>> 7ea4221... checkpoint
+        HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, std::shared_ptr<BlockStore> blockStore = NULL);
         void load();
         void reset();
         bool valid();
@@ -34,17 +26,11 @@ class HeaderChain {
         Bigint totalWork;
         uint64_t chainLength;
         uint64_t offset;
-<<<<<<< HEAD
         std::shared_ptr<BlockStore> blockStore;
-=======
->>>>>>> 7ea4221... checkpoint
         bool failed;
         bool triedBlockStoreCache;
         map<uint64_t, SHA256Hash> checkPoints;
         map<uint64_t, SHA256Hash> bannedHashes;
         vector<std::thread> syncThread;
         friend void chain_sync(HeaderChain& chain);
-#ifndef WASM_BUILD
-        BlockStore* blockStore;
-#endif
 };

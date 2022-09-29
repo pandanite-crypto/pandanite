@@ -62,10 +62,19 @@ void setBytes(wasm_exec_env_t exec_env, char* key, char* bytes, uint32_t sz, uin
     state->setBytes(key, vecbytes, idx);
 }
 
-void setBigint(wasm_exec_env_t exec_env, char* key, char* val, uint32_t idx = 0) {
+void setBigint(wasm_exec_env_t exec_env, char* key, char* val, uint32_t sz, uint32_t idx = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    // Bigint final = Bigint(string(val));
-    // state->setBigint(key, final, idx);
+    Bigint final = Bigint::fromBuffer(val, sz);
+    state->setBigint(key, final, idx);
+}
+
+uint32_t getBigint(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
+    StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
+    string fkey = string(key);
+    Bigint b = state->getBigint(fkey, index);
+    vector<uint8_t> buf = b.toBuffer();
+    memcpy(out, buf.data(), buf.size());
+    return buf.size();
 }
 
 uint64_t getUint64(wasm_exec_env_t exec_env, char* key, uint32_t index = 0) {
@@ -83,12 +92,7 @@ void getSha256(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, int6
     char* ret = (char*)s.c_str();
     strcpy((char*)out, ret);
 }
-void getBigint(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
-    // StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
-    // string s = to_string(state->getBigint(key, index));
-    // char* ret = (char*)s.c_str();
-    // strcpy((char*)out, ret);
-}
+
 void getWallet(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32_t index = 0) {
     StateStore* state = (StateStore*) wasm_runtime_get_function_attachment(exec_env);
     string s = walletAddressToString(state->getWallet(key, index));
@@ -154,6 +158,10 @@ ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, Transact
 }
 ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) const {
     vector<uint8_t> ret;
+    ExecutionStatus status = WASM_ERROR;
+    for(int i = 0; i < sizeof(ExecutionStatus); i++) ret.push_back(0);
+    memcpy(ret.data(), &status, sizeof(ExecutionStatus));
+
     static NativeSymbol native_symbols[] = {
         {
             "print_str",
@@ -186,6 +194,12 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
             (void*)&ret
         },
         {
+            "getUint64",
+            (void*)getUint64,
+            "($i)I",
+            (void*)&state
+        },
+        {
             "pop",
             (void*)pop,
             "($)",
@@ -201,12 +215,6 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
             "itemCount",
             (void*)itemCount,
             "($)i",
-            (void*)&state
-        },
-        {
-            "getUint64",
-            (void*)getUint64,
-            "($i)I",
             (void*)&state
         },
         {
@@ -228,18 +236,6 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
             (void*)&state
         },
         {
-            "_setBigint",
-            (void*)setBigint,
-            "($$i)",
-            (void*)&state
-        },
-        {
-            "_getBigint",
-            (void*)getBigint,
-            "($*~i)",
-            (void*)&state
-        },
-        {
             "_getSha256",
             (void*)getSha256,
             "($*~i)",
@@ -256,6 +252,18 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
             (void*)getBytes,
             "($*~i)i",
             (void*)&state
+        },
+        {
+            "_setBigint",
+            (void*)setBigint,
+            "($$ii)",
+            (void*)&state
+        },
+        {
+            "_getBigint",
+            (void*)getBigint,
+            "($*~i)i",
+            (void*)&state
         }
     };
 
@@ -269,7 +277,7 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
     init_args.n_native_symbols = sizeof(native_symbols) / sizeof(NativeSymbol);
     init_args.native_module_name = "env";
     init_args.native_symbols = native_symbols;
-    
+
     if(!wasm_runtime_full_init(&init_args)) {
         std::cout<<"Failed to init runtime"<<std::endl;
         return WASM_ERROR;

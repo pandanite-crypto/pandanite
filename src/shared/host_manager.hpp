@@ -37,10 +37,9 @@ class HostManager {
         bool isDisabled();
         void syncHeadersWithPeers();
     protected:
-        vector<HeaderChain*> currPeers; 
+        vector<std::shared_ptr<HeaderChain>> currPeers; 
 #ifndef WASM_BUILD
         std::shared_ptr<BlockStore> blockStore;
-#endif
         std::mutex lock;
         vector<std::thread> syncThread;
         vector<std::thread> headerStatsThread;

@@ -369,6 +369,36 @@ void Bigint::clear()
     skip = 0;
 }
 
+std::vector<uint8_t> Bigint::toBuffer() const
+{
+    uint32_t sz = sizeof(int)*number.size() + sizeof(bool) + sizeof(int) + sizeof(unsigned int);
+    std::vector<uint8_t> buf;
+    for(int i = 0; i < sz; i++) buf.push_back(0);
+    memcpy(buf.data(), &positive, sizeof(bool));
+    memcpy(buf.data() + sizeof(bool), &base, sizeof(int));
+    memcpy(buf.data() + sizeof(bool) + sizeof(int), &skip, sizeof(int));
+    memcpy(buf.data() + sizeof(bool) + sizeof(int) + sizeof(int), number.data(), number.size()*sizeof(int));
+    return std::move(buf);
+}
+
+Bigint Bigint::fromBuffer(char* buf, uint32_t sz)
+{
+    Bigint b;
+    char* ptr = buf;
+    b.positive = *(bool*)ptr;
+    ptr += sizeof(bool);
+    b.base = *(int*)ptr;
+    ptr += sizeof(int);
+    b.skip = *(int*)ptr;
+    ptr += sizeof(int);
+    uint32_t num = (sz - (sizeof(bool) + 2*sizeof(int)))/ sizeof(int);
+    for(int i = 0; i < num; i++) {
+        b.number.push_back(*(int*)ptr);
+        ptr += sizeof(int);
+    }
+    return b;
+}
+
 Bigint &Bigint::abs()
 {
     positive = true;
