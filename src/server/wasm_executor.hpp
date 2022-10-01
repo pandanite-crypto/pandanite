@@ -1,4 +1,7 @@
 #pragma once
+
+#include "../external/iwasm/wasm_c_api.h"
+#include "../external/iwasm/wasm_export.h"
 #include "../core/block.hpp"
 #include "../core/constants.hpp"
 #include "../core/common.hpp"
@@ -9,6 +12,14 @@
 #include "executor.hpp"
 
 using namespace std;
+
+struct WasmEnvironment {
+    wasm_module_t module;
+    wasm_module_inst_t runtime;
+    wasm_exec_env_t executor;
+    uint32_t wasm_buffer;
+    StateStore* state;
+};
 
 class WasmExecutor : public Executor {
     public:
@@ -22,7 +33,10 @@ class WasmExecutor : public Executor {
         int updateDifficulty(int initialDifficulty, uint64_t numBlocks, const Program& program, StateStore& store) const;
         TransactionAmount getMiningFee(uint64_t blockId, StateStore& store) const;
         ExecutionStatus executeBlockWasm(Block& b, StateStore& store) const;
+        WasmEnvironment* initWasm(StateStore& state) const;
+        void cleanupWasm(WasmEnvironment* environment) const;
     protected:
         vector<uint8_t> byteCode;
+
         
 };

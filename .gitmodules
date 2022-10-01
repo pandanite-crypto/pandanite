@@ -1,0 +1,3 @@
+[submodule "src/external/wasm-micro-runtime"]
+	path = src/external/wasm-micro-runtime
+	url = https://github.com/bytecodealliance/wasm-micro-runtime

@@ -315,6 +315,9 @@ void StateStore::remove(const string& key, const uint64_t idx) {
     if (idx >= numItems) throw std::runtime_error("Tried to remove from non-existent index");
 
     curr.bytes.erase(curr.bytes.begin() + (idx * curr.itemSize), curr.bytes.begin() + ((idx + 1) * curr.itemSize));
-
-    this->putKey(key, curr);
+    if (curr.bytes.size() == 0) {
+        this->deleteKey(key);
+    } else {
+        this->putKey(key, curr);
+    }
 }

@@ -17,6 +17,14 @@ extern "C" {
 #endif
     #include "external_calls.hpp"
 
+    void getInfo() {
+        print("getting info");
+        PublicWalletAddress owner = getWallet("owner");
+        string ret = "{ \"owner\": \"" + walletAddressToString(owner) + "\"}";
+        const char* str = ret.c_str();
+        setReturnValue((char*) str, strlen(str) + 1);
+    }
+
     void executeBlock(char* args) {
         char* ptr = args;
         print("starting");
@@ -46,23 +54,19 @@ extern "C" {
             setReturnValue((char*)&e, sizeof(ExecutionStatus));
             return;
         } else {
-            print("other");
             for(auto tx : block.getTransactions()) {
                 PublicWalletAddress sender = tx.fromWallet();
                 PublicWalletAddress recepient = tx.toWallet();
                 PublicWalletAddress owner = getWallet("owner");
                 if (owner == sender) {
                     //check the signature of the signing key
-                    print("checking");
                     if (true) {
                         e = INVALID_SIGNATURE;
                         setReturnValue((char*)&e, sizeof(ExecutionStatus));
-                        print("checking3");
                         return;
                     }
                     setWallet("owner", recepient);
                 } else {
-                    print("checking2");
                     e = BALANCE_TOO_LOW;
                     setReturnValue((char*)&e, sizeof(ExecutionStatus));
                     return;
