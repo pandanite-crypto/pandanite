@@ -4,7 +4,7 @@
 #include "logger.hpp"
 #include "constants.hpp"
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
-#include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
+#include "../external/pufferfish/pufferfish.hpp" //https://github.com/epixoip/pufferfish
 
 #ifndef WASM_BUILD
 #include <iostream>
@@ -41,7 +41,9 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     memset(hash, 0, PF_HASHSPACE);
     int ret = 0;
     if ((ret = pf_newhash((const void*) buffer, len, 0, 8, hash)) != 0) {
+#ifndef WASM_BUILD
         Logger::logStatus("PUFFERFISH failed to compute hash");
+#endif
     }
     size_t sz = PF_HASHSPACE;
 
@@ -52,11 +54,13 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
         pufferfishCache->setHash(inputHash, finalHash);
     }
 #endif
-    return finalHash;
+    return NULL_SHA256_HASH;
 }
 
 SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish, bool useCache) {
+#ifndef WASM_BUILD
     if (usePufferFish) return PUFFERFISH(buffer, len, useCache);
+#endif
     std::array<uint8_t, 32> ret;
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -66,7 +70,7 @@ SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish, bool useCa
 }
 
 
-RIPEMD160Hash RIPEMD160(const char* buffer, size_t len) {
+RIPEMD160Hash RIPEMD(const char* buffer, size_t len) {
     RIPEMD160Hash ret;
     RIPEMD160_CTX ripemd;
     RIPEMD160_Init(&ripemd);
@@ -114,23 +118,23 @@ string SHA256toString(SHA256Hash h) {
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
     // Based on: https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
-    SHA256Hash hash;
-    hash = SHA256((const char*)inputKey.data(), inputKey.size());
-    RIPEMD160Hash hash2 = RIPEMD160((const char*)hash.data(), hash.size());
-    SHA256Hash hash3 = SHA256((const char*)hash2.data(),hash2.size());
-    SHA256Hash hash4 = SHA256((const char*)hash3.data(),hash3.size());
-    uint8_t checksum = hash4[0];
-    PublicWalletAddress address;
-    address[0] = 0;
-    for(int i = 1; i <=20; i++) {
-        address[i] = hash2[i-1];
-    }
-    address[21] = hash4[0];
-    address[22] = hash4[1];
-    address[23] = hash4[2];
-    address[24] = hash4[3];
+    // SHA256Hash hash;
+    // hash = SHA256((const char*)inputKey.data(), inputKey.size());
+    // RIPEMD160Hash hash2 = RIPEMD((const char*)hash.data(), hash.size());
+    // SHA256Hash hash3 = SHA256((const char*)hash2.data(),hash2.size());
+    // SHA256Hash hash4 = SHA256((const char*)hash3.data(),hash3.size());
+    // uint8_t checksum = hash4[0];
+    // PublicWalletAddress address;
+    // address[0] = 0;
+    // for(int i = 1; i <=20; i++) {
+    //     address[i] = hash2[i-1];
+    // }
+    // address[21] = hash4[0];
+    // address[22] = hash4[1];
+    // address[23] = hash4[2];
+    // address[24] = hash4[3];
     
-    return address;
+    return NULL_ADDRESS; //address;
 
 }
 

@@ -10,6 +10,7 @@ using namespace std;
 SHA256Hash SHA256(const char* buffer, size_t len, bool usePufferFish=false, bool useCache=false);
 SHA256Hash SHA256(string str);
 RIPEMD160Hash  RIPEMD(const char* buffer, size_t len);
+SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache);
 SHA256Hash stringToSHA256(string hex);
 string SHA256toString(SHA256Hash h);
 std::vector<uint8_t> hexDecode(const string& hex);

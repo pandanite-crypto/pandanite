@@ -176,7 +176,11 @@ Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
     this->to = to;
     this->amount = fee;
     this->isTransactionFee = true;
+#ifndef WASM_BUILD
     this->nonce = getCurrentTime();
+#else
+    this->nonce = 0;
+#endif
     this->fee = 0;
 }
 

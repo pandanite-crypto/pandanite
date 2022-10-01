@@ -109,6 +109,7 @@ int getBytes(wasm_exec_env_t exec_env, char* key, char* out, uint32_t sz, uint32
 
 void setReturnValue(wasm_exec_env_t exec_env, char* out, uint32_t sz) {
     vector<uint8_t>* buf = (vector<uint8_t>*) wasm_runtime_get_function_attachment(exec_env);
+    buf->clear();
     for(int i = 0; i < sz; i++) {
         buf->push_back(out[i]);
     }
@@ -303,18 +304,21 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
     wasm_function_inst_t func = wasm_runtime_lookup_function(runtime, "executeBlock", "none");
 
 
-    uint64_t sz = BLOCKHEADER_BUFFER_SIZE + b.getTransactions().size() * transactionInfoBufferSize();
+    uint64_t sz = BLOCKHEADER_BUFFER_SIZE + b.getTransactions().size() * transactionInfoBufferSize(false);
     char* buf = (char*) malloc(sz);
     char* ptr = buf;
     BlockHeader header = b.serialize();
     blockHeaderToBuffer(header, ptr);
-    ptr += transactionInfoBufferSize();
+    ptr += BLOCKHEADER_BUFFER_SIZE;
+    
     for(auto tx : b.getTransactions()) {
         TransactionInfo txinfo = tx.serialize();
         transactionInfoToBuffer(txinfo, ptr, false);
-        ptr += transactionInfoBufferSize();
+        ptr += transactionInfoBufferSize(false);
     }
-    uint32_t wasm_buffer = wasm_runtime_module_malloc(runtime, sz, (void **)&buf);
+    char* native_buf;
+    uint32_t wasm_buffer = wasm_runtime_module_malloc(runtime, sz, (void **)&native_buf);
+    memcpy(native_buf, buf, sz);
     uint32_t args[1];
     args[0] = wasm_buffer;
     if (wasm_runtime_call_wasm(exec_env, func, 1, args)) {   

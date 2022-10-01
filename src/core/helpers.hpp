@@ -10,10 +10,12 @@ string randomString(int length);
 void writeJsonToFile(json data, string filepath);
 json readJsonFromFile(string filepath);
 vector<uint8_t> readBytes(string filepath);
-std::string uint64ToString(const std::uint64_t& t);
-std::uint64_t stringToUint64(const std::string& input);
 std::string exec(const char* cmd);
 #endif
+
+std::string uint64ToString(const std::uint64_t& t);
+std::uint64_t stringToUint64(const std::string& input);
+
 
 TransactionAmount BMB(double amount);
 std::uint64_t getCurrentTime();

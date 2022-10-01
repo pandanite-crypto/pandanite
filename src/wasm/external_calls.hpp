@@ -1,8 +1,6 @@
 #pragma once
 
 
-#include "../core/types.hpp"
-
 void print_str(char* str, int sz);
 void print(const char* str) {
     print_str((char*)str, strlen(str));
