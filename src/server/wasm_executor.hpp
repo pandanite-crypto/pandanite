@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../external/iwasm/wasm_c_api.h"
-#include "../external/iwasm/wasm_export.h"
+#include "../external/wasm-micro-runtime/core/iwasm/include/wasm_export.h"
 #include "../core/block.hpp"
 #include "../core/constants.hpp"
 #include "../core/common.hpp"

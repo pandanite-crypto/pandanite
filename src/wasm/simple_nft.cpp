@@ -22,6 +22,7 @@ extern "C" {
         PublicWalletAddress owner = getWallet("owner");
         string ret = "{ \"owner\": \"" + walletAddressToString(owner) + "\"}";
         const char* str = ret.c_str();
+        print("returning");
         setReturnValue((char*) str, strlen(str) + 1);
     }
 
@@ -46,7 +47,7 @@ extern "C" {
         if (block.getId() == 1) {
             print("genesis");
             // generate the genesis record of NFT owner
-            PublicWalletAddress ownerAddress = NULL_ADDRESS;
+            PublicWalletAddress ownerAddress = stringToWalletAddress("00CF74F1F0111F43E305283219C9DF908D70A14A528083B77A");
             SHA256Hash contentHash = NULL_SHA256_HASH;
             setWallet("owner", ownerAddress);
             setSha256("content", contentHash);
@@ -55,18 +56,27 @@ extern "C" {
             return;
         } else {
             for(auto tx : block.getTransactions()) {
+                print("Executing transaction");
                 PublicWalletAddress sender = tx.fromWallet();
                 PublicWalletAddress recepient = tx.toWallet();
+                print("getting owner wallet");
                 PublicWalletAddress owner = getWallet("owner");
+                print("got owner wallet");
                 if (owner == sender) {
+                    print("sender is valid");
                     //check the signature of the signing key
-                    if (true) {
+                    if (!tx.signatureValid()) {
+                        print("signature invalid");
                         e = INVALID_SIGNATURE;
                         setReturnValue((char*)&e, sizeof(ExecutionStatus));
                         return;
                     }
+                    print("setting to new wallet");
                     setWallet("owner", recepient);
+                    e = SUCCESS;
+                    setReturnValue((char*)&e, sizeof(ExecutionStatus));
                 } else {
+                    print("sender is invalid");
                     e = BALANCE_TOO_LOW;
                     setReturnValue((char*)&e, sizeof(ExecutionStatus));
                     return;

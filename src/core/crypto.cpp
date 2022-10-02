@@ -118,24 +118,22 @@ string SHA256toString(SHA256Hash h) {
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey) {
     // Based on: https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
-    // SHA256Hash hash;
-    // hash = SHA256((const char*)inputKey.data(), inputKey.size());
-    // RIPEMD160Hash hash2 = RIPEMD((const char*)hash.data(), hash.size());
-    // SHA256Hash hash3 = SHA256((const char*)hash2.data(),hash2.size());
-    // SHA256Hash hash4 = SHA256((const char*)hash3.data(),hash3.size());
-    // uint8_t checksum = hash4[0];
-    // PublicWalletAddress address;
-    // address[0] = 0;
-    // for(int i = 1; i <=20; i++) {
-    //     address[i] = hash2[i-1];
-    // }
-    // address[21] = hash4[0];
-    // address[22] = hash4[1];
-    // address[23] = hash4[2];
-    // address[24] = hash4[3];
-    
-    return NULL_ADDRESS; //address;
-
+    SHA256Hash hash;
+    hash = SHA256((const char*)inputKey.data(), inputKey.size());
+    RIPEMD160Hash hash2 = RIPEMD((const char*)hash.data(), hash.size());
+    SHA256Hash hash3 = SHA256((const char*)hash2.data(),hash2.size());
+    SHA256Hash hash4 = SHA256((const char*)hash3.data(),hash3.size());
+    uint8_t checksum = hash4[0];
+    PublicWalletAddress address;
+    address[0] = 0;
+    for(int i = 1; i <=20; i++) {
+        address[i] = hash2[i-1];
+    }
+    address[21] = hash4[0];
+    address[22] = hash4[1];
+    address[23] = hash4[2];
+    address[24] = hash4[3];
+    return address;
 }
 
 std::pair<PublicKey,PrivateKey> generateKeyPair() {

@@ -14,7 +14,7 @@ using namespace std;
 
 #define RETURN_KEY "__RETURN__"
 
-#define STACK_SZ 1000000
+#define STACK_SZ 1024 * 512
 
 void print_str(wasm_exec_env_t exec_env, char* str, uint32_t sz) {
     printf("%s\n", str);
@@ -153,7 +153,7 @@ WasmEnvironment* WasmExecutor::initWasm(StateStore& state) const {
     WasmEnvironment* env = new WasmEnvironment();
     env->wasm_buffer = 0;
     env->state = &state;
-    static NativeSymbol native_symbols[] = {
+    NativeSymbol native_symbols[] = {
         {
             "print_str",
             (void*)print_str,
@@ -258,12 +258,11 @@ WasmEnvironment* WasmExecutor::initWasm(StateStore& state) const {
         }
     };
 
-
     char error[4096];
     static char global_heap_buf[512 * 1024];
     RuntimeInitArgs init_args;
     memset(&init_args, 0, sizeof(RuntimeInitArgs));
-    init_args.mem_alloc_type = Alloc_With_Pool;
+    init_args.mem_alloc_type = Alloc_With_System_Allocator;
     init_args.mem_alloc_option.pool.heap_buf = global_heap_buf;
     init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
     init_args.n_native_symbols = sizeof(native_symbols) / sizeof(NativeSymbol);
@@ -275,6 +274,7 @@ WasmEnvironment* WasmExecutor::initWasm(StateStore& state) const {
         throw std::runtime_error("Wasm error");
     }
     vector<uint8_t> wasmCode = this->byteCode; // make copy
+    
     wasm_module_t wasmModule = wasm_runtime_load((uint8_t*)wasmCode.data(), wasmCode.size(), error, 4096);
 
     if (!wasmModule) {
@@ -324,23 +324,28 @@ json WasmExecutor::getInfo(json args, StateStore& store) const{
 
 void  WasmExecutor::cleanupWasm(WasmEnvironment* env) const {
     env->state->remove(string(RETURN_KEY), 0);
-    wasm_runtime_destroy_exec_env(env->executor);
-    if (env->wasm_buffer != 0) wasm_runtime_module_free(env->runtime, env->wasm_buffer);
-    wasm_runtime_deinstantiate(env->runtime);
-    wasm_runtime_unload(env->module);
+    if (env->executor) wasm_runtime_destroy_exec_env(env->executor);
+    if (env->runtime) {
+        if (env->wasm_buffer != 0) {
+            wasm_runtime_module_free(env->runtime, env->wasm_buffer);
+        }
+        wasm_runtime_deinstantiate(env->runtime);
+    }
+    if (env->module) {
+        wasm_runtime_unload(env->module);
+    }
     wasm_runtime_destroy();
+    // delete env;
 }
 
 
 ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) const {
-
     WasmEnvironment* env = this->initWasm(state);
 
     vector<uint8_t> ret;
     ExecutionStatus status = WASM_ERROR;
     for(int i = 0; i < sizeof(ExecutionStatus); i++) ret.push_back(0);
     memcpy(ret.data(), &status, sizeof(ExecutionStatus));
-
     wasm_function_inst_t func = wasm_runtime_lookup_function(env->runtime, "executeBlock", "none");
     uint64_t sz = BLOCKHEADER_BUFFER_SIZE + b.getTransactions().size() * transactionInfoBufferSize(false);
     char* buf = (char*) malloc(sz);
