@@ -21,6 +21,6 @@ json pingPeer(string host_url, string peer_url, uint64_t time, string version, s
 json submitBlock(string host_url, Block& b, ProgramID program = NULL_SHA256_HASH);
 json setProgram(string host_url, Program& program);
 void readRawBlocks(string host_url, int startId, int endId, vector<Block>& blocks);
-void readRawTransactions(string host_url, vector<Transaction>& transactions);
+void readRawTransactions(string host_url, vector<Transaction>& transactions, ProgramID program = NULL_SHA256_HASH);
 void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>& blockHeaders);
 #endif

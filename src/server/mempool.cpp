@@ -5,6 +5,7 @@
 #include "../shared/api.hpp"
 #include "mempool.hpp"
 #include "blockchain.hpp"
+#include "virtual_chain.hpp"
 using namespace std;
 
 #define TX_BRANCH_FACTOR 10
@@ -75,8 +76,8 @@ bool MemPool::hasTransaction(Transaction t) {
     return ret;
 }
 
-void MemPool::addProgram(SHA256Hash programId) {
-    programs.insert(programId);
+void MemPool::addProgram(ProgramID programId, std::shared_ptr<VirtualChain> program) {
+    programs[programId] = program;
 }
 
 ExecutionStatus MemPool::addTransaction(Transaction t) {
@@ -90,12 +91,14 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
     // check if this is a layer-2 transaction
     if (t.isLayer2()) {
         if (programs.find(t.getProgramId()) != programs.end()) {
-            //TODO: send this transaction to the program
+            std::unique_lock<std::mutex> ul2(this->sendLock);
+            this->toSend.push_back(t);
+            this->programTransactions[t.getProgramId()].insert(t);
+            return SUCCESS;
         } else {
             return UNSUPPORTED_CHAIN;
         }
     }
-    cout<<SHA256toString(t.getProgramId())<<endl;
     if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL && t.getProgramId() == NULL_SHA256_HASH) {
         status = TRANSACTION_FEE_TOO_LOW;
         return status;
@@ -139,33 +142,56 @@ vector<Transaction> MemPool::getTransactions() {
     return std::move(transactions);
 }
 
-std::pair<char*, size_t> MemPool::getRaw() {
-    int count = 0;
-    std::unique_lock<std::mutex> ul(lock);
-    size_t len = this->transactionQueue.size() * transactionInfoBufferSize();
-    char* buf = (char*) malloc(len);
-    for (auto tx : this->transactionQueue) {
-        TransactionInfo t = tx.serialize();
-        transactionInfoToBuffer(t, buf + count);
-        count+=transactionInfoBufferSize();
+std::pair<char*, size_t> MemPool::getRaw(ProgramID programId) {
+    if (programId == NULL_SHA256_HASH) {
+        int count = 0;
+        std::unique_lock<std::mutex> ul(lock);
+        size_t len = this->transactionQueue.size() * transactionInfoBufferSize();
+        char* buf = (char*) malloc(len);
+        for (auto tx : this->transactionQueue) {
+            TransactionInfo t = tx.serialize();
+            transactionInfoToBuffer(t, buf + count);
+            count+=transactionInfoBufferSize();
+        }
+        return std::pair<char*, size_t>((char*)buf, len);
+    } else {
+        int count = 0;
+        auto& q = this->programTransactions[programId];
+        std::unique_lock<std::mutex> ul(lock);
+        size_t len = q.size() * transactionInfoBufferSize();
+        char* buf = (char*) malloc(len);
+        for (auto tx : q) {
+            TransactionInfo t = tx.serialize();
+            transactionInfoToBuffer(t, buf + count);
+            count+=transactionInfoBufferSize();
+        }
+        return std::pair<char*, size_t>((char*)buf, len);
     }
-    return std::pair<char*, size_t>((char*)buf, len);
+
 }
 
-void MemPool::finishBlock(Block& block) {
+void MemPool::finishBlock(Block& block, ProgramID programId) {
     std::unique_lock<std::mutex> ul(lock);
     // erase all of this blocks included transactions from the mempool
     for(auto tx : block.getTransactions()) {
-        auto it = this->transactionQueue.find(tx);
-        if (it != this->transactionQueue.end()) {
-            this->transactionQueue.erase(it);
-            if (!tx.isFee()) {
-                this->mempoolOutgoing[tx.fromWallet()] -= tx.getAmount() + tx.getFee();
-                if (this->mempoolOutgoing[tx.fromWallet()] == 0) {
-                    // remove the key if there is no longer an outgoing amount
-                    auto it = this->mempoolOutgoing.find(tx.fromWallet());
-                    this->mempoolOutgoing.erase(it);
+        if (programId == NULL_SHA256_HASH) {
+            auto it = this->transactionQueue.find(tx);
+            if (it != this->transactionQueue.end()) {
+                this->transactionQueue.erase(it);
+                if (!tx.isFee()) {
+                    this->mempoolOutgoing[tx.fromWallet()] -= tx.getAmount() + tx.getFee();
+                    if (this->mempoolOutgoing[tx.fromWallet()] == 0) {
+                        // remove the key if there is no longer an outgoing amount
+                        auto it = this->mempoolOutgoing.find(tx.fromWallet());
+                        this->mempoolOutgoing.erase(it);
+                    }
                 }
+            }
+        } else {
+            auto& q = this->programTransactions[programId];
+            auto it = q.find(tx);
+            if (it != q.end()) {
+                q.erase(it);
             }
         }
     }

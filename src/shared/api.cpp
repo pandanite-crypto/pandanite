@@ -70,6 +70,7 @@ json submitBlock(string host_url, Block& block, ProgramID program) {
         ptr += transactionInfoBufferSize();
     }
     http::Request request(host_url + "/submit?program=" + SHA256toString(program));
+    cout<<"/submit?program=" + SHA256toString(program)<<endl;
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
@@ -91,14 +92,11 @@ json getProgram(string host_url, PublicWalletAddress& w) {
 }
 
 json sendTransaction(string host_url, Transaction& t) {
-    http::Request request(host_url + "/add_transaction");
+    http::Request request(host_url + "/add_transaction_json");
 
-    TransactionInfo info = t.serialize();
-    vector<uint8_t> bytes(transactionInfoBufferSize());
-    transactionInfoToBuffer(info, (char*)bytes.data());
     
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
+    const auto response = request.send("POST", t.toJson().dump(), {
+        "Content-Type: text/plain"
     },std::chrono::milliseconds{TIMEOUT_MS * 3});
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
     return json::parse(responseStr);
@@ -181,8 +179,8 @@ void readRawBlocks(string host_url, int startId, int endId, vector<Block>& block
     }
 }
 
-void readRawTransactions(string host_url, vector<Transaction>& transactions) {
-    http::Request request(host_url + "/gettx");
+void readRawTransactions(string host_url, vector<Transaction>& transactions, ProgramID program) {
+    http::Request request(host_url + "/gettx?program=" + SHA256toString(program));
     const auto response = request.send("GET", "", {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});

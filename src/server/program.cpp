@@ -33,13 +33,14 @@ void Program::init(json config) {
     this->ledger.init(basePath + "ledger");
     this->blockStore.init(basePath + "blocks");
     this->txdb.init(basePath + "txdb");
-    this->state.init(basePath + "state");
+    if (this->id != NULL_SHA256_HASH) this->state.init(basePath + "state");
     if (this->blockStore.hasBlockCount()) {
         this->numBlocks = this->blockStore.getBlockCount();
         this->totalWork = this->blockStore.getTotalWork();
         Block last = this->blockStore.getBlock(this->numBlocks);
         this->lastHash = last.getHash();
         this->difficulty = last.getDifficulty();
+        if (this->id != NULL_SHA256_HASH) this->state.setCurrentBlock(this->numBlocks);
     }
 }
 
@@ -147,8 +148,8 @@ vector<SHA256Hash> Program::getTransactionsForWallet(const PublicWalletAddress& 
     return this->blockStore.getTransactionsForWallet(wallet);
 }
 
-TransactionAmount Program::getCurrentMiningFee() const {
-    return this->executor->getMiningFee(this->numBlocks);
+TransactionAmount Program::getCurrentMiningFee()  {
+    return this->executor->getMiningFee(this->numBlocks, this->state);
 }
 
 json Program::getInfo(json args) {
@@ -157,7 +158,7 @@ json Program::getInfo(json args) {
 
 ExecutionStatus Program::executeBlock(Block& block) {
     LedgerState deltasFromBlock;
-    ExecutionStatus status = this->executor->executeBlock(block, this->ledger, this->txdb, deltasFromBlock);
+    ExecutionStatus status = this->executor->executeBlock(block, this->ledger, this->txdb, deltasFromBlock, this->state);
     if (status != SUCCESS) {
         this->rollback(deltasFromBlock);
     } else {
@@ -171,7 +172,7 @@ ExecutionStatus Program::executeBlock(Block& block) {
         this->blockStore.setTotalWork(this->totalWork);
         this->blockStore.setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
-        this->difficulty = this->executor->updateDifficulty(this->difficulty, this->numBlocks, *this);
+        this->difficulty = this->executor->updateDifficulty(this->difficulty, this->numBlocks, *this, this->state);
     }
     return status;
 }
@@ -180,11 +181,11 @@ ExecutionStatus Program::executeTransaction(const Transaction& t, LedgerState& d
     if (this->txdb.hasTransaction(t)) {
         return EXPIRED_TRANSACTION;
     }
-    return this->executor->executeTransaction(this->ledger, t, deltas);
+    return this->executor->executeTransaction(this->ledger, t, deltas, this->state);
 }
 
 void Program::rollback(LedgerState& deltas) {
-    this->executor->rollback(this->ledger, deltas);
+    this->executor->rollback(this->ledger, deltas, this->state);
 }
 
 uint64_t Program::blockForTransaction(const Transaction& t) const {
@@ -192,7 +193,7 @@ uint64_t Program::blockForTransaction(const Transaction& t) const {
 }
 
 void Program::rollbackBlock(Block& block) {
-    this->executor->rollbackBlock(block, this->ledger, this->txdb, this->blockStore);
+    this->executor->rollbackBlock(block, this->ledger, this->txdb, this->blockStore, this->state);
     this->numBlocks--;
     Block last = this->getBlock(this->numBlocks);
     Bigint base = 2;

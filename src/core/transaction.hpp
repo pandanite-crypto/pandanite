@@ -5,8 +5,8 @@
 #include <optional>
 using namespace std;
 
-#define LAYER_2_TX_FLAG -1
-#define PROGRAM_CREATE_TX_FLAG -2
+#define LAYER_2_TX_FLAG std::numeric_limits<uint64_t>::max() - 1
+#define PROGRAM_CREATE_TX_FLAG std::numeric_limits<uint64_t>::max() - 2
 
 #define TRANSACTIONINFO_BUFFER_SIZE 309
 #define TRANSACTIONINFO_BUFFER_SIZE_V0 149
@@ -49,6 +49,7 @@ class Transaction {
         bool isFee() const;
         bool isLayer2() const;
         bool isProgramExecution() const;
+        void setProgramId(ProgramID programId);
         ProgramID getProgramId() const;
         TransactionData getData() const;
         static Transaction createGenesisTransaction(PublicWalletAddress to, TransactionAmount amount);

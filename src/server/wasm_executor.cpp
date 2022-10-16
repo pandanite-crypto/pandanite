@@ -9,6 +9,7 @@
 #include "../core/logger.hpp"
 #include "../core/helpers.hpp"
 #include "../core/types.hpp"
+#include "../shared/user.hpp"
 #include "executor.hpp"
 using namespace std;
 
@@ -120,31 +121,44 @@ WasmExecutor::WasmExecutor(vector<uint8_t> byteCode) {
     this->byteCode = byteCode;
 }
 
+
+void addMerkleHashToBlock(Block& block) {
+    // compute merkle tree and verify root matches;
+    MerkleTree m;
+    m.setItems(block.getTransactions());
+    SHA256Hash computedRoot = m.getRootHash();
+    block.setMerkleRoot(m.getRootHash());
+}
+
 Block WasmExecutor::getGenesis() const {
-    return Block();
+    User miner;
+    // have miner mine the next block
+    Transaction fee = miner.mine();
+    vector<Transaction> transactions;
+    Block newBlock;
+    newBlock.setId(1);
+    newBlock.addTransaction(fee);
+    addMerkleHashToBlock(newBlock);
+    newBlock.setLastBlockHash(NULL_SHA256_HASH);
+    SHA256Hash hash = newBlock.getHash();
+    SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+    newBlock.setNonce(solution);
+    return newBlock;
 }
 
-TransactionAmount WasmExecutor::getMiningFee(uint64_t blockId, StateStore& store) const {
-    throw std::runtime_error("Not used for WASM executor");
-}
-
-int WasmExecutor::updateDifficulty(int initialDifficulty, uint64_t numBlocks, const Program& program, StateStore& store) const{
-    throw std::runtime_error("Not used for WASM executor");
-}
-
-void WasmExecutor::rollback(Ledger& ledger, LedgerState& deltas, StateStore& store) const{
+void WasmExecutor::rollback(Ledger& ledger, LedgerState& deltas, StateStore& store) {
     /** NOTE: WasmExecutor does not use ledger, txdb, or blockStore and stores all data in store **/
     store.popBlock();
 }
 
-ExecutionStatus WasmExecutor::executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas, StateStore& store) const {
+ExecutionStatus WasmExecutor::executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas, StateStore& store)  {
     store.addBlock();
     Block b;
     b.addTransaction(t);
     return this->executeBlockWasm(b, store);
 }
 
-void WasmExecutor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) const{
+void WasmExecutor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) {
     /** NOTE: WasmExecutor does not use ledger, txdb, or blockStore and stores all data in store **/
     store.popBlock();
 }
@@ -296,7 +310,7 @@ WasmEnvironment* WasmExecutor::initWasm(StateStore& state) const {
     return env;
 }
 
-ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, StateStore& store) const{
+ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, StateStore& store) {
     /** NOTE: WasmExecutor does not use ledger, txdb, or blockStore and stores all data in store **/
     return this->executeBlockWasm(curr, store);
 }
@@ -339,9 +353,9 @@ void  WasmExecutor::cleanupWasm(WasmEnvironment* env) const {
 }
 
 
-ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) const {
+ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state)  {
     WasmEnvironment* env = this->initWasm(state);
-
+    state.addBlock();
     vector<uint8_t> ret;
     ExecutionStatus status = WASM_ERROR;
     for(int i = 0; i < sizeof(ExecutionStatus); i++) ret.push_back(0);
@@ -353,8 +367,8 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
     BlockHeader header = b.serialize();
     blockHeaderToBuffer(header, ptr);
     ptr += BLOCKHEADER_BUFFER_SIZE;
-    
     for(auto tx : b.getTransactions()) {
+        cout<<tx.toJson().dump()<<endl;
         TransactionInfo txinfo = tx.serialize();
         transactionInfoToBuffer(txinfo, ptr, false);
         ptr += transactionInfoBufferSize(false);
@@ -364,10 +378,21 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state) cons
     memcpy(native_buf, buf, sz);
     uint32_t args[1];
     args[0] = env->wasm_buffer;
-    if (wasm_runtime_call_wasm(env->executor, func, 1, args)) { 
-        auto bytes = env->state->getBytes(RETURN_KEY);
-        char* buf = (char*)bytes.data();
-        ExecutionStatus status = *(ExecutionStatus*)(buf);
+    bool result = false;
+    try {
+        result = wasm_runtime_call_wasm(env->executor, func, 1, args);
+    } catch (...) {
+        this->cleanupWasm(env);
+        return WASM_ERROR;
+    }
+    if (result) { 
+        vector<uint8_t> bytes;
+        ExecutionStatus status = WASM_ERROR;
+        try {
+            bytes = env->state->getBytes(RETURN_KEY);
+            char* buf = (char*)bytes.data();
+            status = *(ExecutionStatus*)(buf);
+        } catch (...) {}
         this->cleanupWasm(env);
         return status;
     }

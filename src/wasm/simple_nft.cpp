@@ -55,13 +55,17 @@ extern "C" {
             setReturnValue((char*)&e, sizeof(ExecutionStatus));
             return;
         } else {
+            e = SUCCESS;
+            setReturnValue((char*)&e, sizeof(ExecutionStatus));
             for(auto tx : block.getTransactions()) {
+                if (tx.isFee()) continue;
                 print("Executing transaction");
                 PublicWalletAddress sender = tx.fromWallet();
                 PublicWalletAddress recepient = tx.toWallet();
                 print("getting owner wallet");
                 PublicWalletAddress owner = getWallet("owner");
                 print("got owner wallet");
+                print(walletAddressToString(sender).c_str());
                 if (owner == sender) {
                     print("sender is valid");
                     //check the signature of the signing key

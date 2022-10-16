@@ -22,9 +22,7 @@ void _setWallet(char* key, char* val, uint32_t idx = 0);
 void _getWallet(char* key, char* buf, uint32_t sz, uint32_t index = 0);
 PublicWalletAddress getWallet(char* key, uint32_t idx = 0) {
     char buf[50];
-    print("here");
     _getWallet(key, buf, 50, idx);
-    print("here2");
     return stringToWalletAddress(string(buf));
 }
 

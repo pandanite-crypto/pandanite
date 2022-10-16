@@ -56,12 +56,37 @@ StateStore::StateStore() {
 }
 
 void StateStore::addBlock() {
+    this->saveCurrentVariables();
     this->currBlockId++;
+    cout<<"curr block id: " << this->currBlockId << endl;
+    this->saveCurrentVariables();
 }
 
+void StateStore::setCurrentBlock(uint64_t blockId) {
+    this->currBlockId = blockId;
+    this->loadCurrentVariables();
+    
+}
+
+void StateStore::printState() {
+    SHA256Hash start = NULL_SHA256_HASH;
+    SHA256Hash end;
+    for(int i = 0; i < end.size(); i++) {
+        end[i] = 255;
+    }
+    auto startSlice = leveldb::Slice((const char*) start.data(), start.size());
+    auto endSlice = leveldb::Slice((const char*) end.data(), end.size());
+
+    std::shared_ptr<leveldb::Iterator> it(db->NewIterator(leveldb::ReadOptions()));
+    for(it->Seek(startSlice); it->Valid() && it->key().compare(endSlice) < 0; it->Next()) {                
+        leveldb::Slice keySlice(it->key());
+        cout<<"SLICE : " << string((char*)keySlice.data(), keySlice.size()) << endl;
+    }
+}
 void StateStore::popBlock() {
     auto currentVars = this->currentVariables;
     for(auto variable : currentVars) {
+        if (!(this->variablesBlockIds[variable] == this->currBlockId)) continue;
         State s;
         this->getKey(variable, s);
         if (s.lastBlockId >= 0) {
@@ -83,37 +108,32 @@ void StateStore::popBlock() {
 }
 
 void StateStore::saveCurrentVariables() {
-    uint64_t sz = 0;
-    for(auto var : this->currentVariables) {
-        sz += var.size() + 1;
+    if (this->currentVariables.size() != 0) {
+        json data = variablesBlockIds;
+        string varName = "__variables_";
+        leveldb::Slice s = variableToSlice(varName, this->currBlockId);
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+        string str = data.dump();
+        leveldb::Status status = db->Put(write_options, s, leveldb::Slice(str.c_str(), str.size()));
+        if (!status.ok()) throw std::runtime_error("Could not save variable list");
     }
-    char* buf = (char*) malloc(sz);
-    uint64_t delta = 0;
-    for(auto var : this->currentVariables) {
-        strcpy(buf + delta, var.c_str());
-        delta += var.length() + 1;
-    }
-    string varName = "__variables_";
-    leveldb::Slice s = variableToSlice(varName, this->currBlockId);
-    leveldb::Status status = db->Put(leveldb::WriteOptions(), s, leveldb::Slice(buf, (size_t)sz));
-    free(buf);
-    if (!status.ok()) throw std::runtime_error("Could not save variable list");
 }
 
 void StateStore::loadCurrentVariables() {
     string varName = "__variables_";
     leveldb::Slice s = variableToSlice(varName, this->currBlockId);
     string value;
+    this->printState();
     leveldb::Status status = db->Get(leveldb::ReadOptions(), s, &value);
-    if (!status.ok()) throw std::runtime_error("Could not load variable list");
-    uint64_t sz = value.length() + 1;
-    uint64_t offset = 0;
-    const char* buf = value.c_str();
+    if (!status.ok()) throw std::runtime_error("couldn't find variables");
+    json data = json::parse(value);
     this->currentVariables.clear();
-    while (offset > sz) {
-        const char* strptr = buf + offset;
-        this->currentVariables.insert(string(strptr, strlen(strptr)));
-        offset += strlen(strptr) + 1;
+    for(auto& item : data.items()) {
+        auto key = item.key();
+        this->currentVariables.insert(key);
+        this->variablesBlockIds[key] = item.value().get<uint64_t>();
+        cout<<key<<","<<item.value()<<endl;
     }
 }
 
@@ -151,6 +171,7 @@ void StateStore::deleteKey(const string& key) {
 }
 
 void StateStore::getKeyAtBlock(const string& key, State& buf, uint64_t blockId) const{
+    cout<<"GETTING KEY AT BLCOK " << key << blockId <<endl;
     if (!this->hasKeyAtBlock(key, blockId)) throw std::runtime_error("Tried to get non-existent key");
     leveldb::Slice s = variableToSlice(key, blockId);
     string value;
@@ -161,6 +182,8 @@ void StateStore::getKeyAtBlock(const string& key, State& buf, uint64_t blockId) 
 }
 
 void StateStore::getKey(const string& key, State& buf) const {
+
+    cout<<"GETTING KEY " << key <<endl;
     if (!this->hasKey(key)) throw std::runtime_error("Tried to get non-existent key");
     leveldb::Slice s = variableToSlice(key, this->currBlockId);
     string value;
@@ -174,11 +197,13 @@ void StateStore::putKey(const string& key, const State& state) {
     leveldb::Slice s = variableToSlice(key, this->currBlockId);
     if (currentVariables.find(key) == currentVariables.end()) {
         currentVariables.insert(key);
-        this->saveCurrentVariables();
     }
     this->variablesBlockIds[key] = this->currBlockId;
+    this->saveCurrentVariables();
     vector<uint8_t> buf = stateToBuffer(state);
-    leveldb::Status status = db->Put(leveldb::WriteOptions(), s, leveldb::Slice((char*)buf.data(), buf.size()));
+    leveldb::WriteOptions write_options;
+    write_options.sync = true;
+    leveldb::Status status = db->Put(write_options, s, leveldb::Slice((char*)buf.data(), buf.size()));
     if(!status.ok()) throw std::runtime_error("Could not write state to db : " + status.ToString());
 }
 

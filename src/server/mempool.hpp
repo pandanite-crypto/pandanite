@@ -12,6 +12,7 @@
 using namespace std;
 
 class BlockChain;
+class VirtualChain;
 
 class MemPool {
     public:
@@ -19,11 +20,11 @@ class MemPool {
         ~MemPool();
         void sync();
         ExecutionStatus addTransaction(Transaction t);
-        void addProgram(SHA256Hash programId);
-        void finishBlock(Block& block);
+        void addProgram(ProgramID programId, std::shared_ptr<VirtualChain> program);
+        void finishBlock(Block& block, ProgramID programId = NULL_SHA256_HASH);
         bool hasTransaction(Transaction t);
         size_t size();
-        std::pair<char*, size_t> getRaw();
+        std::pair<char*, size_t> getRaw(ProgramID programId = NULL_SHA256_HASH);
         vector<Transaction> getTransactions();
     protected:
         bool shutdown;
@@ -32,8 +33,9 @@ class MemPool {
         list<Transaction> toSend;
         BlockChain & blockchain;
         HostManager & hosts;
-        set<SHA256Hash> programs;
+        map<ProgramID, std::shared_ptr<VirtualChain>> programs;
         set<Transaction> transactionQueue;
+        map<ProgramID, set<Transaction>> programTransactions;
         vector<std::thread> syncThread;
         std::mutex lock;
         std::mutex sendLock;

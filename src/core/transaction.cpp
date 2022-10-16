@@ -154,6 +154,11 @@ ProgramID Transaction::getProgramId() const {
     return this->programId;
 }
 
+void Transaction::setProgramId(ProgramID programId) {
+    this->nonce = LAYER_2_TX_FLAG;
+    this->programId = programId;
+}
+
 TransactionData Transaction::getData() const {
     if (!this->isLayer2()) throw std::runtime_error("Cannot get tx data of non-layer 2 transaction");
     return this->data;
@@ -188,7 +193,6 @@ Transaction::Transaction(PublicWalletAddress to, TransactionAmount fee) {
 Transaction::Transaction(json obj) {
     PublicWalletAddress to;
     this->nonce = stringToUint64(obj["nonce"]);
-
     if (this->nonce == LAYER_2_TX_FLAG) {
         this->programId = stringToSHA256(obj["programId"]);
         vector<uint8_t> bytes = hexDecode(obj["data"]);
@@ -200,7 +204,7 @@ Transaction::Transaction(json obj) {
         this->programId = NULL_SHA256_HASH;
         this->data.fill(0);
     }
-
+    
     this->to = stringToWalletAddress(obj["to"]);
     this->fee = obj["fee"];
     if(obj["from"] == "") {        

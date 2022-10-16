@@ -80,7 +80,7 @@ uint32_t computeDifficulty(int32_t currentDifficulty, int32_t elapsedTime, int32
     }
 }
 
-TransactionAmount Executor::getMiningFee(uint64_t blockId) const {
+TransactionAmount Executor::getMiningFee(uint64_t blockId, StateStore& store)  {
     // compute the fee based on blockId:
     // NOTE:
     // The chain was forked three times, once at 7,750 and again at 125,180, then at 18k
@@ -98,7 +98,7 @@ TransactionAmount Executor::getMiningFee(uint64_t blockId) const {
     }
 }
 
-int Executor::updateDifficulty(int initialDifficulty, uint64_t numBlocks, const Program& program) const{
+int Executor::updateDifficulty(int initialDifficulty, uint64_t numBlocks, const Program& program, StateStore& store) {
     if (numBlocks <= DIFFICULTY_LOOKBACK*2) return initialDifficulty;
     if (numBlocks % DIFFICULTY_LOOKBACK != 0) return initialDifficulty;
     int firstID = numBlocks - DIFFICULTY_LOOKBACK;
@@ -188,13 +188,13 @@ void rollbackLedger(Transaction& t,  PublicWalletAddress& miner, Ledger& ledger)
     }
 }
 
-void Executor::rollback(Ledger& ledger, LedgerState& deltas) const{
+void Executor::rollback(Ledger& ledger, LedgerState& deltas, StateStore& store) {
     for(auto it : deltas) {
         ledger.withdraw(it.first, it.second);
     }
 }
 
-void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore) const{
+void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) {
     PublicWalletAddress miner;
     for(auto t : curr.getTransactions()) {
         if (t.isFee()) {
@@ -212,13 +212,13 @@ void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txd
     blockStore.removeBlockWalletTransactions(curr);
 }
 
-json Executor::getInfo(json args, const StateStore& store) {
+json Executor::getInfo(json args, StateStore& store) {
     json result;
     result["info"] = "None";
     return result;
 }
 
-ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t,  LedgerState& deltas) const{
+ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas, StateStore& store) {
     if (!t.isFee() && !t.signatureValid()) {
         return INVALID_SIGNATURE;
     }
@@ -232,8 +232,8 @@ ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t
 }
 
 
-ExecutionStatus Executor::executeBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas) const{
-    TransactionAmount blockMiningFee = this->getMiningFee(curr.getId());
+ExecutionStatus Executor:: executeBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, StateStore& store) {
+    TransactionAmount blockMiningFee = this->getMiningFee(curr.getId(), store);
     // try executing each transaction
     bool foundFee = false;
     PublicWalletAddress miner;

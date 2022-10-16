@@ -23,6 +23,7 @@ class StateStore : public DataStore {
         StateStore();
         void addBlock();
         void popBlock();
+        void setCurrentBlock(uint64_t blockId);
         bool hasKey(const string& key) const;
         bool hasKeyAtBlock(const string& key, const uint64_t blockId) const;
         void deleteKey(const string& key);
@@ -43,6 +44,7 @@ class StateStore : public DataStore {
         vector<uint8_t> getBytes(const string& key, uint64_t index = 0) const;
         void getKeyAtBlock(const string& key, State& buf, uint64_t blockId) const;
         set<string> getCurrentVariables() const;
+        void printState();
     protected:
         map<string,uint64_t> variablesBlockIds;
         void putKey(const string& key, const State& buf);

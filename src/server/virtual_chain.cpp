@@ -190,7 +190,14 @@ ExecutionStatus VirtualChain::addBlock(Block& block) {
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
     ExecutionStatus status = this->program->executeBlock(block);
+    if (status == SUCCESS && this->memPool) {
+        this->memPool->finishBlock(block);
+    }
     return status;
+}
+
+void VirtualChain::setMemPool(std::shared_ptr<MemPool> memPool) {
+    this->memPool = memPool;
 }
 
 json VirtualChain::getInfo(json args) {

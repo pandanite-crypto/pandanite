@@ -23,15 +23,13 @@ struct WasmEnvironment {
 class WasmExecutor : public Executor {
     public:
         WasmExecutor(vector<uint8_t> byteCode);
-        json getInfo(json args, StateStore& store);
-        Block getGenesis() const;
-        void rollback(Ledger& ledger, LedgerState& deltas, StateStore& store) const;
-        void rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) const;
-        ExecutionStatus executeBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, StateStore& store) const;
-        ExecutionStatus executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas, StateStore& store) const;
-        int updateDifficulty(int initialDifficulty, uint64_t numBlocks, const Program& program, StateStore& store) const;
-        TransactionAmount getMiningFee(uint64_t blockId, StateStore& store) const;
-        ExecutionStatus executeBlockWasm(Block& b, StateStore& store) const;
+        json getInfo(json args,  StateStore& store) override;
+        Block getGenesis() const override;
+        void rollback(Ledger& ledger, LedgerState& deltas, StateStore& store) override;
+        void rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore, StateStore& store) override;
+        ExecutionStatus executeBlock(Block& block, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, StateStore& store) override;
+        ExecutionStatus executeTransaction(Ledger& ledger, const Transaction t, LedgerState& deltas, StateStore& store) override;
+        ExecutionStatus executeBlockWasm(Block& b, StateStore& store);
         WasmEnvironment* initWasm(StateStore& state) const;
         void cleanupWasm(WasmEnvironment* environment) const;
     protected:

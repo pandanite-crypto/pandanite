@@ -49,7 +49,7 @@ Bigint BlockStore::getTotalWork() const {
     leveldb::Slice key = leveldb::Slice(countKey);
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
-    if(!status.ok()) throw std::runtime_error("Could not read block count from DB : " + status.ToString());
+    if(!status.ok()) throw std::runtime_error("Could not read total work from DB : " + status.ToString());
     Bigint b(value);
     return b;
 }

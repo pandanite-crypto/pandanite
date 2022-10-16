@@ -1,5 +1,6 @@
 #include "data_store.hpp"
 #include <thread>
+#include <iostream>
 
 #ifdef _WIN32
 #include <filesystem>
@@ -32,6 +33,7 @@ void DataStore::clear() {
 
 void DataStore::deleteDB() {
     leveldb::Options options;
+    std::cout<<"DELETING DB: " << this->path <<std::endl;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
 #ifdef _WIN32
     filesystem::remove_all(this->path); 

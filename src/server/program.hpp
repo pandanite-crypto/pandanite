@@ -46,7 +46,7 @@ class Program {
         TransactionAmount getWalletValue(PublicWalletAddress& wallet) const;
         SHA256Hash getLastHash() const;
         int getDifficulty() const;
-        TransactionAmount getCurrentMiningFee() const;
+        TransactionAmount getCurrentMiningFee();
         bool hasTransaction(Transaction& t) const;
         bool hasWalletProgram(PublicWalletAddress& wallet) const;
         ProgramID getWalletProgram(PublicWalletAddress& wallet) const;

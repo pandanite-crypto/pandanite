@@ -21,13 +21,9 @@ RequestManager::RequestManager(json config) {
     }
 
     this->defaultProgram = std::make_shared<Program>(config);
-
     this->hosts->setBlockstore(this->defaultProgram->getBlockstore());
     
-    // start downloading headers from peers
-    this->hosts->syncHeadersWithPeers();
-    // start pinging other peers about ourselves
-    this->hosts->startPingingPeers();
+
 
     auto blockchain = std::make_shared<BlockChain>(this->defaultProgram, *this->hosts);
     this->subchains[NULL_SHA256_HASH] = blockchain;
@@ -65,6 +61,11 @@ RequestManager::RequestManager(json config) {
         std::shared_ptr<Program> p = this->programs->getProgram(programId);
         this->setProgram(p);
     }
+
+    // start downloading headers from peers
+    this->hosts->syncHeadersWithPeers();
+    // start pinging other peers about ourselves
+    this->hosts->startPingingPeers();
 }
 
 json RequestManager::getConfig() {
@@ -80,6 +81,7 @@ string RequestManager::getHostAddress() {
 }
 
 std::shared_ptr<VirtualChain> RequestManager::getChain(ProgramID program) {
+    if (this->subchains.find(program) == this->subchains.end()) throw std::runtime_error("Invalid programID");
     return this->subchains[program];
 }
 
@@ -251,8 +253,11 @@ json RequestManager::getProgram(ProgramID program) {
 json RequestManager::setProgram(std::shared_ptr<Program> program) {
     json result;
     this->programs->insertProgram(*program);
-    this->subchains[program->getId()] = std::make_shared<VirtualChain>(program, *hosts);
+    auto chain = std::make_shared<VirtualChain>(program, *hosts);
+    this->subchains[program->getId()] = chain;
     this->subchains[program->getId()]->sync();
+    this->mempool->addProgram(program->getId(), chain);
+    chain->setMemPool(this->mempool);
     result["status"] = executionStatusAsString(SUCCESS);
     return result;
 }
@@ -287,8 +292,8 @@ BlockHeader RequestManager::getBlockHeader(uint32_t blockId, ProgramID program) 
     return chain->getBlockHeader(blockId);
 }
 
-std::pair<char*, size_t> RequestManager::getRawTransactionData() {
-    return this->mempool->getRaw();
+std::pair<char*, size_t> RequestManager::getRawTransactionData(ProgramID program) {
+    return this->mempool->getRaw(program);
 }
 
 json RequestManager::getBlock(uint32_t blockId, ProgramID program) {

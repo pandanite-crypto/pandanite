@@ -9,10 +9,6 @@ ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
     return NULL_SHA256_HASH;
 }
 
-void BlockChain::setMemPool(std::shared_ptr<MemPool> memPool) {
-    this->memPool = memPool;
-}
-
 map<string, uint64_t> BlockChain::getHeaderChainStats() const {
     return this->hosts.getHeaderChainStats();
 }
@@ -34,8 +30,5 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
     ExecutionStatus status = VirtualChain::addBlock(block);
-    if (status == SUCCESS && this->memPool) {
-        this->memPool->finishBlock(block);
-    }
     return status;
 }

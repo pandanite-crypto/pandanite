@@ -6,6 +6,7 @@
 #include <map>
 #include <mutex>
 #include "program.hpp"
+#include "mempool.hpp"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ class VirtualChain {
         uint32_t getBlockCount();
         TransactionAmount getCurrentMiningFee();
         SHA256Hash getLastHash();
+        void setMemPool(std::shared_ptr<MemPool> memPool);
         json getInfo(json args);
         std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
         BlockHeader getBlockHeader(uint32_t blockId);
@@ -39,7 +41,9 @@ class VirtualChain {
         // add or remove blocks to the chain
         ExecutionStatus addBlockSync(Block& block);
         void popBlock();
+
     protected:
+        std::shared_ptr<MemPool> memPool;
         virtual ExecutionStatus addBlock(Block& block);
         void updateDifficulty();
         ExecutionStatus startChainSync();

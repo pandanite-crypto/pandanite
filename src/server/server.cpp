@@ -293,6 +293,45 @@ void BambooServer::run(json config) {
         }
     };
 
+    auto getInfoHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
+        std::string buffer;
+        res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
+            buffer.append(data.data(), data.length());
+            checkBuffer(buffer, res);
+            if (last) {
+                ProgramID programId = NULL_SHA256_HASH;
+                if (req->getQuery("program").length() != 0) {
+                    programId = stringToSHA256(string(req->getQuery("program")));
+                }
+                try {
+                    json parsed;
+                    try {
+                        parsed = json::parse(string(buffer));
+                    } catch(...) {
+                    }
+                    std::cout<<"PROGRAM ID " << SHA256toString(programId) <<std::endl;
+                    json result = manager.getInfo(parsed, programId);
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
+                }  catch(const std::exception &e) {
+                    Logger::logError("/get_info", e.what());
+                    json err;
+                    err["error"] = e.what();
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                } catch(...) {
+                    json err;
+                    err["error"] = "Unknown error";
+                    Logger::logError("/get_info", "unknown");
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
+                }
+            }
+        });
+    };
+
     auto setProgramHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
@@ -628,10 +667,6 @@ void BambooServer::run(json config) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    SHA256Hash programID = NULL_SHA256_HASH;
-                    if (string(req->getQuery("program")).length() != 0) {
-                        programID = stringToSHA256(string(req->getQuery("program")));
-                    }
                     if (buffer.length() < transactionInfoBufferSize()) {
                         json response;
                         response["error"] = "Malformed transaction";
@@ -644,7 +679,8 @@ void BambooServer::run(json config) {
                         for (int i = 0; i < numTransactions; i++) {
                             TransactionInfo t = transactionInfoFromBuffer(buffer.c_str());
                             Transaction tx(t);
-                            response.push_back(manager.addTransaction(tx, programID));
+                            cout<<tx.toJson().dump()<<endl;
+                            response.push_back(manager.addTransaction(tx));
                         }
                         res->end(response.dump());
                     }
@@ -669,10 +705,6 @@ void BambooServer::run(json config) {
             checkBuffer(buffer, res);
             if (last) {
                 try {
-                    SHA256Hash programID = NULL_SHA256_HASH;
-                    if (string(req->getQuery("program")).length() != 0) {
-                        programID = stringToSHA256(string(req->getQuery("program")));
-                    }
                     json parsed = json::parse(string(buffer));
                     cout<<parsed.dump()<<endl;
                     json response = json::array();
@@ -681,7 +713,7 @@ void BambooServer::run(json config) {
                             Transaction tx(item);
                             json result;
                             result["txid"] = SHA256toString(tx.hashContents());
-                            result["status"] = manager.addTransaction(tx, programID)["status"];
+                            result["status"] = manager.addTransaction(tx)["status"];
                             response.push_back(result);
                             // only add a maximum of 100 transactions per request
                             if (response.size() > 100) break;
@@ -803,10 +835,12 @@ void BambooServer::run(json config) {
         .get("/create_wallet", createWalletHandler)
         .get("/get_program", getProgramHandler)
         .post("/set_program", setProgramHandler)
+        .post("/get_info", getInfoHandler)
         .post("/create_transaction", createTransactionHandler)
         .post("/add_transaction", addTransactionHandler)
         .post("/add_transaction_json", addTransactionJSONHandler)
         .post("/verify_transaction", verifyTransactionHandler)
+        .options("/get_info", corsHandler)
         .options("/get_program", corsHandler)
         .options("/name", corsHandler)
         .options("set_program", corsHandler)
