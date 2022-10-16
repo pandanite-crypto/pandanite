@@ -4,6 +4,7 @@
 #include "../shared/host_manager.hpp"
 #include "ledger.hpp"
 #include "tx_store.hpp"
+#include "state_store.hpp"
 #include "block_store.hpp"
 #include "program.hpp"
 
@@ -13,9 +14,11 @@ class Executor;
 
 class Program {
     public:
-        Program(vector<uint8_t>& byteCode);
-        Program(json obj);
-        Program();
+        Program(vector<uint8_t>& byteCode, json config);
+        Program(json obj, json config);
+        Program(json config);
+
+        void init(json config);
 
         // get program info
         ProgramID getId() const;
@@ -32,6 +35,8 @@ class Program {
         Bigint getTotalWork() const;
         bool hasBlockCount() const;
         Block getGenesis() const;
+        json getInfo(json args);
+        BlockStore* getBlockstore();
         uint64_t blockForTransaction(const Transaction& t) const;
         vector<SHA256Hash> getTransactionsForWallet(const PublicWalletAddress& wallet) const;
         uint32_t blockForTransactionId(SHA256Hash txid) const;
@@ -57,6 +62,7 @@ class Program {
     protected:
         void removeBlockWalletTransactions(Block& b);
         std::shared_ptr<Executor> executor;
+        StateStore state;
         ProgramID id;
         BlockStore blockStore;
         Ledger ledger;

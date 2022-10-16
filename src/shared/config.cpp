@@ -33,6 +33,7 @@ json getConfig(int argc, char**argv) {
     string customWallet = "";
     string customIp = "";
     string customName = randomString(25);
+    ProgramID programId = NULL_SHA256_HASH;
     string networkName = "mainnet";
     json hostSources = json::array();
     json checkpoints = json::array();
@@ -58,6 +59,11 @@ json getConfig(int argc, char**argv) {
     it = std::find(args.begin(), args.end(), "--priority");
     if (it != args.end()) {
         thread_priority = std::stoi(*++it);
+    }
+
+    it = std::find(args.begin(), args.end(), "-program");
+    if (it++ != args.end()) {
+        programId = stringToSHA256(string(*it));
     }
 
     it = std::find(args.begin(), args.end(), "-ip");
@@ -117,6 +123,7 @@ json getConfig(int argc, char**argv) {
     }
 
     json config;
+    config["programId"] = programId;
     config["rateLimiter"] = rateLimiter;
     config["threads"] = threads;
     config["wallet"] = customWallet;
@@ -131,6 +138,8 @@ json getConfig(int argc, char**argv) {
     config["hostSources"] = hostSources;
     config["minHostVersion"] = "0.2.4-alpha";
     config["showHeaderStats"] = true;
+    config["storagePath"] = "./data/prog_";
+    config["mockHosts"] = false;
 
     if (local) {
         // do nothing

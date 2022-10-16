@@ -38,7 +38,7 @@ sudo apt install git
 
 ### Building
 ```
-git clone https://github.com/mr-pandabear/bamboo.git
+git clone --recurse-submodules https://github.com/mr-pandabear/bamboo.git 
 cd bamboo
 mkdir build
 cd build

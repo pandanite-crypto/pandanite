@@ -1,11 +1,11 @@
 #include "blockchain.hpp"
 
-BlockChain::BlockChain(Program& program, HostManager& hosts) : VirtualChain(program, hosts) {
+BlockChain::BlockChain(std::shared_ptr<Program> program, HostManager& hosts) : VirtualChain(program, hosts) {
     this->memPool = nullptr;
 }
 
 ProgramID BlockChain::getProgramForWallet(PublicWalletAddress addr) {
-    if (this->program.hasWalletProgram(addr)) return this->program.getWalletProgram(addr);
+    if (this->program->hasWalletProgram(addr)) return this->program->getWalletProgram(addr);
     return NULL_SHA256_HASH;
 }
 
@@ -25,10 +25,10 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     // verify the transaction is consistent with ledger
     std::unique_lock<std::mutex> ul(lock);
     LedgerState deltas;
-    ExecutionStatus status = this->program.executeTransaction(t, deltas);
+    ExecutionStatus status = this->program->executeTransaction(t, deltas);
 
     //roll back the ledger to it's original state:
-    this->program.rollback(deltas);
+    this->program->rollback(deltas);
     return status;
 }
 

@@ -15,7 +15,7 @@ TEST(test_blockstore_stores_block) {
     // send tiny shares to receiver:
     for(int i = 0; i < 5; i++) {
         Transaction t = miner.send(receiver, 1);
-        t.setTimestamp(i);
+        t.setNonce(i);
         a.addTransaction(t);
     }
     ASSERT_EQUAL(blocks.hasBlock(2), false);

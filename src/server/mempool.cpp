@@ -95,8 +95,8 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
             return UNSUPPORTED_CHAIN;
         }
     }
-
-    if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL) {
+    cout<<SHA256toString(t.getProgramId())<<endl;
+    if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL && t.getProgramId() == NULL_SHA256_HASH) {
         status = TRANSACTION_FEE_TOO_LOW;
         return status;
     }

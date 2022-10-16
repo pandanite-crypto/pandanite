@@ -8,9 +8,12 @@ using namespace std;
 
 class ProgramStore : public DataStore {
     public:
-        ProgramStore();
+        ProgramStore(json config);
         bool hasProgram(const ProgramID& programId);
-        Program getProgram(const ProgramID& programId);
+        std::shared_ptr<Program> getProgram(const ProgramID& programId);
         void insertProgram(const Program& p);
         void removeProgram(const Program& p);
+        vector<ProgramID> getProgramIds();
+    protected:
+        json config;
 };

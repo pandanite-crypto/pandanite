@@ -107,6 +107,7 @@ HostManager::HostManager(json config) {
     this->ip = config["ip"];
     this->firewall = config["firewall"];
     this->version = BUILD_VERSION;
+    this->blockStore = NULL;
     this->networkName = config["networkName"];
     this->computeAddress();
 
@@ -160,11 +161,11 @@ HostManager::HostManager(json config) {
         this->hostSources.push_back(h);
     }
     if (this->hostSources.size() == 0) {
+        cout<<"Running in local mode"<<endl;
         string localhost = "http://localhost:3000";
         this->hosts.push_back(localhost);
         this->hostPingTimes[localhost] = std::time(0);
         this->peerClockDeltas[localhost] = 0;
-        this->syncHeadersWithPeers();
     } else {
         this->refreshHostList();
     }
@@ -386,11 +387,10 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 }
 
 #ifndef WASM_BUILD
-void HostManager::setBlockstore(std::shared_ptr<BlockStore> blockStore) {
+void HostManager::setBlockstore(BlockStore* blockStore) {
     this->blockStore = blockStore;
 }
 #endif
-
 
 bool HostManager::isDisabled() {
     return this->disabled;

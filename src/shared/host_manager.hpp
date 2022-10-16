@@ -31,7 +31,7 @@ class HostManager {
         string getAddress();
         uint64_t getNetworkTimestamp();
 #ifndef WASM_BUILD
-        void setBlockstore(std::shared_ptr<BlockStore> blockStore);
+        void setBlockstore(BlockStore* blockStore);
 #endif
         void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
@@ -39,7 +39,7 @@ class HostManager {
     protected:
         vector<std::shared_ptr<HeaderChain>> currPeers; 
 #ifndef WASM_BUILD
-        std::shared_ptr<BlockStore> blockStore;
+        BlockStore* blockStore;
         std::mutex lock;
         vector<std::thread> syncThread;
         vector<std::thread> headerStatsThread;

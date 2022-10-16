@@ -26,7 +26,7 @@ void chain_sync(HeaderChain& chain) {
     }
 }
 
-HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, std::shared_ptr<BlockStore> blockStore) {
+HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, map<uint64_t, SHA256Hash>& bannedHashes, BlockStore* blockStore) {
     this->host = host;
     this->failed = false;
     this->offset = 0;
@@ -81,7 +81,6 @@ void HeaderChain::load() {
         this->failed = true;
         return;
     }
-    
     SHA256Hash lastHash = NULL_SHA256_HASH;
     if (this->blockHashes.size() > 0) {
         lastHash = this->blockHashes.back();

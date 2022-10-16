@@ -2,30 +2,38 @@
 #include "executor.hpp"
 #include "wasm_executor.hpp"
 
-Program::Program(vector<uint8_t>& byteCode) {
+Program::Program(vector<uint8_t>& byteCode, json config) {
     this->byteCode = byteCode;
     this->id = SHA256((char*)byteCode.data(), byteCode.size());
     this->executor = std::make_shared<WasmExecutor>(this->byteCode);
+    this->init(config);
 }
 
-Program::Program(json obj){
+Program::Program(json obj, json config){
     this->byteCode = hexDecode(obj["byteCode"]);
     this->id = SHA256((char*)byteCode.data(), byteCode.size());
+    std::string basePath = config["storagePath"];
     this->executor = std::make_shared<WasmExecutor>(this->byteCode);
+    this->init(config);
 }
 
-Program::Program(){
+Program::Program(json config){
     this->id = NULL_SHA256_HASH;
     // use the default executor
     this->executor = std::make_shared<Executor>();
+    this->init(config);
+}
+
+void Program::init(json config) {
     this->lastHash = NULL_SHA256_HASH;
     this->difficulty = this->getGenesis().getDifficulty();
-    std::string basePath = "./data/prog_";
+    std::string basePath = config["storagePath"];
     basePath += SHA256toString(this->id).substr(0,5);
     basePath += "_";
     this->ledger.init(basePath + "ledger");
     this->blockStore.init(basePath + "blocks");
     this->txdb.init(basePath + "txdb");
+    this->state.init(basePath + "state");
     if (this->blockStore.hasBlockCount()) {
         this->numBlocks = this->blockStore.getBlockCount();
         this->totalWork = this->blockStore.getTotalWork();
@@ -40,9 +48,9 @@ vector<uint8_t> Program::getByteCode() const {
 }
 
 json Program::toJson() const{
-    json obj;
-    obj["byteCode"] = hexEncode((char*)this->byteCode.data(), this->byteCode.size());
-    return obj;
+    json ret;
+    ret["byteCode"] = hexEncode((char*)this->byteCode.data(), this->byteCode.size());
+    return ret;
 }
 
 bool Program::hasWalletProgram(PublicWalletAddress& wallet) const {
@@ -71,6 +79,7 @@ void Program::closeDB() {
     txdb.closeDB();
     ledger.closeDB();
     blockStore.closeDB();
+    state.closeDB();
 }
 
 void Program::deleteDB() {
@@ -78,6 +87,7 @@ void Program::deleteDB() {
     txdb.deleteDB();
     ledger.deleteDB();
     blockStore.deleteDB();
+    state.deleteDB();
 }
 
 Block Program::getGenesis() const {
@@ -86,6 +96,10 @@ Block Program::getGenesis() const {
 
 bool Program::hasBlockCount() const {
     return this->blockStore.hasBlockCount();
+}
+
+BlockStore* Program::getBlockstore() {
+    return &this->blockStore;
 }
 
 uint64_t Program::getBlockCount() const {
@@ -135,6 +149,10 @@ vector<SHA256Hash> Program::getTransactionsForWallet(const PublicWalletAddress& 
 
 TransactionAmount Program::getCurrentMiningFee() const {
     return this->executor->getMiningFee(this->numBlocks);
+}
+
+json Program::getInfo(json args) {
+    return this->executor->getInfo(args, this->state);
 }
 
 ExecutionStatus Program::executeBlock(Block& block) {
@@ -200,9 +218,11 @@ void Program::deleteData() {
     this->blockStore.closeDB();
     this->txdb.closeDB();
     this->ledger.closeDB();
+    this->state.closeDB();
     this->blockStore.deleteDB();
     this->txdb.deleteDB();
     this->ledger.deleteDB();
+    this->state.deleteDB();
 }
 
 bool operator==(const Program& a, const Program& b) {

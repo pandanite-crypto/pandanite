@@ -16,7 +16,7 @@
 using namespace std;
 
 
-void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHostIp) {
+void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHostIp, ProgramID& programId) {
     TransactionAmount allEarnings = 0;
     int failureCount = 0;
     int last_block_id = 0;
@@ -33,18 +33,18 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             if (customHostIp != "") {
                 // mine against a specific IP
                 host = customHostIp;
-                currCount = getCurrentBlockCount(host);
+                currCount = getCurrentBlockCount(host, programId);
             } else {
                 host = hosts.getGoodHost();
-                currCount = hosts.getBlockCount();
+                currCount = getCurrentBlockCount(host, programId);
             }
-
+            cout<<"GOT COUNT" << currCount << endl;
             if (host == "") {
                 Logger::logStatus("no host found");
                 return;
             }
 
-            json problem = getMiningProblem(host);
+            json problem = getMiningProblem(host, programId);
             int nextBlock = problem["chainLength"];
             nextBlock++;
             // download transactions
@@ -97,7 +97,8 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, newBlock.getId() > PUFFERFISH_START_BLOCK);
             newBlock.setNonce(solution);
             Logger::logStatus("Submitting block...");
-            auto result = submitBlock(host, newBlock);
+
+            auto result = submitBlock(host, newBlock, programId);
             if (result.contains("status") && string(result["status"]) == "SUCCESS")  {
                 Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET );
             } else {
@@ -121,9 +122,12 @@ int main(int argc, char **argv) {
     int thread_priority = config["thread_priority"];
     string customIp = config["ip"];
     string customWallet = config["wallet"];
+    ProgramID programId = config["programId"];
+    cout<<SHA256toString(programId)<<endl;
     PublicWalletAddress wallet;
 
     HostManager hosts(config);
+    hosts.syncHeadersWithPeers();
     json keys;
     if (customWallet == "") {
         try {
@@ -140,5 +144,5 @@ int main(int argc, char **argv) {
     }
         
     Logger::logStatus("Starting miner on single thread");
-    get_work(wallet, hosts, customIp);
+    get_work(wallet, hosts, customIp, programId);
 }

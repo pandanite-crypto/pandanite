@@ -22,6 +22,7 @@ void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  Led
     }
 }
 
+
 void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
     if (ledger.hasWallet(from)) {
         ledger.withdraw(from, amt);
@@ -209,6 +210,12 @@ void Executor::rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txd
         }
     }
     blockStore.removeBlockWalletTransactions(curr);
+}
+
+json Executor::getInfo(json args, const StateStore& store) {
+    json result;
+    result["info"] = "None";
+    return result;
 }
 
 ExecutionStatus Executor::executeTransaction(Ledger& ledger, const Transaction t,  LedgerState& deltas) const{

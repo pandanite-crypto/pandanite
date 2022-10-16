@@ -273,15 +273,18 @@ void BambooServer::run(json config) {
     auto getProgramHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
         try {
-            if (req->getQuery("wallet").length() == 0) {
+            if (req->getQuery("program_id").length() == 0) {
                 json err;
                 err["error"] = "No query parameters specified";
                 res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
                 return;
             }
-            PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
-            json program = manager.getProgram(w);
+            ProgramID p = stringToSHA256(string(req->getQuery("program_id")));
+            json program = manager.getProgram(p);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(program.dump());
         } catch(const std::exception &e) {
             Logger::logError("/get_program", e.what());
@@ -293,6 +296,9 @@ void BambooServer::run(json config) {
     auto setProgramHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
+        res->onAborted([res]() {
+            res->end("ABORTED");
+        });
         std::string buffer;
         res->onData([res, req, buffer = std::move(buffer), &manager](std::string_view data, bool last) mutable {
             buffer.append(data.data(), data.length());
@@ -300,20 +306,19 @@ void BambooServer::run(json config) {
             if (last) {
                 try {
                     json parsed = json::parse(string(buffer));
-                    if (req->getQuery("wallet").length() == 0) {
-                        json err;
-                        err["error"] = "No query parameters specified";
-                        res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
-                        return;
-                    }
-                    PublicWalletAddress w = stringToWalletAddress(string(req->getQuery("wallet")));
-                    Program p(parsed);
-                    json result = manager.setProgram(w,p);
+                    std::shared_ptr<Program> p = std::make_shared<Program>(parsed, manager.getConfig());
+                    json result = manager.setProgram(p);
                     res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
                 }  catch(const std::exception &e) {
                     Logger::logError("/set_program", e.what());
+                    json err;
+                    err["error"] = e.what();
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
                 } catch(...) {
+                    json err;
+                    err["error"] = "Unknown error";
                     Logger::logError("/set_program", "unknown");
+                    res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(err.dump());
                 }
             }
         });
@@ -669,6 +674,7 @@ void BambooServer::run(json config) {
                         programID = stringToSHA256(string(req->getQuery("program")));
                     }
                     json parsed = json::parse(string(buffer));
+                    cout<<parsed.dump()<<endl;
                     json response = json::array();
                     if (parsed.is_array()) {
                         for (auto& item : parsed) {
@@ -795,11 +801,15 @@ void BambooServer::run(json config) {
         .get("/sync", syncHandler)
         .get("/block_headers", blockHeaderHandler)
         .get("/create_wallet", createWalletHandler)
+        .get("/get_program", getProgramHandler)
+        .post("/set_program", setProgramHandler)
         .post("/create_transaction", createTransactionHandler)
         .post("/add_transaction", addTransactionHandler)
         .post("/add_transaction_json", addTransactionJSONHandler)
         .post("/verify_transaction", verifyTransactionHandler)
+        .options("/get_program", corsHandler)
         .options("/name", corsHandler)
+        .options("set_program", corsHandler)
         .options("/total_work", corsHandler)
         .options("/peers", corsHandler)
         .options("/block_count", corsHandler)

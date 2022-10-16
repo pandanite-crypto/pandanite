@@ -301,7 +301,7 @@ ExecutionStatus WasmExecutor::executeBlock(Block& curr, Ledger& ledger, Transact
     return this->executeBlockWasm(curr, store);
 }
 
-json WasmExecutor::getInfo(json args, StateStore& store) const{
+json WasmExecutor::getInfo(json args, StateStore& store){
     json result;
     WasmEnvironment* env = this->initWasm(store);
     wasm_function_inst_t func = wasm_runtime_lookup_function(env->runtime, "getInfo", "none");

@@ -31,8 +31,10 @@ class RequestManager {
         json getTransactionStatus(SHA256Hash txid, ProgramID program = NULL_SHA256_HASH);
         json getPeers(ProgramID program = NULL_SHA256_HASH);
         json getPeerStats();
-        json getProgram(PublicWalletAddress& wallet);
-        json setProgram(PublicWalletAddress& wallet, Program& program);
+        json getConfig();
+        json getInfo(json args, ProgramID program = NULL_SHA256_HASH);
+        json getProgram(ProgramID programId);
+        json setProgram(std::shared_ptr<Program> program);
         json getMineStatus(uint32_t blockId, ProgramID program = NULL_SHA256_HASH);
         json addPeer(string address, uint64_t time, string version, string network);
         BlockHeader getBlockHeader(uint32_t blockId, ProgramID program = NULL_SHA256_HASH);
@@ -42,13 +44,16 @@ class RequestManager {
         string getBlockCount(ProgramID program = NULL_SHA256_HASH);
         string getTotalWork(ProgramID program = NULL_SHA256_HASH);
         uint64_t getNetworkHashrate();
+        std::shared_ptr<VirtualChain> getChain(ProgramID program);
+        std::shared_ptr<BlockChain> getMainChain();
         void exit();
         void deleteDB();
         void enableRateLimiting(bool enabled);
     protected:
+        json config;
         bool limitRequests;
+        map<ProgramID, std::shared_ptr<VirtualChain>> subchains;
         std::shared_ptr<RateLimiter> rateLimiter;
-        std::shared_ptr<BlockChain> blockchain;
         std::shared_ptr<MemPool> mempool;
         std::shared_ptr<HostManager> hosts;
         std::shared_ptr<Program> defaultProgram;

@@ -22,7 +22,8 @@ TEST(checks_invalid_mining_fee) {
     txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();
     txdb.closeDB();
@@ -44,8 +45,8 @@ TEST(checks_duplicate_mining_fee) {
     Transaction t2 = miner.mine();
     b.addTransaction(t1);
     b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();
     txdb.closeDB();
@@ -61,7 +62,8 @@ TEST(checks_missing_mining_fee) {
     txdb.init("./test-data/tmpdb2");
     LedgerState deltas;
     ExecutionStatus status;
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();   
     txdb.closeDB();
@@ -86,8 +88,8 @@ TEST(check_valid_send) {
     b.addTransaction(t);
     Transaction t2 = miner.send(receiver, BMB(30));
     b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ASSERT_EQUAL(status, SUCCESS);
 
     PublicWalletAddress aKey = miner.getAddress(); 
@@ -117,8 +119,8 @@ TEST(check_wallet_tampering) {
     b.addTransaction(t);
     Transaction t2 = miner.send(receiver, BMB(30));
     b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     PublicWalletAddress minerWallet = miner.getAddress(); 
     PublicWalletAddress receiverWallet = receiver.getAddress();
 
@@ -138,7 +140,7 @@ TEST(check_wallet_tampering) {
     t22.sign(miner.getPublicKey(), miner.getPrivateKey());
     c.addTransaction(t22);
     LedgerState deltas2;
-    status = Executor::ExecuteBlock(c, ledger, txdb, deltas2, BMB(50));
+    status = executor.executeBlock(c, ledger, txdb, deltas2);
     ASSERT_EQUAL(status, WALLET_SIGNATURE_MISMATCH);
     ledger.closeDB();
     ledger.deleteDB();
@@ -165,8 +167,8 @@ TEST(check_low_balance) {
 
     Transaction t2 = miner.send(receiver, BMB(100.0));
     b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();  
     txdb.closeDB();
@@ -192,8 +194,8 @@ TEST(check_overflow) {
 
     Transaction t2 = miner.send(receiver, 18446744073709551615);
     b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ledger.closeDB();
     ledger.deleteDB();  
     txdb.closeDB();
@@ -222,7 +224,8 @@ TEST(check_miner_fee) {
     miner.signTransaction(t2);
     b.addTransaction(t);
     b.addTransaction(t2);
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
     ASSERT_EQUAL(status, SUCCESS);
     
     Block b2;
@@ -233,7 +236,7 @@ TEST(check_miner_fee) {
     receiver.signTransaction(t4);
     b2.addTransaction(t3);
     b2.addTransaction(t4);
-    status = Executor::ExecuteBlock(b2, ledger, txdb, deltas, BMB(50));
+    status = executor.executeBlock(b2, ledger, txdb, deltas);
     ASSERT_EQUAL(status, SUCCESS);
     ASSERT_EQUAL(ledger.getWalletValue(other.getAddress()), BMB(1)); 
     ASSERT_EQUAL(ledger.getWalletValue(receiver.getAddress()), BMB(9)); 
@@ -266,8 +269,8 @@ TEST(check_bad_signature) {
     User foo;
     t2.sign(foo.getPublicKey(), foo.getPrivateKey());
     b.addTransaction(t2);
-
-    status = Executor::ExecuteBlock(b, ledger, txdb, deltas, BMB(50));
+    Executor executor;
+    status = executor.executeBlock(b, ledger, txdb, deltas);
 
     ledger.closeDB();
     ledger.deleteDB();

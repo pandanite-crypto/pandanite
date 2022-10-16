@@ -21,7 +21,9 @@ void addMerkleHashToBlock(Block& block) {
 
 TEST(check_adding_new_node_with_hash) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
     User other;
@@ -43,7 +45,9 @@ TEST(check_adding_new_node_with_hash) {
 
 TEST(check_popping_block) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
     User other;
@@ -76,7 +80,9 @@ TEST(check_popping_block) {
 
 TEST(check_adding_wrong_lastblock_hash_fails) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
     User other;
@@ -99,7 +105,42 @@ TEST(check_adding_wrong_lastblock_hash_fails) {
 
 TEST(check_adding_program_locks_ledger) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
+    BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
+    User miner;
+
+    // have miner mine and add chain lock 
+    Transaction fee = miner.mine();
+    ProgramID progId = NULL_SHA256_HASH;
+    progId[0] = 0xf;
+    Transaction chainLock = Transaction(miner.getAddress(), miner.getPublicKey(), 0, progId);
+    miner.signTransaction(chainLock);
+    Block newBlock;
+    newBlock.setId(2);
+    newBlock.addTransaction(fee);
+    newBlock.addTransaction(chainLock);
+    newBlock.setDifficulty(blockchain->getDifficulty());
+    addMerkleHashToBlock(newBlock);
+    newBlock.setLastBlockHash(blockchain->getLastHash());
+    SHA256Hash hash = newBlock.getHash();
+    SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
+    newBlock.setNonce(solution);
+    ExecutionStatus status = blockchain->addBlockSync(newBlock);
+    ASSERT_EQUAL(status, SUCCESS);
+
+    // now add a program block
+
+
+  
+}
+
+TEST(check_adding_program_locks_ledger) {
+    HostManager hosts;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
 
@@ -161,7 +202,9 @@ TEST(check_adding_program_locks_ledger) {
 
 TEST(check_adding_two_nodes_updates_ledger) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
 
@@ -187,7 +230,9 @@ TEST(check_adding_two_nodes_updates_ledger) {
 
 TEST(check_sending_transaction_updates_ledger) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
     User other;
@@ -227,7 +272,9 @@ TEST(check_sending_transaction_updates_ledger) {
 
 TEST(check_duplicate_tx_fails) {
     HostManager hosts;
-    Program defaultProgram;
+    json config;
+    config["storagePath"] = "./test-data/prog_";
+    Program defaultProgram = Program(config);
     BlockChain* blockchain = new BlockChain(defaultProgram, hosts);
     User miner;
     User other;

@@ -10,6 +10,7 @@ using namespace std;
 
 class Executor {
     public:
+        json getInfo(json args, const StateStore& store);
         Block getGenesis() const;
         void rollback(Ledger& ledger, LedgerState& deltas) const;
         void rollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, BlockStore& blockStore) const;

@@ -8,8 +8,8 @@
 #include "../core/helpers.hpp"
 using namespace std;
 
-uint32_t getCurrentBlockCount(string host_url) {
-    http::Request request{host_url + "/block_count"};
+uint32_t getCurrentBlockCount(string host_url, ProgramID program) {
+    http::Request request{host_url + "/block_count?program=" + SHA256toString(program)};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
     return std::stoi(std::string{response.body.begin(), response.body.end()});
 }
@@ -47,7 +47,16 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
     return json::parse(responseStr);  
 }
 
-json submitBlock(string host_url, Block& block) {
+json setProgram(string host_url,  Program& program) {
+    ProgramID id = program.getId();
+    http::Request request(host_url + "/set_program");
+    const auto response = request.send("POST", program.toJson().dump(), {
+       "Content-Type: text/plain"
+    }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
+    return json::parse(std::string{response.body.begin(), response.body.end()});
+}
+
+json submitBlock(string host_url, Block& block, ProgramID program) {
     BlockHeader b = block.serialize();
     vector<uint8_t> bytes(BLOCKHEADER_BUFFER_SIZE + transactionInfoBufferSize() * b.numTransactions);
 
@@ -60,15 +69,15 @@ json submitBlock(string host_url, Block& block) {
         transactionInfoToBuffer(tx, ptr);
         ptr += transactionInfoBufferSize();
     }
-    http::Request request(host_url + "/submit");
+    http::Request request(host_url + "/submit?program=" + SHA256toString(program));
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
-json getMiningProblem(string host_url) {
-    string url = host_url + "/mine";
+json getMiningProblem(string host_url, ProgramID program) {
+    string url = host_url + "/mine?program=" +  SHA256toString(program);
     http::Request request(url);
     const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
     return json::parse(std::string{response.body.begin(), response.body.end()});
