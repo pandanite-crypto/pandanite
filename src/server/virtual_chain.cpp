@@ -191,7 +191,7 @@ ExecutionStatus VirtualChain::addBlock(Block& block) {
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
     ExecutionStatus status = this->program->executeBlock(block);
     if (status == SUCCESS && this->memPool) {
-        this->memPool->finishBlock(block);
+        this->memPool->finishBlock(block, this->program->getId());
     }
     return status;
 }

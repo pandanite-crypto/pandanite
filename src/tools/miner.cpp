@@ -49,7 +49,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             nextBlock++;
             // download transactions
             vector<Transaction> transactions;
-            readRawTransactions(host, transactions);
+            readRawTransactions(host, transactions, programId);
 
             Logger::logStatus("[ NEW ] block = " + std::to_string(nextBlock) + ", difficulty = " + to_string(problem["challengeSize"]) + ", transactions = " + to_string(transactions.size()) + " - " + host);
 
@@ -123,7 +123,6 @@ int main(int argc, char **argv) {
     string customIp = config["ip"];
     string customWallet = config["wallet"];
     ProgramID programId = config["programId"];
-    cout<<SHA256toString(programId)<<endl;
     PublicWalletAddress wallet;
 
     HostManager hosts(config);

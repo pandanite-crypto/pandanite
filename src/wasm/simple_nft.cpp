@@ -66,6 +66,7 @@ extern "C" {
                 PublicWalletAddress owner = getWallet("owner");
                 print("got owner wallet");
                 print(walletAddressToString(sender).c_str());
+                print(walletAddressToString(owner).c_str());
                 if (owner == sender) {
                     print("sender is valid");
                     //check the signature of the signing key

@@ -58,7 +58,6 @@ StateStore::StateStore() {
 void StateStore::addBlock() {
     this->saveCurrentVariables();
     this->currBlockId++;
-    cout<<"curr block id: " << this->currBlockId << endl;
     this->saveCurrentVariables();
 }
 
@@ -124,7 +123,6 @@ void StateStore::loadCurrentVariables() {
     string varName = "__variables_";
     leveldb::Slice s = variableToSlice(varName, this->currBlockId);
     string value;
-    this->printState();
     leveldb::Status status = db->Get(leveldb::ReadOptions(), s, &value);
     if (!status.ok()) throw std::runtime_error("couldn't find variables");
     json data = json::parse(value);
@@ -133,7 +131,6 @@ void StateStore::loadCurrentVariables() {
         auto key = item.key();
         this->currentVariables.insert(key);
         this->variablesBlockIds[key] = item.value().get<uint64_t>();
-        cout<<key<<","<<item.value()<<endl;
     }
 }
 
@@ -171,7 +168,6 @@ void StateStore::deleteKey(const string& key) {
 }
 
 void StateStore::getKeyAtBlock(const string& key, State& buf, uint64_t blockId) const{
-    cout<<"GETTING KEY AT BLCOK " << key << blockId <<endl;
     if (!this->hasKeyAtBlock(key, blockId)) throw std::runtime_error("Tried to get non-existent key");
     leveldb::Slice s = variableToSlice(key, blockId);
     string value;

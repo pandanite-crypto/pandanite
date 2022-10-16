@@ -545,8 +545,12 @@ void BambooServer::run(json config) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
         try {
+            ProgramID programId = NULL_SHA256_HASH;
+            if (req->getQuery("program").length() != 0) {
+                programId = stringToSHA256(string(req->getQuery("program")));
+            }
             res->writeHeader("Content-Type", "application/octet-stream");
-            std::pair<char*, size_t> buffer = manager.getRawTransactionData();
+            std::pair<char*, size_t> buffer = manager.getRawTransactionData(programId);
             std::string_view str(buffer.first, buffer.second);
             res->write(str);
             delete buffer.first;

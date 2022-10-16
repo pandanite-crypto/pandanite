@@ -368,7 +368,6 @@ ExecutionStatus WasmExecutor::executeBlockWasm(Block& b, StateStore& state)  {
     blockHeaderToBuffer(header, ptr);
     ptr += BLOCKHEADER_BUFFER_SIZE;
     for(auto tx : b.getTransactions()) {
-        cout<<tx.toJson().dump()<<endl;
         TransactionInfo txinfo = tx.serialize();
         transactionInfoToBuffer(txinfo, ptr, false);
         ptr += transactionInfoBufferSize(false);

@@ -255,7 +255,6 @@ json RequestManager::setProgram(std::shared_ptr<Program> program) {
     this->programs->insertProgram(*program);
     auto chain = std::make_shared<VirtualChain>(program, *hosts);
     this->subchains[program->getId()] = chain;
-    this->subchains[program->getId()]->sync();
     this->mempool->addProgram(program->getId(), chain);
     chain->setMemPool(this->mempool);
     result["status"] = executionStatusAsString(SUCCESS);

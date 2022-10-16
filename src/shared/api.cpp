@@ -70,7 +70,6 @@ json submitBlock(string host_url, Block& block, ProgramID program) {
         ptr += transactionInfoBufferSize();
     }
     http::Request request(host_url + "/submit?program=" + SHA256toString(program));
-    cout<<"/submit?program=" + SHA256toString(program)<<endl;
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
