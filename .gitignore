@@ -1,6 +1,7 @@
 main
 keys/
 build/
+lib/
 data/
 test-data/
 bin/
