@@ -47,8 +47,8 @@ class BlockChain {
         void popBlock();
         void deleteDB();
         void closeDB();
-    protected:
         ExecutionStatus addBlock(Block& block);
+    protected:
         bool isSyncing;
         bool shutdown;
         HostManager& hosts;
