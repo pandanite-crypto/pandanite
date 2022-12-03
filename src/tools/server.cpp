@@ -4,7 +4,7 @@
 int main(int argc, char **argv) {  
     srand(time(0));
     json config = getConfig(argc, argv);
-    BambooServer* server = new BambooServer();
+    PandaniteServer* server = new PandaniteServer();
     server->run(config);
 }
 

@@ -1,6 +1,6 @@
 #include "../core/common.hpp"
 
-class BambooServer {
+class PandaniteServer {
     public:
         void run(json config);
 };

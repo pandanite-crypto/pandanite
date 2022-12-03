@@ -44,7 +44,7 @@ namespace {
     }
 }
 
-void BambooServer::run(json config) {
+void PandaniteServer::run(json config) {
     srand(time(0));
 
     std::filesystem::path data{ "data" };
@@ -784,7 +784,7 @@ void BambooServer::run(json config) {
         response +="<head><meta http-equiv=\"refresh\" content=\"1.5\"/><script src=\"https://adamvleggett.github.io/drawdown/drawdown.js\"></script></head>";
         response += "<body>";
         response += "<pre id=\"content\" style=\"display:none\">";
-        response += "# Bamboo Server " + string(BUILD_VERSION) + "\n";
+        response += "# Pandanite Server " + string(BUILD_VERSION) + "\n";
         response += "***\n";
         response += "## Stats\n";
         response += "- Loaded Blockchain length: " + manager.getBlockCount() + "\n";
