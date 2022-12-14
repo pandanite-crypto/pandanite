@@ -14,7 +14,7 @@ TEST(check_signature) {
 
     Transaction t = miner.mine();
     b.addTransaction(t);
-    Transaction t2 = miner.send(receiver, BMB(30.0));
+    Transaction t2 = miner.send(receiver, PDN(30.0));
     b.addTransaction(t2);
 
     ASSERT_TRUE(t2.signatureValid());
@@ -29,7 +29,7 @@ TEST(check_user_serialization) {
 
     Transaction t = miner.mine();
     b.addTransaction(t);
-    Transaction t2 = miner.send(receiver, BMB(30.0));
+    Transaction t2 = miner.send(receiver, PDN(30.0));
     b.addTransaction(t2);
 
     ASSERT_TRUE(t2.signatureValid());

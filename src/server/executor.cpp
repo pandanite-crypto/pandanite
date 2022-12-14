@@ -218,7 +218,7 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
     }
 
     PublicWalletAddress miner = NULL_ADDRESS;
-    return updateLedger(t, miner, ledger, deltas, BMB(0), 0); // ExecuteTransaction is only used on non-fee transactions
+    return updateLedger(t, miner, ledger, deltas, PDN(0), 0); // ExecuteTransaction is only used on non-fee transactions
 }
 
 ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee) {

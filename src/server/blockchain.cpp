@@ -86,7 +86,7 @@ void BlockChain::resetChain() {
     
     
     // // User miner;
-    // Transaction fee(stringToWalletAddress("006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"), BMB(50));
+    // Transaction fee(stringToWalletAddress("006FD6A3E7EE4B6F6556502224E6C1FC7232BD449314E7A124"), PDN(50));
     // fee.setTimestamp(0);
     // vector<Transaction> transactions;
     // Block genesis;
@@ -166,13 +166,13 @@ uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) {
     // SEE: https://bitcointalk.org/index.php?topic=5372707.msg58965610#msg58965610
     uint64_t logicalBlock = blockId + 125180 + 7750 + 18000;
     if (logicalBlock < 1000000) {
-        return BMB(50.0);
+        return PDN(50.0);
     } else if (logicalBlock < 2000000) {
-        return BMB(25.0);
+        return PDN(25.0);
     }  else if (logicalBlock < 4000000) {
-        return BMB(12.5);
+        return PDN(12.5);
     } else {
-        return BMB(0.0);
+        return PDN(0.0);
     }
 }
 

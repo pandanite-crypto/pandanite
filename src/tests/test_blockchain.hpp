@@ -60,7 +60,7 @@ TEST(check_adding_new_node_with_hash) {
 //     SHA256Hash solution = mineHash(hash, newBlock.getDifficulty());
 //     newBlock.setNonce(solution);
 //     ExecutionStatus status = blockchain->addBlock(newBlock);
-//     ASSERT_EQUAL(blockchain->getLedger().getWalletValue(miner.getAddress()), BMB(50));
+//     ASSERT_EQUAL(blockchain->getLedger().getWalletValue(miner.getAddress()), PDN(50));
 //     blockchain->popBlock();
 //     bool threw = false;
 //     // wallet should no longer exist:
@@ -118,7 +118,7 @@ TEST(check_adding_new_node_with_hash) {
 //     }
 //     Ledger& ledger = blockchain->getLedger();
 //     double total = ledger.getWalletValue(miner.getAddress());
-//     ASSERT_EQUAL(total, BMB(100.0));
+//     ASSERT_EQUAL(total, PDN(100.0));
 //     blockchain->deleteDB();
 //     delete blockchain;
 // }
@@ -136,7 +136,7 @@ TEST(check_adding_new_node_with_hash) {
 //         newBlock.setId(i);
 //         newBlock.addTransaction(fee);
 //         if (i==3) {
-//             Transaction t = miner.send(other, BMB(20.0));
+//             Transaction t = miner.send(other, PDN(20.0));
 //             newBlock.addTransaction(t);
 //         }
 //         addMerkleHashToBlock(newBlock);
@@ -156,8 +156,8 @@ TEST(check_adding_new_node_with_hash) {
 //     Bigint num = 3;
 //     Bigint total = num * work;
 //     ASSERT_EQUAL(totalWork, total);
-//     ASSERT_EQUAL(minerTotal, BMB(80.0));
-//     ASSERT_EQUAL(otherTotal, BMB(20.0));
+//     ASSERT_EQUAL(minerTotal, PDN(80.0));
+//     ASSERT_EQUAL(otherTotal, PDN(20.0));
 //     blockchain->deleteDB();
 //     delete blockchain;
 // }
@@ -169,7 +169,7 @@ TEST(check_adding_new_node_with_hash) {
 //     User miner;
 //     User other;
 
-//     Transaction t = miner.send(other, BMB(20.0));
+//     Transaction t = miner.send(other, PDN(20.0));
 //     // have miner mine the next block
 //     for (int i =2; i <=4; i++) {
 //         Transaction fee = miner.mine();

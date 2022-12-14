@@ -37,7 +37,7 @@ uint32_t networkToHostUint32(uint32_t x) {
 
 using namespace std;
 
-TransactionAmount BMB(double amount) {
+TransactionAmount PDN(double amount) {
     return (TransactionAmount)(amount * DECIMAL_SCALE_FACTOR);
 }
 

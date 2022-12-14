@@ -36,7 +36,7 @@ PrivateKey User::getPrivateKey() {
 }
 
 Transaction User::mine() {
-    return Transaction(this->getAddress(), BMB(50));
+    return Transaction(this->getAddress(), PDN(50));
 }
 
 Transaction User::send(User& to, TransactionAmount amount) {

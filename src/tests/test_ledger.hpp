@@ -10,8 +10,8 @@ TEST(test_ledger_stores_wallets) {
     Ledger ledger;
     ledger.init("./test-data/tmpdb");
     ledger.createWallet(wallet);
-    ledger.deposit(wallet, BMB(50.0));
-    ASSERT_EQUAL(ledger.getWalletValue(wallet), BMB(50.0));
+    ledger.deposit(wallet, PDN(50.0));
+    ASSERT_EQUAL(ledger.getWalletValue(wallet), PDN(50.0));
     ledger.closeDB();
     ledger.deleteDB();
 }
