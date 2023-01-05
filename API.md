@@ -1,6 +1,6 @@
 # API Guide
 General notes:
-All transaction amounts, balances, and fees are represented in leaves (1 leaf = 1/10,000 BMB).
+All transaction amounts, balances, and fees are represented in leaves (1 leaf = 1/10,000 PDN).
 All wallet addresses, keys, and block hashes are represented as hexadecimal strings.
 
 #### `GET` /ledger?wallet={string:walletAddress}
