@@ -5,10 +5,11 @@ Pandanite
 [Pandanite](http://www.bamboocrypto.io) is a minimalist implementation of a layer 1 cryptocurrency similar to Bitcoin. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ — it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
 
 ### Circulation
-Pandanite is minted by miners who earn rewards. Mining payments occur using the following algorithm, which yields a total final circulation of 100M PDN
-- 50 PDN per block until block 1M
-- 25 PDN per block for blocks 1M to 2M
-- 12.5 PDN per block for blocks 2M to 4M
+Pandanite is minted by miners who earn rewards. Mining payments occur using the *thwothirding* algorithm, which yields a total final circulation of ~100M PDN:
+- 50 PDN per block until block 666666
+- 50\*(2/3) PDN per block from blocks 666667 to 2\*666666
+- 50\*(2/3)^2 PDN per block from blocks 2\*66666+1 to 3\*666666
+etc.
 
 ### Technical Implementation
 Pandanite is written from the ground up in C++. We want the Pandanite source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built Pandanite from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
