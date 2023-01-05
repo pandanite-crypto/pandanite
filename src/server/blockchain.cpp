@@ -165,15 +165,12 @@ uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) {
     // Thus we push the chain ahead by this count.
     // SEE: https://bitcointalk.org/index.php?topic=5372707.msg58965610#msg58965610
     uint64_t logicalBlock = blockId + 125180 + 7750 + 18000;
-    if (logicalBlock < 1000000) {
-        return PDN(50.0);
-    } else if (logicalBlock < 2000000) {
-        return PDN(25.0);
-    }  else if (logicalBlock < 4000000) {
-        return PDN(12.5);
-    } else {
-        return PDN(0.0);
+    double amount = 50.0;
+    while (logicalBlock >= 666666) {
+        amount *= (2.0/3.0);
+        logicalBlock-= 666666;
     }
+    return PDN(amount);
 }
 
 Bigint BlockChain::getTotalWork() {
