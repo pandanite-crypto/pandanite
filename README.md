@@ -10,6 +10,13 @@ Pandanite is minted by miners who earn rewards. Mining payments occur using the 
 - 50\*(2/3) PDN per block from blocks 666667 to 2\*666666
 - 50\*(2/3)^2 PDN per block from blocks 2\*66666+1 to 3\*666666
 etc.
+#### Comparison with halving
+Block reward changes are more often and have less impact compared to halving:
+<image src="img/reward.png" width=600/>
+
+The payout curve is smoother in twothirding compared to halving:
+
+<image src="img/circulation.png" width=600/>
 
 ### Technical Implementation
 Pandanite is written from the ground up in C++. We want the Pandanite source code to be simple, elegant, and easy to understand. Rather than adding duct-tape to an existing currency, we built Pandanite from scratch with lots of love. There are a few optimizations that we have made to help further our core objectives:
