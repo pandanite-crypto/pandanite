@@ -46,7 +46,7 @@ sudo apt install git
 
 ### Building
 ```
-git clone https://github.com/mr-pandabear/bamboo.git
+git clone https://github.com/pandanite-crypto/pandanite.git
 cd bamboo
 mkdir build
 cd build
