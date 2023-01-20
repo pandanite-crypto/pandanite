@@ -1,6 +1,6 @@
 Pandanite 
 ====================
-<image src="https://github.com/mr-pandabear/bamboo-utils/raw/master/logo.png" width=350/>
+<image src="img/logo.png" width=350/>
 
 [Pandanite](http://www.bamboocrypto.io) is a minimalist implementation of a layer 1 cryptocurrency similar to Bitcoin. It is designed with utmost simplicity and user friendliness in mind and is written from the ground up in C++ — it isn't yet another re-packaging of existing open-source blockchain code (where's the fun in that?!). 
 
@@ -46,8 +46,8 @@ sudo apt install git
 
 ### Building
 ```
-git clone https://github.com/mr-pandabear/bamboo.git
-cd bamboo
+git clone https://github.com/pandanite-crypto/pandanite
+cd pandanite
 mkdir build
 cd build
 conan install .. --build=missing
@@ -86,19 +86,18 @@ To host a node:
 ```
 ./bin/server
 ```
-NOTE: you will need to make a folder `~/bamboo/data` to store the nodes data
 
 ### Docker
 
-Pandanite is pre-built for amd64 and arm64 with [GitHub Actions](https://github.com/bamboo-crypto/bamboo/actions) and distributed with the [GitHub Container Registry](https://github.com/bamboo-crypto/bamboo/pkgs/container/bamboo)
+Pandanite is pre-built for amd64 and arm64 with [GitHub Actions](https://github.com/pandanite-crypto/pandanite/actions) and distributed with the [GitHub Container Registry](https://github.com/pandanite-crypto/pandanite/pkgs/container/pandanite)
 
 #### Running with Docker
 
 with `docker`
 
 ```shell
-docker run -d --name bamboo -p 3000:3000 -v $(pwd)/bamboo-data:/bamboo/data ghcr.io/bamboo-crypto/bamboo:latest server
-docker logs -f bamboo
+docker run -d --name pandanite -p 3000:3000 -v $(pwd)/pandanite-data:/pandanite/data ghcr.io/pandanite-crypto/pandanite:latest server
+docker logs -f pandanite
 ```
 
 You can follow the progress of server sync from `http://localhost:3000`
@@ -109,13 +108,13 @@ Running with `docker-compose` is recommended to easily add more options like cpu
 version: '3.4'
 
 services:
-  bamboo:
-    image: ghcr.io/bamboo-crypto/bamboo:latest
+  pandanite:
+    image: ghcr.io/pandanite-crypto/pandanite:latest
     command: server
     ports:
       - 3000:3000
     volumes:
-      - ./bamboo-data:/bamboo/data
+      - ./pandanite-data:/pandanite/data
     restart: unless-stopped
     cpus: 8
     healthcheck:
@@ -131,8 +130,8 @@ services:
 Clone this repository and then
 
 ```shell
-docker build . -t bamboo
-docker run [OPTIONS] bamboo server
+docker build . -t pandanite
+docker run [OPTIONS] pandanite server
 ```
 
 Running CI build locally
