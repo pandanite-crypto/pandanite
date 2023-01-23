@@ -35,13 +35,12 @@ pip3 install conan
 ```
 
 
-*Linux* install pre-requirements
+*Ubuntu 20.04 LTS* install pre-requirements
 ```
 sudo apt-get update
-sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
+sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev curl git
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 sudo pip3 install conan
-sudo apt install git
 ```
 
 ### Building

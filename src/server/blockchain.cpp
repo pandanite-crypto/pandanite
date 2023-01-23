@@ -401,71 +401,73 @@ void BlockChain::recomputeLedger() {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-    std::unique_lock<std::mutex> ul(lock);
-    this->isSyncing = true;
-    string bestHost = this->hosts.getGoodHost();
-    this->targetBlockCount = this->hosts.getBlockCount();
-    // If our current chain is lower POW than the trusted host
-    // remove anything that does not align with the hashes of the trusted chain
-    if (this->hosts.getTotalWork() > this->getTotalWork()) {
-        // iterate through our current chain until a hash diverges from trusted chain
-        uint64_t toPop = 0;
-        for(uint64_t i = 1; i <= this->numBlocks; i++) {
-            SHA256Hash trustedHash = this->hosts.getBlockHash(bestHost, i);
-            SHA256Hash myHash = this->getBlock(i).getHash();
-            if (trustedHash != myHash) {
-                toPop = this->numBlocks - i + 1;
-                break;
-            }
-        }
-        // pop all subsequent blocks
-        for (uint64_t i = 0; i < toPop; i++) {
-            if (this->numBlocks == 1) break;
-            this->popBlock();
-        }
-    }
-
-    int startCount = this->numBlocks;
-
-    int needed = this->targetBlockCount - startCount;
-    if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
-    // download any remaining blocks in batches
-    uint64_t start = std::time(0);
-    for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
-        try {
-            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
-            bool failure = false;
-            ExecutionStatus status;
-            BlockChain &bc = *this;
-            int count = 0;
-            vector<Block> blocks;
-            readRawBlocks(bestHost, i, end, blocks);
-            for(auto & b : blocks) {   
-                ExecutionStatus addResult = bc.addBlock(b);
-                if (addResult != SUCCESS) {
-                    failure = true;
-                    status = addResult;
-                    Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
+    if (this->isSyncing == false) {
+        std::unique_lock<std::mutex> ul(lock);
+        this->isSyncing = true;
+        string bestHost = this->hosts.getGoodHost();
+        this->targetBlockCount = this->hosts.getBlockCount();
+        // If our current chain is lower POW than the trusted host
+        // remove anything that does not align with the hashes of the trusted chain
+        if (this->hosts.getTotalWork() > this->getTotalWork()) {
+            // iterate through our current chain until a hash diverges from trusted chain
+            uint64_t toPop = 0;
+            for(uint64_t i = 1; i <= this->numBlocks; i++) {
+                SHA256Hash trustedHash = this->hosts.getBlockHash(bestHost, i);
+                SHA256Hash myHash = this->getBlock(i).getHash();
+                if (trustedHash != myHash) {
+                    toPop = this->numBlocks - i + 1;
                     break;
                 }
             }
-            if (failure) {
-                Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
-                this->isSyncing = false;
-                return status;
+            // pop all subsequent blocks
+            for (uint64_t i = 0; i < toPop; i++) {
+                if (this->numBlocks == 1) break;
+                this->popBlock();
             }
-        } catch (const std::exception &e) {
-            this->isSyncing = false;
-            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
-            return UNKNOWN_ERROR;
         }
+
+        int startCount = this->numBlocks;
+
+        int needed = this->targetBlockCount - startCount;
+        if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
+        // download any remaining blocks in batches
+        uint64_t start = std::time(0);
+        for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
+            try {
+                int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
+                bool failure = false;
+                ExecutionStatus status;
+                BlockChain &bc = *this;
+                int count = 0;
+                vector<Block> blocks;
+                readRawBlocks(bestHost, i, end, blocks);
+                for(auto & b : blocks) {   
+                    ExecutionStatus addResult = bc.addBlock(b);
+                    if (addResult != SUCCESS) {
+                        failure = true;
+                        status = addResult;
+                        Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
+                        break;
+                    }
+                }
+                if (failure) {
+                    Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
+                    this->isSyncing = false;
+                    return status;
+                }
+            } catch (const std::exception &e) {
+                this->isSyncing = false;
+                Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
+                return UNKNOWN_ERROR;
+            }
+        }
+        uint64_t final = std::time(0);
+        uint64_t d = final - start;
+        stringstream s;
+        s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
+        if (needed > 1) Logger::logStatus(s.str());
+        this->isSyncing = false;
     }
-    uint64_t final = std::time(0);
-    uint64_t d = final - start;
-    stringstream s;
-    s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
-    if (needed > 1) Logger::logStatus(s.str());
-    this->isSyncing = false;
     return SUCCESS;
 }
 
