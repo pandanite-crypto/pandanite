@@ -94,7 +94,7 @@ BlockHeader Block::serialize() {
 json Block::toJson() {
     json result;
     result["id"] = this->id;
-    result["hash"] = this->getHash();
+    result["hash"] = SHA256toString(this->getHash());
     result["difficulty"] = this->difficulty;
     result["nonce"] = SHA256toString(this->nonce);
     result["timestamp"] = uint64ToString(this->timestamp);
