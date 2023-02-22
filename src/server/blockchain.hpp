@@ -29,6 +29,7 @@ class BlockChain {
         uint8_t getDifficulty();
         uint32_t getBlockCount();
         uint32_t getCurrentMiningFee(uint64_t blockId);
+        uint64_t getSupply(); // locks mutex
         SHA256Hash getLastHash();
         Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);

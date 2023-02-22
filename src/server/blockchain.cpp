@@ -172,6 +172,19 @@ uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) {
     }
     return PDN(amount);
 }
+uint64_t BlockChain::getSupply() {
+  std::unique_lock<std::mutex> ul(lock);
+  uint64_t supply = 0;
+  double amount = 50.0;
+  uint64_t logicalBlock = numBlocks + 125180 + 7750 + 18000;
+  while (logicalBlock >= 666666) {
+    supply += 666666 * amount;
+    amount *= (2.0 / 3.0);
+    logicalBlock -= 666666;
+  }
+  supply += logicalBlock * amount;
+  return supply;
+};
 
 Bigint BlockChain::getTotalWork() {
     return this->totalWork;

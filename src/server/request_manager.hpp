@@ -28,6 +28,7 @@ class RequestManager {
         json getTransactionsForWallet(PublicWalletAddress addr);
         json verifyTransaction(Transaction& t);
         json getTransactionStatus(SHA256Hash txid);
+        json getSupply();
         json getPeers();
         json getPeerStats();
         json getMineStatus(uint32_t blockId);

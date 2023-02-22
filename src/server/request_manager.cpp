@@ -223,6 +223,11 @@ json RequestManager::getPeers() {
     return peers;
 }
 
+json RequestManager::getSupply() {
+    return this->blockchain->getSupply();
+}
+
+
 json RequestManager::addPeer(string address, uint64_t time, string version, string network) {
     this->hosts.addPeer(address, time, version, network);
     json ret;

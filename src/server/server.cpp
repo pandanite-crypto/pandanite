@@ -466,6 +466,19 @@ void PandaniteServer::run(json config) {
         });
     };
 
+    auto supplyHandler = [&manager](auto *res, auto *req) {
+        rateLimit(manager, res);
+        sendCorsHeaders(res);
+        try {
+            json response = manager.getSupply();
+            res->end(response.dump());
+        } catch(const std::exception &e) {
+            Logger::logError("/supply", e.what());
+        } catch(...) {
+            Logger::logError("/supply", "unknown");
+        }
+    };
+
     auto mineHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
         sendCorsHeaders(res);
@@ -826,6 +839,7 @@ void PandaniteServer::run(json config) {
         .get("/block_headers/:start/:end", blockHeaderHandlerDeprecated) // DEPRECATED
         .get("/block/:b", blockHandlerDeprecated) // DEPRECATED
         .get("/mine", mineHandler)
+        .get("/supply", supplyHandler)
         .get("/getnetworkhashrate", getNetworkHashrateHandler)
         .post("/add_peer", addPeerHandler)
         .post("/submit", submitHandler)
