@@ -76,7 +76,7 @@ Transaction::Transaction(const TransactionInfo& t) {
     this->timestamp = t.timestamp;
     this->fee = t.fee;
 }
-TransactionInfo Transaction::serialize() {
+TransactionInfo Transaction::serialize() const {
     TransactionInfo t;
     memcpy((void*)t.signature, (void*)this->signature.data(), 64);
     memcpy((void*)t.signingKey, (void*)this->signingKey.data(), 32);

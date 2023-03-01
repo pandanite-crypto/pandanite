@@ -73,7 +73,7 @@ json getMiningProblem(string host_url) {
     return json::parse(std::string{response.body.begin(), response.body.end()});
 }
 
-json sendTransaction(string host_url, Transaction& t) {
+json sendTransaction(string host_url, const Transaction& t) {
     http::Request request(host_url + "/add_transaction");
 
     TransactionInfo info = t.serialize();

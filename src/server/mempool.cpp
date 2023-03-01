@@ -35,7 +35,7 @@ void MemPool::mempool_sync() {
             if (toSend.empty()) {
                 continue;
             }
-            txs = std::move(toSend);
+            txs = std::vector<Transaction>(std::make_move_iterator(toSend.begin()), std::make_move_iterator(toSend.end()));
             toSend.clear();
         }
 
@@ -57,7 +57,7 @@ void MemPool::mempool_sync() {
             }
         }
 
-        for (const auto& req : reqs) {
+        for (auto& req : reqs) {
             if (!req.get()) {
                 all_sent = false;
             }
@@ -115,19 +115,19 @@ ExecutionStatus MemPool::addTransaction(Transaction t) {
 
     transactionQueue.insert(t);
     mempoolOutgoing[t.fromWallet()] += totalTxAmount;
-    std::unique_lock<std::mutex> lock(toSend_mutex);
+    std::unique_lock<std::mutex> toSend_lock(toSend_mutex);
     toSend.push_back(t);
 
     return SUCCESS;
 }
 
 size_t MemPool::size() {
-    std::unique_lockstd::mutex lock(mempool_mutex);
+    std::unique_lock<std::mutex> lock(mempool_mutex);
     return transactionQueue.size();
 }
 
 std::vector<Transaction> MemPool::getTransactions() {
-    std::unique_lockstd::mutex lock(mempool_mutex);
+    std::unique_lock<std::mutex> lock(mempool_mutex);
     std::vector<Transaction> transactions;
     for (const auto& tx : transactionQueue) {
         transactions.push_back(tx);
@@ -136,7 +136,7 @@ std::vector<Transaction> MemPool::getTransactions() {
 }
 
 std::pair<char*, size_t> MemPool::getRaw() {
-    std::unique_lockstd::mutex lock(mempool_mutex);
+    std::unique_lock<std::mutex> lock(mempool_mutex);
     size_t len = transactionQueue.size() * TRANSACTIONINFO_BUFFER_SIZE;
     char* buf = (char*) malloc(len);
     int count = 0;
@@ -151,7 +151,7 @@ std::pair<char*, size_t> MemPool::getRaw() {
 }
 
 void MemPool::finishBlock(Block& block) {
-    std::unique_lockstd::mutex lock(mempool_mutex);
+    std::unique_lock<std::mutex> lock(mempool_mutex);
     for (const auto& tx : block.getTransactions()) {
         auto it = transactionQueue.find(tx);
         if (it != transactionQueue.end()) {

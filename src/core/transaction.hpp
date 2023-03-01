@@ -30,7 +30,7 @@ class Transaction {
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee=0);
         Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp);
         Transaction(const TransactionInfo& t);
-        TransactionInfo serialize();
+        TransactionInfo serialize() const;
         json toJson();
         void sign(PublicKey pubKey, PrivateKey signingKey);
         void setTransactionFee(TransactionAmount amount);
