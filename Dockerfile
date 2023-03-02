@@ -12,7 +12,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-ins
   && apt-get clean
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
-RUN pip3 install conan
+RUN pip3 install conan==1.59
 
 WORKDIR /bamboo
 
@@ -20,9 +20,6 @@ COPY src src
 COPY CMakeLists.txt conanfile.txt ./
 
 WORKDIR /bamboo/build
-RUN mkdir ~/.conan2
-RUN mkdir ~/.conan2/profiles
-RUN conan profile detect
 RUN conan install .. --build=missing
 
 WORKDIR /bamboo
