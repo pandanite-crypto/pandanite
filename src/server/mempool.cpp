@@ -14,8 +14,6 @@
 
 #define TX_BRANCH_FACTOR 10
 #define MIN_FEE_TO_ENTER_MEMPOOL 1
-#define MAX_TRANSACTIONS_PER_BLOCK 1000
-#define TRANSACTIONINFO_BUFFER_SIZE sizeof(TransactionInfo)
 
 MemPool::MemPool(HostManager& h, BlockChain& b) : hosts(h), blockchain(b) {
     shutdown = false;
