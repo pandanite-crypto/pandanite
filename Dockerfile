@@ -20,8 +20,10 @@ COPY src src
 COPY CMakeLists.txt conanfile.txt ./
 
 WORKDIR /bamboo/build
-RUN conan profile new /bamboo/defaultconan --detect -pr=myprofile
-RUN conan install .. --build=missing --profile myprofile
+RUN mkdir ~/.conan2
+RUN mkdir ~/.conan2/profiles
+RUN conan profile detect
+RUN conan install .. --build=missing
 
 WORKDIR /bamboo
 
