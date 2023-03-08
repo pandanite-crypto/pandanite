@@ -34,12 +34,27 @@ brew install cmake
 pip3 install conan
 ```
 
+*Ubuntu 18.04 LTS* install pre-requirements
+```
+sudo apt-get update
+sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev curl git
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
+sudo pip3 install conan==1.59
+```
 
 *Ubuntu 20.04 LTS* install pre-requirements
 ```
 sudo apt-get update
 sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev curl git
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
+sudo pip3 install conan==1.59
+```
+
+*Ubuntu 22.04 LTS* install pre-requirements
+```
+sudo apt-get update
+sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev curl git
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 sudo pip3 install conan==1.59
 ```
 
@@ -85,6 +100,14 @@ To host a node:
 ```
 ./bin/server
 ```
+
+Some server running args:
+```
+-n (Custom Name, shows on peer list)
+-p (Custom Port, default is 3000)
+--testnet (Run in testnet mode, good for testing your mining setup)
+```
+Full list of arguments can be found here: https://github.com/pandanite-crypto/pandanite/blob/master/src/core/config.cpp
 
 ### Docker
 
