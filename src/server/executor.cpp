@@ -119,7 +119,7 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     }
 }
 
-ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
+ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
@@ -168,7 +168,7 @@ ExecutionStatus updateLedger(Transaction& t, PublicWalletAddress& miner, Ledger&
     return SUCCESS;
 }
 
-void rollbackLedger(Transaction& t,  PublicWalletAddress& miner, Ledger& ledger) {
+void rollbackLedger(Transaction t,  PublicWalletAddress& miner, Ledger& ledger) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
