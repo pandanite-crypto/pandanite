@@ -48,7 +48,7 @@ void MemPool::mempool_sync() {
                         sendTransaction(neighbor, tx);
                         return true;
                     } catch (...) {
-                        Logger::logError("MemPool::mempool_sync", "Could not send tx to " + neighbor);
+                        //Logger::logError("MemPool::mempool_sync", "Could not send tx to " + neighbor); // not thread safe, find different solution
                         return false;
                     }
                 }));
