@@ -36,7 +36,7 @@ pip3 install conan
 
 *Ubuntu 18.04 LTS* install pre-requirements
 ```
-sudo apt-get update
+sudo apt update
 sudo apt-get -y install make cmake automake libtool python3-pip libleveldb-dev curl git
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
 sudo pip3 install conan==1.59
@@ -68,6 +68,22 @@ conan install .. --build=missing
 cd ..
 cmake .
 ```
+
+*Ubuntu 18.04 Requires a code change to build server
+in src/server/server.cpp change:
+```
+Line 10
+#include <filesystem>
+to
+#include <experimental/filesystem>
+
+Lines 50, 52, & 58
+std::filesystem::...  
+to 
+std::experimental::filesystem::...
+```
+
+
 To compile the miner run the following command:
 ```
 make miner
