@@ -15,4 +15,4 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./data:/bamboo/data
+      - ./data:/pandanite/data
