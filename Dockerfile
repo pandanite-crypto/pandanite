@@ -14,15 +14,15 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-ins
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 RUN pip3 install conan==1.59
 
-WORKDIR /bamboo
+WORKDIR /pandanite
 
 COPY src src
 COPY CMakeLists.txt conanfile.txt ./
 
-WORKDIR /bamboo/build
+WORKDIR /pandanite/build
 RUN conan install .. --build=missing
 
-WORKDIR /bamboo
+WORKDIR /pandanite
 
 RUN cmake .
 
@@ -30,6 +30,6 @@ RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make miner
 RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make keygen
 RUN MAKEFLAGS=-j$(nproc); export MAKEFLAGS; make server
 
-RUN cp /bamboo/bin/* /usr/local/bin
+RUN cp /pandanite/bin/* /usr/local/bin
 
 COPY genesis.json blacklist.txt ./
