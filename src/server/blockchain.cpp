@@ -395,6 +395,7 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() {
     return this->hosts.getHeaderChainStats();
 }
 
+// NOTE: this isn't used?
 void BlockChain::recomputeLedger() {
     this->ledger.clear();
     this->txdb.clear();
