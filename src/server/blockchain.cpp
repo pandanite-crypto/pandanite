@@ -22,7 +22,7 @@
 #include "mempool.hpp"
 #include "genesis.hpp"
 
-#define FORK_CHAIN_POP_COUNT 1
+#define FORK_CHAIN_POP_COUNT 10
 #define FORK_RESET_RETRIES 3
 #define MAX_DISCONNECTS_BEFORE_RESET 10
 #define FAILURES_BEFORE_POP_ATTEMPT 1
@@ -456,8 +456,9 @@ ExecutionStatus BlockChain::startChainSync() {
                     const ExecutionStatus addResult = bc.addBlock(block);
                     if (addResult != SUCCESS) {
                         Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(block.getId()));
-                        popBlock();
-                        popBlock();
+                        for(int j = 0; j < FORK_CHAIN_POP_COUNT; j++) {
+                            popBlock();
+                        }
                         isSyncing = false;
                         return addResult;
                     }
