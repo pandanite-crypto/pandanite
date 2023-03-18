@@ -66,7 +66,8 @@ public:
     }
 };
 
-list<string> Logger::buffer = list<string>();
+//list<string> Logger::buffer = list<string>();
+extern list<string> Logger::buffer = list<string>();
 ofstream Logger::file = ofstream();
 std::mutex Logger::console_lock;
 std::mutex Logger::file_mutex;
