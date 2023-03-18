@@ -449,21 +449,23 @@ ExecutionStatus BlockChain::startChainSync() {
         for (int i = startCount + 1; i <= targetBlockCount; i += BLOCKS_PER_FETCH) {
             try {
                 const int end = std::min(targetBlockCount, i + BLOCKS_PER_FETCH - 1);
+                bool failure = false;
                 BlockChain &bc = *this;
                 std::vector<Block> blocks;
                 readRawBlocks(bestHost, i, end, blocks);
                 for (auto& block : blocks) {
                     const ExecutionStatus addResult = bc.addBlock(block);
                     if (addResult != SUCCESS) {
+                        failure = true;
+                        status = addResult;
                         Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(block.getId()));
-                        
-                        for (uint64_t j = 0; j < FORK_CHAIN_POP_COUNT && numBlocks > 1; ++j) {
-                            popBlock();
-                        }
-
-                        isSyncing = false;
-                        return addResult;
+                        break;
                     }
+                }
+                if (failure) {
+                    Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
+                    this->isSyncing = false;
+                    return status;
                 }
             } catch (const std::exception &e) {
                 Logger::logError("BlockChain::startChainSync", "Failed to load block: " + std::string(e.what()));
