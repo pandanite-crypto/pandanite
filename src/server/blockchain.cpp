@@ -456,9 +456,11 @@ ExecutionStatus BlockChain::startChainSync() {
                     const ExecutionStatus addResult = bc.addBlock(block);
                     if (addResult != SUCCESS) {
                         Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(block.getId()));
-                        for(int j = 0; j < FORK_CHAIN_POP_COUNT; j++) {
+                        
+                        for (uint64_t j = 0; j < FORK_CHAIN_POP_COUNT && numBlocks > 1; ++j) {
                             popBlock();
                         }
+
                         isSyncing = false;
                         return addResult;
                     }
