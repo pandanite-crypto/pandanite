@@ -451,6 +451,7 @@ ExecutionStatus BlockChain::startChainSync() {
             try {
                 const int end = std::min(targetBlockCount, i + BLOCKS_PER_FETCH - 1);
                 bool failure = false;
+                ExecutionStatus status;
                 BlockChain &bc = *this;
                 std::vector<Block> blocks;
                 readRawBlocks(bestHost, i, end, blocks);
