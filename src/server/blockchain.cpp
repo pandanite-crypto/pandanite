@@ -429,7 +429,7 @@ ExecutionStatus BlockChain::startChainSync() {
                 const SHA256Hash trustedHash = hosts.getBlockHash(bestHost, i);
                 const SHA256Hash myHash = getBlock(i).getHash();
                 if (trustedHash != myHash) {
-                    toPop = numBlocks - i + 1;
+                    toPop = numBlocks - i + FORK_CHAIN_POP_COUNT;
                     break;
                 }
             }
