@@ -31,7 +31,7 @@ using namespace std;
 
 void chain_sync(BlockChain& blockchain) {
     while(true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         if (blockchain.shutdown) break;
         if (!blockchain.isSyncing) {
             blockchain.startChainSync();
