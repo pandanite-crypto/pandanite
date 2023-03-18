@@ -457,6 +457,7 @@ ExecutionStatus BlockChain::startChainSync() {
                     if (addResult != SUCCESS) {
                         Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(block.getId()));
                         popBlock();
+                        popBlock();
                         isSyncing = false;
                         return addResult;
                     }
