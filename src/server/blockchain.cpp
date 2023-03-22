@@ -22,7 +22,7 @@
 #include "mempool.hpp"
 #include "genesis.hpp"
 
-#define FORK_CHAIN_POP_COUNT 1
+#define FORK_CHAIN_POP_COUNT 10
 #define FORK_RESET_RETRIES 3
 #define MAX_DISCONNECTS_BEFORE_RESET 10
 #define FAILURES_BEFORE_POP_ATTEMPT 1
@@ -33,7 +33,9 @@ void chain_sync(BlockChain& blockchain) {
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         if (blockchain.shutdown) break;
-        blockchain.startChainSync();
+        if (!blockchain.isSyncing) {
+            blockchain.startChainSync();
+        }
     }
 }
 
@@ -395,6 +397,7 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() {
     return this->hosts.getHeaderChainStats();
 }
 
+// NOTE: this isn't used?
 void BlockChain::recomputeLedger() {
     this->ledger.clear();
     this->txdb.clear();
@@ -414,68 +417,70 @@ void BlockChain::recomputeLedger() {
 }
 
 ExecutionStatus BlockChain::startChainSync() {
-    if (!isSyncing) {
-        std::unique_lock<std::mutex> lockGuard(lock);
-        isSyncing = true;
+    std::unique_lock<std::mutex> ul(lock);
+    this->isSyncing = true;
+    string bestHost = this->hosts.getGoodHost();
+    this->targetBlockCount = this->hosts.getBlockCount();
+    // If our current chain is lower POW than the trusted host
+    // remove anything that does not align with the hashes of the trusted chain
+    if (this->hosts.getTotalWork() > this->getTotalWork()) {
+        // iterate through our current chain until a hash diverges from trusted chain
+        uint64_t toPop = 0;
+        for(uint64_t i = 1; i <= this->numBlocks; i++) {
+            SHA256Hash trustedHash = this->hosts.getBlockHash(bestHost, i);
+            SHA256Hash myHash = this->getBlock(i).getHash();
+            if (trustedHash != myHash) {
+                toPop = this->numBlocks - i + FORK_CHAIN_POP_COUNT;
+                break;
+            }
+        }
+        // pop all subsequent blocks
+        for (uint64_t i = 0; i < toPop; i++) {
+            if (this->numBlocks == 1) break;
+            this->popBlock();
+        }
+    }
 
-        // Get a good host and target block count
-        const std::string& bestHost = hosts.getGoodHost();
-        targetBlockCount = hosts.getBlockCount();
+    int startCount = this->numBlocks;
 
-        // Remove any blocks that do not align with the trusted chain if our current chain has lower total work
-        if (hosts.getTotalWork() > getTotalWork()) {
-            uint64_t toPop = 0;
-            for (uint64_t i = 1; i <= numBlocks; ++i) {
-                const SHA256Hash trustedHash = hosts.getBlockHash(bestHost, i);
-                const SHA256Hash myHash = getBlock(i).getHash();
-                if (trustedHash != myHash) {
-                    toPop = numBlocks - i + 1;
+    int needed = this->targetBlockCount - startCount;
+    if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
+    // download any remaining blocks in batches
+    uint64_t start = std::time(0);
+    for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
+        try {
+            int end = min(this->targetBlockCount, i + BLOCKS_PER_FETCH - 1);
+            bool failure = false;
+            ExecutionStatus status;
+            BlockChain &bc = *this;
+            int count = 0;
+            vector<Block> blocks;
+            readRawBlocks(bestHost, i, end, blocks);
+            for(auto & b : blocks) {   
+                ExecutionStatus addResult = bc.addBlock(b);
+                if (addResult != SUCCESS) {
+                    failure = true;
+                    status = addResult;
+                    Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
                     break;
                 }
             }
-            for (uint64_t i = 0; i < toPop && numBlocks > 1; ++i) {
-                popBlock();
+            if (failure) {
+                Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
+                this->isSyncing = false;
+                return status;
             }
+        } catch (const std::exception &e) {
+            this->isSyncing = false;
+            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
+            return UNKNOWN_ERROR;
         }
-
-        const int startCount = numBlocks;
-        const int needed = targetBlockCount - startCount;
-        if (needed > 0) {
-            Logger::logStatus("fetching target block count=" + std::to_string(targetBlockCount));
-        }
-
-        // Download any remaining blocks in batches
-        uint64_t start = std::time(0);
-        for (int i = startCount + 1; i <= targetBlockCount; i += BLOCKS_PER_FETCH) {
-            try {
-                const int end = std::min(targetBlockCount, i + BLOCKS_PER_FETCH - 1);
-                BlockChain &bc = *this;
-                std::vector<Block> blocks;
-                readRawBlocks(bestHost, i, end, blocks);
-                for (auto& block : blocks) {
-                    const ExecutionStatus addResult = bc.addBlock(block);
-                    if (addResult != SUCCESS) {
-                        Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(block.getId()));
-                        isSyncing = false;
-                        return addResult;
-                    }
-                }
-            } catch (const std::exception &e) {
-                Logger::logError("BlockChain::startChainSync", "Failed to load block: " + std::string(e.what()));
-                isSyncing = false;
-                return UNKNOWN_ERROR;
-            }
-        }
-        uint64_t final = std::time(0);
-        uint64_t downloadTime = final - start;
-        std::stringstream ss;
-        ss << "Downloaded " << needed << " blocks in " << downloadTime << " seconds from " + bestHost;
-        if (needed > 1) {
-            Logger::logStatus(ss.str());
-        }
-
-        // Set the isSyncing flag to false and return SUCCESS
-        isSyncing = false;
     }
+    uint64_t final = std::time(0);
+    uint64_t d = final - start;
+    stringstream s;
+    s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
+    if (needed > 1) Logger::logStatus(s.str());
+    this->isSyncing = false;
     return SUCCESS;
 }

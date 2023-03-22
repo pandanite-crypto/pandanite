@@ -103,6 +103,13 @@ json getConfig(int argc, char**argv) {
         checkpoints.push_back({1, "0840EF092D16B7D2D31B6F8CBB855ACF36D73F5778A430B0CEDB93A6E33AF750"});
         checkpoints.push_back({7774, "E1DC4CA2F2D634868C12B2C8963B33DD8632F459A1D37701A6B9BE17C0DA99EB"});
         checkpoints.push_back({14142, "BC77EB5157A82E1FC684653FEBECAEAF1034F7E0ABE09A10908B4F75D0F66956"});
+        checkpoints.push_back({50000, "FCB52942BEF47DD21BEAFBB5FE907A893FA5ABCA4659044E0914CCCBF0FB571C"});
+        checkpoints.push_back({100000, "FCF90CDAD5BF111AE4346FBA3156EE47CAD337A6EA11BE86469994F07ABA49BD"});
+        checkpoints.push_back({150000, "50601CBBF4701553209C1B9E5E09C3E1F06CC7FD9B4C4B9D9CA82D9F77E44DEB"});
+        checkpoints.push_back({200000, "1BE4BA317867A587B4ED4480084134CB2BC7998EC9C336E00E46D6CB6DA89A44"});
+        checkpoints.push_back({250000, "69FBEC9482E099D96C9462DAD765C5E11258344AE986E4E63DCD24030A7CF2C2"});
+        checkpoints.push_back({300000, "E43270C33F6A029E6104CC2A3A6E59FA55B6C42B49EAF8DA35CD36D082290645"});
+        checkpoints.push_back({350000, "564A807B18A9C36275E0BCC2478A94005CE53C9E7C160929B2941E0235B50097"});
         bannedHashes.push_back({143799,"60D84E0D3078F3FFD9E54133B450448F3F12B671028B0431F775A37A347FFACA"});
     }
 
@@ -129,7 +136,7 @@ json getConfig(int argc, char**argv) {
     config["ip"] = customIp;
     config["thread_priority"] = thread_priority;
     config["hostSources"] = hostSources;
-    config["minHostVersion"] = "0.2.4-alpha";
+    config["minHostVersion"] = "0.7.7-beta";
     config["showHeaderStats"] = true;
 
     if (local) {

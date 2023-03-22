@@ -37,6 +37,25 @@ void MemPool::mempool_sync() {
             toSend.clear();
         }
 
+        // Check that all transactions in the mempool are still valid according to the blockchain
+        std::vector<Transaction> invalidTxs;
+        for (const auto& tx : transactionQueue) {
+            ExecutionStatus status = blockchain.verifyTransaction(tx);
+            if (status != SUCCESS) {
+                invalidTxs.push_back(tx);
+            }
+        }
+
+        // Remove all invalid transactions from the mempool
+        for (const auto& tx : invalidTxs) {
+            transactionQueue.erase(tx);
+        }
+
+        // If there are no valid transactions in the mempool, continue without sending anything
+        if (transactionQueue.empty()) {
+            continue;
+        }
+        
         std::vector<std::future<bool>> reqs;
         std::set<std::string> neighbors = hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
         bool all_sent = true;
@@ -48,7 +67,7 @@ void MemPool::mempool_sync() {
                         sendTransaction(neighbor, tx);
                         return true;
                     } catch (...) {
-                        //Logger::logError("MemPool::mempool_sync", "Could not send tx to " + neighbor); // not thread safe, find different solution
+                        Logger::logError("MemPool::mempool_sync", "Could not send tx to " + neighbor);
                         return false;
                     }
                 }));
