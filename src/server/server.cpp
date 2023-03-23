@@ -7,6 +7,7 @@
 #include <string_view>
 #include <atomic>
 #include <signal.h>
+#include <execinfo.h>
 #include <filesystem>
 #include "../core/logger.hpp"
 #include "../core/crypto.hpp"
@@ -15,8 +16,10 @@
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 #include "../core/config.hpp"
+#include "../core/logger.hpp"
 #include "request_manager.hpp"
 #include "server.hpp"
+
 using namespace std;
 
 
@@ -39,6 +42,23 @@ void rateLimit(RequestManager& manager, uWS::HttpResponse<false>* ptr) {
 namespace {
     std::function<void(int)> shutdown_handler;
     void signal_handler(int signal) { 
+    
+        void* array[10];
+        size_t size;
+
+		if (signal == SIGTERM) {
+		
+            // get void*'s for all entries on the stack
+            size = backtrace(array, 10);
+
+            // print out all the frames to stderr
+            std::cerr << "Error: signal " << signal << std::endl;
+            backtrace_symbols_fd(array, size, STDERR_FILENO);
+
+            Logger::logError(RED + "[FATAL]" + RESET, "Error: signal " + std::to_string(signal));
+	
+		}
+		
         shutdown_handler(signal); 
         exit(0);
     }
@@ -59,7 +79,8 @@ void PandaniteServer::run(json config) {
         }
     }
 
-    Logger::logStatus("Starting server...");
+    
+    Logger::logStatus("Starting Server Version: ");
     HostManager hosts(config);
 
     
