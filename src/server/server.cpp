@@ -46,7 +46,7 @@ namespace {
         void* array[10];
         size_t size;
 
-		if (signal == SIGTERM) {
+		if (signal == SIGTERM || signal == SIGSEGV) {
 		
             // get void*'s for all entries on the stack
             size = backtrace(array, 10);
@@ -102,6 +102,7 @@ void PandaniteServer::run(json config) {
     signal(SIGINT, signal_handler);
     signal(SIGQUIT, signal_handler);
     signal(SIGTERM, signal_handler);
+    signal(SIGSEGV, signal_handler);
 
 
     if (config["rateLimiter"] == false) manager.enableRateLimiting(false);
