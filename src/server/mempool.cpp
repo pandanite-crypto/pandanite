@@ -40,15 +40,24 @@ void MemPool::mempool_sync() {
         // Check that all transactions in the mempool are still valid according to the blockchain
         std::vector<Transaction> invalidTxs;
         for (const auto& tx : transactionQueue) {
-            ExecutionStatus status = blockchain.verifyTransaction(tx);
-            if (status != SUCCESS) {
+        	try {
+                ExecutionStatus status = blockchain.verifyTransaction(tx);
+                if (status != SUCCESS) {
+                    invalidTxs.push_back(tx);
+                }
+            } catch (const std::exception& e) {
+                std::cout << "Caught exception: " << e.what() << '\n';
                 invalidTxs.push_back(tx);
             }
         }
 
         // Remove all invalid transactions from the mempool
         for (const auto& tx : invalidTxs) {
-            transactionQueue.erase(tx);
+            try {
+                transactionQueue.erase(tx);
+            } catch (const std::exception& e) {
+            	std::cout << "Caught exception: " << e.what() << '\n';
+            }
         }
 
         // If there are no valid transactions in the mempool, continue without sending anything
