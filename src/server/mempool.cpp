@@ -37,30 +37,26 @@ void MemPool::mempool_sync() {
             toSend.clear();
         }
 
-        // Check that all transactions in the mempool are still valid according to the blockchain
         std::vector<Transaction> invalidTxs;
-        for (const auto& tx : transactionQueue) {
-        	try {
-                ExecutionStatus status = blockchain.verifyTransaction(tx);
-                if (status != SUCCESS) {
-                    invalidTxs.push_back(tx);
+        {
+            std::unique_lock<std::mutex> lock(mempool_mutex);
+            for (auto it = transactionQueue.begin(); it != transactionQueue.end(); ) {
+                try {
+                    ExecutionStatus status = blockchain.verifyTransaction(*it);
+                    if (status != SUCCESS) {
+                        invalidTxs.push_back(*it);
+                        it = transactionQueue.erase(it);
+                    } else {
+                        ++it;
+                    }
+                } catch (const std::exception& e) {
+                    std::cout << "Caught exception: " << e.what() << '\n';
+                    invalidTxs.push_back(*it);
+                    it = transactionQueue.erase(it);
                 }
-            } catch (const std::exception& e) {
-                std::cout << "Caught exception: " << e.what() << '\n';
-                invalidTxs.push_back(tx);
             }
         }
 
-        // Remove all invalid transactions from the mempool
-        for (const auto& tx : invalidTxs) {
-            try {
-                transactionQueue.erase(tx);
-            } catch (const std::exception& e) {
-            	std::cout << "Caught exception: " << e.what() << '\n';
-            }
-        }
-
-        // If there are no valid transactions in the mempool, continue without sending anything
         if (transactionQueue.empty()) {
             continue;
         }
@@ -89,7 +85,6 @@ void MemPool::mempool_sync() {
             }
         }
 
-        // if we did not succeed sending all transactions, put the unsent ones back in queue
         if (!all_sent) {
             std::unique_lock<std::mutex> lock(toSend_mutex);
             for (const auto& tx : txs) {
