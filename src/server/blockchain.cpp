@@ -38,9 +38,16 @@ void chain_sync(BlockChain& blockchain) {
             if (status != SUCCESS)
             {
                 blockchain.retries++;
-                for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
-                    if (blockchain.numBlocks == 1) break;
-                    blockchain.popBlock();
+                if (blockchain.retries > FORK_RESET_RETRIES)
+                {
+                    blockchain.resetChain();
+                }
+                else
+                {
+                    for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
+                        if (blockchain.numBlocks == 1) break;
+                        blockchain.popBlock();
+                    }
                 }
             }
             blockchain.retries = 0;
