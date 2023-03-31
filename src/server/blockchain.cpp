@@ -50,7 +50,10 @@ void chain_sync(BlockChain& blockchain) {
                     }
                 }
             }
-            blockchain.retries = 0;
+            else
+            {
+                blockchain.retries = 0;
+            }
         }
     }
 }
