@@ -40,10 +40,12 @@ void chain_sync(BlockChain& blockchain) {
                 blockchain.retries++;
                 if (blockchain.retries > FORK_RESET_RETRIES)
                 {
+                    Logger::logError(RED + "[FATAL]" + RESET, "Max Rollback Tries Reached.");
                     blockchain.resetChain();
                 }
                 else
                 {
+                    Logger::logError(RED + "[ERROR]", "Rollback retry #" + to_string(blockchain.retries));
                     for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
                         if (blockchain.numBlocks == 1) break;
                         blockchain.popBlock();
@@ -52,6 +54,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             else
             {
+                Logger::logStatus("Chain Sync Status: SUCCESS Top Block: " + to_string(block.getId()));
                 blockchain.retries = 0;
             }
         }
