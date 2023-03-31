@@ -22,7 +22,7 @@
 #include "mempool.hpp"
 #include "genesis.hpp"
 
-#define FORK_CHAIN_POP_COUNT 10
+#define FORK_CHAIN_POP_COUNT 100
 #define FORK_RESET_RETRIES 3
 #define MAX_DISCONNECTS_BEFORE_RESET 10
 #define FAILURES_BEFORE_POP_ATTEMPT 1
@@ -37,11 +37,13 @@ void chain_sync(BlockChain& blockchain) {
             ExecutionStatus status = blockchain.startChainSync();
             if (status != SUCCESS)
             {
-                for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT; i++) {
+                blockchain.retries++;
+                for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
                     if (blockchain.numBlocks == 1) break;
                     blockchain.popBlock();
                 }
             }
+            blockchain.retries = 0;
         }
     }
 }
@@ -52,6 +54,7 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
     this->memPool = nullptr;
     this->shutdown = false;
+    this->retries = 0;
     this->ledger.init(ledgerPath);
     this->blockStore = std::make_unique<BlockStore>();
     this->blockStore->init(blockPath);
