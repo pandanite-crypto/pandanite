@@ -34,7 +34,14 @@ void chain_sync(BlockChain& blockchain) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         if (blockchain.shutdown) break;
         if (!blockchain.isSyncing) {
-            blockchain.startChainSync();
+            ExecutionStatus status = blockchain.startChainSync();
+            if (status != SUCCESS)
+            {
+                for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT; i++) {
+                    if (this->numBlocks == 1) break;
+                    this->popBlock();
+                }
+            }
         }
     }
 }
