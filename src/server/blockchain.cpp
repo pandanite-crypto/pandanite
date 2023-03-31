@@ -54,7 +54,7 @@ void chain_sync(BlockChain& blockchain) {
             }
             else
             {
-                Logger::logStatus("Chain Sync Status: SUCCESS Top Block: " + to_string(block.getId()));
+                Logger::logStatus("Chain Sync Status: SUCCESS Top Block: " + to_string(blockchain.numBlocks));
                 blockchain.retries = 0;
             }
         }
