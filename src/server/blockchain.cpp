@@ -45,7 +45,7 @@ void chain_sync(BlockChain& blockchain) {
                 }
                 else
                 {
-                    Logger::logError(RED + "[ERROR]", "Rollback retry #" + to_string(blockchain.retries));
+                    Logger::logError(RED + "[ERROR]" + RESET, "Rollback retry #" + to_string(blockchain.retries));
                     for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
                         if (blockchain.numBlocks == 1) break;
                         blockchain.popBlock();
