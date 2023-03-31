@@ -38,8 +38,8 @@ void chain_sync(BlockChain& blockchain) {
             if (status != SUCCESS)
             {
                 for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT; i++) {
-                    if (this->numBlocks == 1) break;
-                    this->popBlock();
+                    if (blockchain.numBlocks == 1) break;
+                    blockchain.popBlock();
                 }
             }
         }
