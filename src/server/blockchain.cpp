@@ -433,6 +433,7 @@ void BlockChain::recomputeLedger() {
     this->ledger.clear();
     this->txdb.clear();
     for(int i = 1; i <= this->numBlocks; i++) {
+        Logger::logStatus("Recompute: " + to_string(i));
         LedgerState deltas;
         Block block = this->getBlock(i);
         ExecutionStatus addResult = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
