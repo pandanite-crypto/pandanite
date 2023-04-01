@@ -42,6 +42,7 @@ void chain_sync(BlockChain& blockchain) {
                 {
                     Logger::logError(RED + "[FATAL]" + RESET, "Max Rollback Tries Reached.");
                     blockchain.resetChain();
+                    blockchain.recomputeLedger();
                 }
                 else
                 {
@@ -50,6 +51,7 @@ void chain_sync(BlockChain& blockchain) {
                         if (blockchain.numBlocks == 1) break;
                         blockchain.popBlock();
                     }
+                    blockchain.recomputeLedger();
                 }
             }
             else
