@@ -60,6 +60,12 @@ void chain_sync(BlockChain& blockchain) {
                 blockchain.retries = 0;
             }
         }
+        else
+        {
+            Logger::logStatus("Debug isSyncing: " + to_string(blockchain.isSyncing));
+            Logger::logStatus("Debug hosts.getBlockCount: " + to_string(blockchain.hosts.getBlockCount()));
+            Logger::logStatus("Debug numBlocks: " + to_string(blockchain.numBlocks));
+        }
     }
 }
 
