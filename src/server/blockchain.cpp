@@ -324,11 +324,15 @@ vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress add
     vector<Transaction> ret;
     // TODO: this is pretty inefficient -- might want direct index of transactions
     for (auto txid : txids) {
-        Block b = this->blockStore->getBlock(this->txdb.blockForTransactionId(txid));
-        for (auto tx : b.getTransactions()) {
-            if (tx.hashContents() == txid) {
-                ret.push_back(tx);
-                break;
+        uint32_t blockId = this->txdb.blockForTransactionId(txid);
+        if (blockId > 0)
+        {
+            Block b = this->blockStore->getBlock(blockId);
+            for (auto tx : b.getTransactions()) {
+                if (tx.hashContents() == txid) {
+                    ret.push_back(tx);
+                    break;
+                }
             }
         }
     }
