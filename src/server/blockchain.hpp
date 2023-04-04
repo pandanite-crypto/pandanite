@@ -55,6 +55,7 @@ class BlockChain {
         HostManager& hosts;
         std::shared_ptr<MemPool> memPool;
         int numBlocks;
+        int retries;
         Bigint totalWork;
         std::shared_ptr<BlockStore> blockStore;
         Ledger ledger;

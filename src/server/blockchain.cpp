@@ -22,7 +22,7 @@
 #include "mempool.hpp"
 #include "genesis.hpp"
 
-#define FORK_CHAIN_POP_COUNT 10
+#define FORK_CHAIN_POP_COUNT 100
 #define FORK_RESET_RETRIES 3
 #define MAX_DISCONNECTS_BEFORE_RESET 10
 #define FAILURES_BEFORE_POP_ATTEMPT 1
@@ -33,8 +33,38 @@ void chain_sync(BlockChain& blockchain) {
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         if (blockchain.shutdown) break;
-        if (!blockchain.isSyncing) {
-            blockchain.startChainSync();
+        if (!blockchain.isSyncing && blockchain.hosts.getBlockCount() > blockchain.numBlocks) {
+            ExecutionStatus status = blockchain.startChainSync();
+            if (status != SUCCESS)
+            {
+                blockchain.retries++;
+                if (blockchain.retries > FORK_RESET_RETRIES)
+                {
+                    Logger::logError(RED + "[FATAL]" + RESET, "Max Rollback Tries Reached.");
+                    blockchain.resetChain();
+                    blockchain.recomputeLedger();
+                }
+                else
+                {
+                    Logger::logError(RED + "[ERROR]" + RESET, "Rollback retry #" + to_string(blockchain.retries));
+                    for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
+                        if (blockchain.numBlocks == 1) break;
+                        blockchain.popBlock();
+                    }
+                    blockchain.recomputeLedger();
+                }
+            }
+            else
+            {
+                Logger::logStatus("Chain Sync Status: SUCCESS Top Block: " + to_string(blockchain.numBlocks));
+                blockchain.retries = 0;
+            }
+        }
+        else
+        {
+            Logger::logStatus("Debug isSyncing: " + to_string(blockchain.isSyncing));
+            Logger::logStatus("Debug hosts.getBlockCount: " + to_string(blockchain.hosts.getBlockCount()));
+            Logger::logStatus("Debug numBlocks: " + to_string(blockchain.numBlocks));
         }
     }
 }
@@ -45,6 +75,7 @@ BlockChain::BlockChain(HostManager& hosts, string ledgerPath, string blockPath, 
     if (txdbPath == "") txdbPath = TXDB_FILE_PATH;
     this->memPool = nullptr;
     this->shutdown = false;
+    this->retries = 0;
     this->ledger.init(ledgerPath);
     this->blockStore = std::make_unique<BlockStore>();
     this->blockStore->init(blockPath);
@@ -293,11 +324,15 @@ vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress add
     vector<Transaction> ret;
     // TODO: this is pretty inefficient -- might want direct index of transactions
     for (auto txid : txids) {
-        Block b = this->blockStore->getBlock(this->txdb.blockForTransactionId(txid));
-        for (auto tx : b.getTransactions()) {
-            if (tx.hashContents() == txid) {
-                ret.push_back(tx);
-                break;
+        uint32_t blockId = this->txdb.blockForTransactionId(txid);
+        if (blockId > 0)
+        {
+            Block b = this->blockStore->getBlock(blockId);
+            for (auto tx : b.getTransactions()) {
+                if (tx.hashContents() == txid) {
+                    ret.push_back(tx);
+                    break;
+                }
             }
         }
     }
@@ -371,7 +406,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee(block.getId()));
 
     if (status != SUCCESS) {
-        Executor::Rollback(this->ledger, deltasFromBlock);
+        // Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
         if (this->memPool != nullptr) {
             this->memPool->finishBlock(block);
@@ -402,6 +437,7 @@ void BlockChain::recomputeLedger() {
     this->ledger.clear();
     this->txdb.clear();
     for(int i = 1; i <= this->numBlocks; i++) {
+        Logger::logStatus("Recompute: " + to_string(i));
         LedgerState deltas;
         Block block = this->getBlock(i);
         ExecutionStatus addResult = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
