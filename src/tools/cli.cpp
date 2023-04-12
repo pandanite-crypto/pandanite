@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     PublicKey publicKey = stringToPublicKey(keys["publicKey"]);
     PrivateKey privateKey = stringToPrivateKey(keys["privateKey"]);
 
-    cout<<"Enter to user wallet:"<<endl;
+    cout<<"Enter a destination wallet address to send PDN to:"<<endl;
     string to;
     cin>> to;
     PublicWalletAddress toWallet = stringToWalletAddress(to);
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     TransactionAmount amount;
     cin>>amount;
 
-    cout<<"Enter the mining fee (or 0):"<<endl;
+    cout<<"Enter the mining fee in leaves (or 0):"<<endl;
     TransactionAmount fee;
     cin>>fee;
 
