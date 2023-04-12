@@ -98,6 +98,12 @@ To compile the node server:
 make server
 ```
 
+To compile a simple CLI tool that lets you send PDN:
+```
+make cli
+```
+For a separate, interactive GUI wallet see https://github.com/pandanite-crypto/pandanite-wallet
+
 ### Usage
 Start by generating `keys.json`.
 
@@ -105,7 +111,6 @@ Start by generating `keys.json`.
 ./bin/keygen
 ```
  ***Keep a copy of this file in a safe location*** -- it contains pub/private keys to the wallet that the miner will mint coins to. If you lose this file you lose your coins. We recommend keeping an extra copy on a unique thumbdrive (that you don't re-use) the moment you generate it.
-
 
 To start mining:
 ```
@@ -124,6 +129,11 @@ Some server running args:
 --testnet (Run in testnet mode, good for testing your mining setup)
 ```
 Full list of arguments can be found here: https://github.com/pandanite-crypto/pandanite/blob/master/src/core/config.cpp
+
+To send PDN to another address (run with --local flag if the server you want to use is listening on localhost):
+```
+./bin/cli
+```
 
 ### Docker
 
