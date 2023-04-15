@@ -406,7 +406,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee(block.getId()));
 
     if (status != SUCCESS) {
-        // Executor::Rollback(this->ledger, deltasFromBlock);
+        Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
         if (this->memPool != nullptr) {
             this->memPool->finishBlock(block);
