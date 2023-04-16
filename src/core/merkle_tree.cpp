@@ -39,6 +39,11 @@ MerkleTree::~MerkleTree() {
     this->root = nullptr;
 }
 
+// TODO: Check if this is intended: Does items really need to be modified?
+// Typically used like this: m.setItems(block.getTransactions());
+// see server/blockchain.cpp
+// This changes the block as getTransactions() returns a reference of block's transactions
+// VERY BAD DESIGN!!! 
 void MerkleTree::setItems(vector<Transaction>& items) {
     std::sort(items.begin(), items.end(), [](const Transaction & a, const Transaction & b) -> bool { 
         return SHA256toString(a.getHash()) > SHA256toString(b.getHash());
