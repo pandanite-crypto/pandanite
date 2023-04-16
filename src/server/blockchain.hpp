@@ -29,7 +29,7 @@ class BlockChain {
         uint8_t getDifficulty();
         uint32_t getBlockCount();
         uint32_t getCurrentMiningFee(uint64_t blockId);
-        uint64_t getSupply(); // locks mutex
+        uint64_t getSupply() const; // locks mutex
         SHA256Hash getLastHash();
         Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);
@@ -65,7 +65,7 @@ class BlockChain {
         void updateDifficulty();
         ExecutionStatus startChainSync();
         int targetBlockCount;
-        std::mutex lock;
+        mutable std::mutex lock;
         vector<std::thread> syncThread;
         map<int,SHA256Hash> checkpoints;
         friend void chain_sync(BlockChain& blockchain);
