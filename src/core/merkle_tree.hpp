@@ -22,7 +22,7 @@ class MerkleTree {
         void setItems(vector<Transaction>& items);
         ~MerkleTree();
         bool verifyMerkleProof(SHA256Hash rootHash, HashTree* proof);
-        shared_ptr<HashTree> getMerkleProof(Transaction t);
+        shared_ptr<HashTree> getMerkleProof(Transaction t) const;
         SHA256Hash getRootHash();
     protected:
         shared_ptr<HashTree> root;

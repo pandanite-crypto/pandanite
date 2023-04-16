@@ -175,7 +175,7 @@ void HostManager::startPingingPeers() {
     this->syncThread.push_back(std::thread(peer_sync, ref(*this)));
 }
 
-string HostManager::getAddress() {
+string HostManager::getAddress() const{
     return this->address;
 }
 
@@ -184,14 +184,17 @@ HostManager::HostManager() {
     this->disabled = true;
 }
 
-uint64_t HostManager::getNetworkTimestamp() {
+uint64_t HostManager::getNetworkTimestamp() const{
     // find deltas of all hosts that pinged recently
     vector<int32_t> deltas;
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only use peers that have pinged recently
         if (lastPingAge < HOST_MIN_FRESHNESS) { 
-            deltas.push_back(this->peerClockDeltas[pair.first]);
+            auto iterator = peerClockDeltas.find(pair.first);
+            if ( iterator != peerClockDeltas.end()){
+                deltas.push_back(iterator->second);
+            }
         }
     }
     
@@ -215,7 +218,7 @@ uint64_t HostManager::getNetworkTimestamp() {
 /*
     Asks nodes for their current POW and chooses the best peer
 */
-string HostManager::getGoodHost() {
+string HostManager::getGoodHost() const{
     if (this->currPeers.size() < 1) return "";
     Bigint bestWork = 0;
     string bestHost = this->currPeers[0]->getHost();
@@ -232,7 +235,7 @@ string HostManager::getGoodHost() {
 /*
     Returns number of block headers downloaded by peer host
 */
-map<string,uint64_t> HostManager::getHeaderChainStats() {
+map<string,uint64_t> HostManager::getHeaderChainStats() const{
     map<string, uint64_t> ret;
     for(auto h : this->currPeers) {
         ret[h->getHost()] = h->getCurrentDownloaded();
@@ -243,7 +246,7 @@ map<string,uint64_t> HostManager::getHeaderChainStats() {
 /*
     Returns the block count of the highest PoW chain amongst current peers
 */
-uint64_t HostManager::getBlockCount() {
+uint64_t HostManager::getBlockCount() const{
     if (this->currPeers.size() < 1) return 0;
     uint64_t bestLength = 0;
     Bigint bestWork = 0;
@@ -260,7 +263,7 @@ uint64_t HostManager::getBlockCount() {
 /*
     Returns the total work of the highest PoW chain amongst current peers
 */
-Bigint HostManager::getTotalWork() {
+Bigint HostManager::getTotalWork() const{
     Bigint bestWork = 0;
     std::unique_lock<std::mutex> ul(lock);
     if (this->currPeers.size() < 1) return bestWork;
@@ -275,7 +278,7 @@ Bigint HostManager::getTotalWork() {
 /*
     Returns the block header hash for the given block, peer host
  */
-SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) {
+SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) const{
     SHA256Hash ret = NULL_SHA256_HASH;
     std::unique_lock<std::mutex> ul(lock);
     for(auto h : this->currPeers) {
@@ -467,7 +470,7 @@ void HostManager::syncHeadersWithPeers() {
 /*
     Returns a list of all peer hosts
 */
-vector<string> HostManager::getHosts(bool includeSelf) {
+vector<string> HostManager::getHosts(bool includeSelf) const{
     vector<string> ret;
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;

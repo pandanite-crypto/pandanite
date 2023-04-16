@@ -38,15 +38,16 @@ class Block {
         void setTimestamp(uint64_t t);
         void setId(uint32_t id);
         void setDifficulty(uint8_t d);
-        SHA256Hash getHash();
-        SHA256Hash getNonce();
-        SHA256Hash getMerkleRoot();
-        SHA256Hash getLastBlockHash();
+        SHA256Hash getHash() const;
+        SHA256Hash getNonce() const;
+        SHA256Hash getMerkleRoot() const;
+        SHA256Hash getLastBlockHash() const;
         void setLastBlockHash(SHA256Hash hash);
-        uint64_t getTimestamp();
+        uint64_t getTimestamp() const;
         uint32_t getDifficulty() const;
+        const vector<Transaction>& getTransactions() const;
         vector<Transaction>& getTransactions();
-        uint32_t getId();
+        uint32_t getId() const;
         bool verifyNonce();
     // protected:
         uint32_t id;

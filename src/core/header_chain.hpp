@@ -13,11 +13,11 @@ class HeaderChain {
         void load();
         void reset();
         bool valid();
-        string getHost();
-        Bigint getTotalWork();
-        uint64_t getChainLength();
-        uint64_t getCurrentDownloaded();
-        SHA256Hash getHash(uint64_t blockId);
+        string getHost() const;
+        Bigint getTotalWork() const;
+        uint64_t getChainLength() const;
+        uint64_t getCurrentDownloaded() const;
+        SHA256Hash getHash(uint64_t blockId) const;
         vector<SHA256Hash> blockHashes;
     protected:
         string host;

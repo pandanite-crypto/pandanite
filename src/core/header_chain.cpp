@@ -40,7 +40,7 @@ HeaderChain::HeaderChain(string host, map<uint64_t, SHA256Hash>& checkpoints, ma
     this->bannedHashes = bannedHashes;
 }
 
-SHA256Hash HeaderChain::getHash(uint64_t blockId) {
+SHA256Hash HeaderChain::getHash(uint64_t blockId) const{
     if (blockId >= this->blockHashes.size()) return NULL_SHA256_HASH;
     return this->blockHashes[blockId - 1];
 }
@@ -57,20 +57,20 @@ bool HeaderChain::valid() {
     return !this->failed && this->totalWork > 0;
 }
 
-string HeaderChain::getHost() {
+string HeaderChain::getHost() const{
     return this->host;
 }
 
-Bigint HeaderChain::getTotalWork() {
+Bigint HeaderChain::getTotalWork() const{
     if (this->failed) return 0;
     return this->totalWork;
 }
-uint64_t HeaderChain::getChainLength() {
+uint64_t HeaderChain::getChainLength() const{
     if (this->failed) return 0;
     return this->chainLength;
 }
 
-uint64_t HeaderChain::getCurrentDownloaded() {
+uint64_t HeaderChain::getCurrentDownloaded() const{
     return this->blockHashes.size();
 }
 

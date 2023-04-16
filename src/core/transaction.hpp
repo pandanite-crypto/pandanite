@@ -42,7 +42,7 @@ class Transaction {
         TransactionAmount getAmount() const;
         TransactionAmount getFee() const;
         void setTimestamp(uint64_t t);
-        uint64_t getTimestamp();
+        uint64_t getTimestamp() const;
         SHA256Hash getHash() const;
         SHA256Hash hashContents() const;
         TransactionSignature getSignature() const;

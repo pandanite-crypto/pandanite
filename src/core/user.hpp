@@ -11,9 +11,9 @@ class User {
         json toJson();
         Transaction send(User & u, TransactionAmount amount);
         Transaction mine();
-        PublicWalletAddress getAddress();
-        PublicKey getPublicKey();
-        PrivateKey getPrivateKey();
+        PublicWalletAddress getAddress() const;
+        PublicKey getPublicKey() const;
+        PrivateKey getPrivateKey() const;
         void signTransaction(Transaction & t);
     protected:
         PrivateKey privateKey;

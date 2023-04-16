@@ -75,8 +75,9 @@ SHA256Hash MerkleTree::getRootHash() {
     return this->root->hash;
 }
 
-shared_ptr<HashTree> MerkleTree::getMerkleProof(Transaction t) {
+shared_ptr<HashTree> MerkleTree::getMerkleProof(Transaction t) const{
     SHA256Hash hash = t.getHash();
-    if (this->fringeNodes.find(hash) == this->fringeNodes.end()) return NULL;
-    return getProof(this->fringeNodes[hash]);
+    auto iterator {fringeNodes.find(hash)};
+    if (iterator == this->fringeNodes.end()) return {};
+    return getProof(iterator->second);
 }

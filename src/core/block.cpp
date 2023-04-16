@@ -113,11 +113,11 @@ void Block::setTimestamp(uint64_t t) {
     this->timestamp = t;
 }
 
-uint64_t Block::getTimestamp() {
+uint64_t Block::getTimestamp() const{
     return this->timestamp;
 }
 
-uint32_t Block::getId() {
+uint32_t Block::getId() const{
     return this->id;
 }
 
@@ -134,7 +134,7 @@ void Block::setNonce(SHA256Hash s) {
     this->nonce = s;
 }
 
-SHA256Hash Block::getNonce() {
+SHA256Hash Block::getNonce() const{
     return this->nonce;
 }
 
@@ -142,11 +142,15 @@ void Block::setMerkleRoot(SHA256Hash s) {
     this->merkleRoot = s;
 }
 
-SHA256Hash Block::getMerkleRoot() {
+SHA256Hash Block::getMerkleRoot() const{
     return this->merkleRoot;
 }
 
-vector<Transaction>& Block::getTransactions() {
+const vector<Transaction>& Block::getTransactions() const{
+    return this->transactions;
+}
+
+vector<Transaction>& Block::getTransactions(){
     return this->transactions;
 }
 
@@ -164,7 +168,7 @@ uint32_t Block::getDifficulty() const {
     return this->difficulty;
 }
 
-SHA256Hash Block::getLastBlockHash() {
+SHA256Hash Block::getLastBlockHash() const{
     return this->lastBlockHash;
 }
 
@@ -172,7 +176,7 @@ void Block::setLastBlockHash(SHA256Hash hash) {
     this->lastBlockHash = hash;
 }
 
-SHA256Hash Block::getHash() {
+SHA256Hash Block::getHash() const{
     SHA256Hash ret;
     SHA256_CTX sha256;
     SHA256_Init(&sha256);

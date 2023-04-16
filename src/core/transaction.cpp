@@ -162,7 +162,7 @@ void Transaction::setTimestamp(uint64_t t) {
     this->timestamp = t;
 }
 
-uint64_t Transaction::getTimestamp() {
+uint64_t Transaction::getTimestamp() const{
     return this->timestamp;
 }
 

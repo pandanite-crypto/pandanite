@@ -18,17 +18,17 @@ class HostManager {
         void refreshHostList();
         void startPingingPeers();
 
-        string getGoodHost();
-        uint64_t getBlockCount();
-        Bigint getTotalWork();
-        SHA256Hash getBlockHash(string host, uint64_t blockId);
-        map<string,uint64_t> getHeaderChainStats();
-        std::pair<string,uint64_t> getRandomHost();
-        vector<string> getHosts(bool includeSelf=true);
+        string getGoodHost() const;
+        uint64_t getBlockCount() const;
+        Bigint getTotalWork() const;
+        SHA256Hash getBlockHash(string host, uint64_t blockId) const;
+        map<string,uint64_t> getHeaderChainStats() const;
+        std::pair<string,uint64_t> getRandomHost() const;
+        vector<string> getHosts(bool includeSelf=true) const;
         set<string> sampleFreshHosts(int count);
         set<string> sampleAllHosts(int count);
-        string getAddress();
-        uint64_t getNetworkTimestamp();
+        string getAddress()const;
+        uint64_t getNetworkTimestamp()const;
         void setBlockstore(std::shared_ptr<BlockStore> blockStore);
         
         void addPeer(string addr, uint64_t time, string version, string network);
@@ -38,7 +38,7 @@ class HostManager {
         vector<std::shared_ptr<HeaderChain>> currPeers; 
         std::shared_ptr<BlockStore> blockStore;
 
-        std::mutex lock;
+        mutable std::mutex lock;
         bool disabled;
         bool firewall;
         string ip;

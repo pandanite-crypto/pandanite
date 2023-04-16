@@ -23,15 +23,15 @@ json User::toJson() {
     return result;
 }
 
-PublicWalletAddress User::getAddress() {
+PublicWalletAddress User::getAddress() const{
     return walletAddressFromPublicKey(this->publicKey);
 }
 
-PublicKey User::getPublicKey() {
+PublicKey User::getPublicKey() const{
     return this->publicKey;
 }
 
-PrivateKey User::getPrivateKey() {
+PrivateKey User::getPrivateKey() const{
     return this->privateKey;
 }
 
