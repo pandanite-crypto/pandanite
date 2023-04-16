@@ -209,10 +209,10 @@ uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) const{
     }
     return PDN(amount);
 }
-uint64_t BlockChain::getSupply() const {
+double BlockChain::getSupply() const {
   std::unique_lock<std::mutex> ul(lock);
-  uint64_t supply = 0;
-  double amount_offset=66474778490; // from previous fork
+  double supply = 0;
+  double amount_offset=6647477.8490; // from previous fork
   double amount = 50.0;
   uint64_t blocks = numBlocks;
   while (blocks >= 666666) {

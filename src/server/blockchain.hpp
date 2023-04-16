@@ -29,7 +29,7 @@ class BlockChain {
         uint8_t getDifficulty() const;
         uint32_t getBlockCount() const;
         uint32_t getCurrentMiningFee(uint64_t blockId) const;
-        uint64_t getSupply() const; // locks mutex
+        double getSupply() const; // locks mutex
         SHA256Hash getLastHash() const;
         const Ledger& getLedger() const;
         Ledger& getLedger();
