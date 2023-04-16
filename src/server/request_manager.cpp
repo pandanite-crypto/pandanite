@@ -238,7 +238,7 @@ json RequestManager::addPeer(string address, uint64_t time, string version, stri
 
 json RequestManager::getLedger(PublicWalletAddress w) {
     json result;
-    Ledger& ledger = this->blockchain->getLedger();
+    const Ledger& ledger = this->blockchain->getLedger();
     if (!ledger.hasWallet(w)) {
         result["error"] = "Wallet not found";
     } else {

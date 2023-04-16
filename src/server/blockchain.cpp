@@ -184,15 +184,19 @@ void BlockChain::sync() {
     this->syncThread.push_back(std::thread(chain_sync, ref(*this)));
 }
 
-Ledger& BlockChain::getLedger() {
+const Ledger& BlockChain::getLedger() const{
     return this->ledger;
 }
 
-uint32_t BlockChain::getBlockCount() {
+Ledger& BlockChain::getLedger(){
+    return ledger;
+}
+
+uint32_t BlockChain::getBlockCount() const {
     return this->numBlocks;
 }
 
-uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) {
+uint32_t BlockChain::getCurrentMiningFee(uint64_t blockId) const{
     // NOTE:
     // The chain was forked three times, once at 7,750 and again at 125,180, then at 18k
     // Thus we push the chain ahead by this count.
@@ -220,11 +224,11 @@ uint64_t BlockChain::getSupply() const {
   return supply + amount_offset;
 };
 
-Bigint BlockChain::getTotalWork() {
+Bigint BlockChain::getTotalWork() const {
     return this->totalWork;
 }
 
-Block BlockChain::getBlock(uint32_t blockId) {
+Block BlockChain::getBlock(uint32_t blockId) const {
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore->getBlock(blockId);
 }
@@ -248,7 +252,7 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     return status;
 }
 
-SHA256Hash BlockChain::getLastHash() {
+SHA256Hash BlockChain::getLastHash() const {
     return this->lastHash;
 }
 
@@ -316,7 +320,7 @@ void BlockChain::setMemPool(std::shared_ptr<MemPool> memPool) {
     this->memPool = memPool;
 }
 
-uint8_t BlockChain::getDifficulty() {
+uint8_t BlockChain::getDifficulty() const{
     return this->difficulty;
 }
 

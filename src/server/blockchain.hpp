@@ -24,13 +24,14 @@ class BlockChain {
         BlockChain(HostManager& hosts, string ledgerPath="", string blockPath="", string txdbPath="");
         ~BlockChain();
         void sync();
-        Block getBlock(uint32_t blockId);
-        Bigint getTotalWork();
-        uint8_t getDifficulty();
-        uint32_t getBlockCount();
-        uint32_t getCurrentMiningFee(uint64_t blockId);
+        Block getBlock(uint32_t blockId) const;
+        Bigint getTotalWork() const ;
+        uint8_t getDifficulty() const;
+        uint32_t getBlockCount() const;
+        uint32_t getCurrentMiningFee(uint64_t blockId) const;
         uint64_t getSupply() const; // locks mutex
-        SHA256Hash getLastHash();
+        SHA256Hash getLastHash() const;
+        const Ledger& getLedger() const;
         Ledger& getLedger();
         uint32_t findBlockForTransaction(Transaction &t);
         uint32_t findBlockForTransactionId(SHA256Hash txid);
