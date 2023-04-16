@@ -22,8 +22,8 @@ public:
     void finishBlock(Block& block);
     bool hasTransaction(Transaction t);
     size_t size();
-    std::pair<char*, size_t> getRaw();
-    std::vector<Transaction> getTransactions();
+    std::pair<char*, size_t> getRaw() const;
+    std::vector<Transaction> getTransactions() const;
 
 protected:
     void mempool_sync();
@@ -35,6 +35,6 @@ protected:
     HostManager& hosts;
     std::set<Transaction> transactionQueue;
     std::vector<std::thread> syncThread;
-    std::mutex mempool_mutex;
+    mutable std::mutex mempool_mutex;
     std::mutex toSend_mutex;
 };

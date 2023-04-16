@@ -10,7 +10,7 @@ class DataStore {
         void deleteDB();
         void closeDB();
         void clear();
-        string getPath();
+        string getPath() const;
     protected:
         leveldb::DB* db;
         string path;

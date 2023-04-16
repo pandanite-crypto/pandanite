@@ -170,12 +170,12 @@ void BlockChain::deleteDB() {
     this->blockStore->deleteDB();
 }
 
-std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) {
+std::pair<uint8_t*, size_t> BlockChain::getRaw(uint32_t blockId) const{
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore->getRawData(blockId);
 }
 
-BlockHeader BlockChain::getBlockHeader(uint32_t blockId) {
+BlockHeader BlockChain::getBlockHeader(uint32_t blockId) const{
     if (blockId <= 0 || blockId > this->numBlocks) throw std::runtime_error("Invalid block");
     return this->blockStore->getBlockHeader(blockId);
 }
@@ -256,7 +256,7 @@ SHA256Hash BlockChain::getLastHash() const {
     return this->lastHash;
 }
 
-TransactionAmount BlockChain::getWalletValue(PublicWalletAddress addr) {
+TransactionAmount BlockChain::getWalletValue(PublicWalletAddress addr) const{
     return this->getLedger().getWalletValue(addr);
 }
 
@@ -324,7 +324,7 @@ uint8_t BlockChain::getDifficulty() const{
     return this->difficulty;
 }
 
-vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress addr) {
+vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress addr) const{
     vector<SHA256Hash> txids = this->blockStore->getTransactionsForWallet(addr);
     vector<Transaction> ret;
     // TODO: this is pretty inefficient -- might want direct index of transactions
@@ -433,7 +433,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     return status;
 }
 
-map<string, uint64_t> BlockChain::getHeaderChainStats() {
+map<string, uint64_t> BlockChain::getHeaderChainStats() const{
     return this->hosts.getHeaderChainStats();
 }
 

@@ -147,7 +147,7 @@ size_t MemPool::size() {
     return transactionQueue.size();
 }
 
-std::vector<Transaction> MemPool::getTransactions() {
+std::vector<Transaction> MemPool::getTransactions() const{
     std::unique_lock<std::mutex> lock(mempool_mutex);
     std::vector<Transaction> transactions;
     for (const auto& tx : transactionQueue) {
@@ -156,7 +156,7 @@ std::vector<Transaction> MemPool::getTransactions() {
     return transactions;
 }
 
-std::pair<char*, size_t> MemPool::getRaw() {
+std::pair<char*, size_t> MemPool::getRaw() const{
     std::unique_lock<std::mutex> lock(mempool_mutex);
     size_t len = transactionQueue.size() * TRANSACTIONINFO_BUFFER_SIZE;
     char* buf = (char*) malloc(len);

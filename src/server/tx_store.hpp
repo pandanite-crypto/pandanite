@@ -11,7 +11,7 @@ class TransactionStore : public DataStore {
         TransactionStore();
         bool hasTransaction(const Transaction &t);
         uint32_t blockForTransaction(Transaction &t);
-        uint32_t blockForTransactionId(SHA256Hash txid);
+        uint32_t blockForTransactionId(SHA256Hash txid) const;
         void insertTransaction(Transaction& t, uint32_t blockId);
         void removeTransaction(Transaction & t);
 };

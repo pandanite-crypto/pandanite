@@ -23,7 +23,7 @@ uint32_t TransactionStore::blockForTransaction(Transaction &t) {
     return val;
 }
 
-uint32_t TransactionStore::blockForTransactionId(SHA256Hash txHash) {
+uint32_t TransactionStore::blockForTransactionId(SHA256Hash txHash) const{
     leveldb::Slice key = leveldb::Slice((const char*) txHash.data(), txHash.size());
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);

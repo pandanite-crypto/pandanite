@@ -7,8 +7,7 @@ using namespace std;
 
 class PufferfishCache : public DataStore {
     public:
-        PufferfishCache();
-        bool hasHash(const SHA256Hash& hash);
-        SHA256Hash getHash(const SHA256Hash& hash);
+        bool hasHash(const SHA256Hash& hash) const;
+        SHA256Hash getHash(const SHA256Hash& hash) const;
         void setHash(const SHA256Hash& input, const SHA256Hash& hash);
 };

@@ -37,11 +37,11 @@ class BlockChain {
         uint32_t findBlockForTransactionId(SHA256Hash txid);
         ExecutionStatus addBlockSync(Block& block);
         ExecutionStatus verifyTransaction(const Transaction& t);
-        std::pair<uint8_t*, size_t> getRaw(uint32_t blockId);
-        BlockHeader getBlockHeader(uint32_t blockId);
-        TransactionAmount getWalletValue(PublicWalletAddress addr);
-        map<string, uint64_t> getHeaderChainStats();
-        vector<Transaction> getTransactionsForWallet(PublicWalletAddress addr);
+        std::pair<uint8_t*, size_t> getRaw(uint32_t blockId) const;
+        BlockHeader getBlockHeader(uint32_t blockId) const;
+        TransactionAmount getWalletValue(PublicWalletAddress addr) const;
+        map<string, uint64_t> getHeaderChainStats() const;
+        vector<Transaction> getTransactionsForWallet(PublicWalletAddress addr) const;
         void setMemPool(std::shared_ptr<MemPool> memPool);
         void initChain();
         void recomputeLedger();

@@ -12,16 +12,14 @@ leveldb::Slice sha256ToSlice(const SHA256Hash& h) {
     return s2;
 }
 
-PufferfishCache::PufferfishCache() {
-}
 
-bool PufferfishCache::hasHash(const SHA256Hash& hash) {
+bool PufferfishCache::hasHash(const SHA256Hash& hash) const{
     std::string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), sha256ToSlice(hash), &value);
     return (status.ok());
 }
 
-SHA256Hash PufferfishCache::getHash(const SHA256Hash& hash) {
+SHA256Hash PufferfishCache::getHash(const SHA256Hash& hash) const{
     std::string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), sha256ToSlice(hash), &value);
     if (!status.ok()) throw std::runtime_error("Hash does not exist");

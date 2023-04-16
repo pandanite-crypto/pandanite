@@ -15,7 +15,7 @@ void DataStore::closeDB() {
     delete db;
 }
 
-string DataStore::getPath() {
+string DataStore::getPath() const{
     return this->path;
 }
 
