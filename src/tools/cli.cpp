@@ -13,7 +13,6 @@ int main(int argc, char** argv) {
     
     json config = getConfig(argc, argv);
     config["showHeaderStats"] = false;
-    HostManager hosts(config);
 
     json keys;
     try {
@@ -22,46 +21,61 @@ int main(int argc, char** argv) {
         PublicWalletAddress keyFromAddress = walletAddressFromPublicKey(stringToPublicKey(keys["publicKey"]));
         PublicWalletAddress statedFromAddress = stringToWalletAddress(keys["wallet"]);
         if (keyFromAddress != statedFromAddress) {
-            cout<<"Wallet address does not match public key. Keyfile is likely corrupted."<<endl;
-            //return 0;
+            cout << "Wallet address does not match public key. Keyfile is likely corrupted." << endl;
+            return 0;
         }
     } catch(...) {
-        cout<<"Could not read ./keys.json"<<endl;
+        cout << "Could not read ./keys.json" << endl;
+        return 0;
+    }
+
+    if (keys.find("publicKey") == keys.end() || keys.find("privateKey") == keys.end()) {
+        cout << "Missing publicKey or privateKey in keys.json" << endl;
         return 0;
     }
 
     PublicKey publicKey = stringToPublicKey(keys["publicKey"]);
     PrivateKey privateKey = stringToPrivateKey(keys["privateKey"]);
 
-    cout<<"Enter a destination wallet address to send PDN to:"<<endl;
+    HostManager hosts(config);
+
+    cout << "Enter a destination wallet address to send PDN to:" << endl;
     string to;
-    cin>> to;
+    cin >> to;
     PublicWalletAddress toWallet = stringToWalletAddress(to);
     PublicWalletAddress fromWallet = walletAddressFromPublicKey(publicKey);
 
-    cout<<"Enter the amount in leaves (NOTE: 1 leaf = 1/10,000 PDN):"<<endl;
+    cout << "Enter the amount in leaves (NOTE: 1 leaf = 1/10,000 PDN):" << endl;
     TransactionAmount amount;
-    cin>>amount;
+    cin >> amount;
+    if (cin.fail()) {
+        cout << "Invalid amount entered" << endl;
+        return 0;
+    }
 
-    cout<<"Enter the mining fee in leaves (or 0):"<<endl;
+    cout << "Enter the mining fee in leaves (or 0):" << endl;
     TransactionAmount fee;
-    cin>>fee;
+    cin >> fee;
+    if (cin.fail()) {
+        cout << "Invalid fee entered" << endl;
+            return 0;
+}
 
-    string host = hosts.getGoodHost();
+string host = hosts.getGoodHost();
 
-    cout<<"Sending to host : " <<host<<endl;
-    
-    Transaction t(fromWallet, toWallet, amount,publicKey, fee);
-    t.sign(publicKey, privateKey);
+cout << "Sending to host : " << host << endl;
 
-    cout<<"Creating transaction..."<<endl;
-    cout<<"================================================="<<endl;
-    cout<<"TRANSACTION JSON (keep this for your records)"<<endl;
-    cout<<"================================================="<<endl;
-    cout<<t.toJson().dump()<<endl;
-    cout<<"=============================="<<endl;
-    json result = sendTransaction(host, t);
-    cout<<result<<endl;
-    cout<<"Finished."<<endl;
-    return 0;
+Transaction t(fromWallet, toWallet, amount, publicKey, fee);
+t.sign(publicKey, privateKey);
+
+cout << "Creating transaction..." << endl;
+cout << "=================================================" << endl;
+cout << "TRANSACTION JSON (keep this for your records)" << endl;
+cout << "=================================================" << endl;
+cout << t.toJson().dump() << endl;
+cout << "==============================" << endl;
+json result = sendTransaction(host, t);
+cout << result << endl;
+cout << "Finished." << endl;
+return 0;
 }
