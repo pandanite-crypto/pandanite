@@ -1,47 +1,37 @@
 #ifndef MERKLE_TREE_HPP
 #define MERKLE_TREE_HPP
 
-#include <iostream>
-#include <string>
-#include <vector>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 #include "transaction.hpp"
-#include "sha256.hpp"
-
-using std::make_shared;
-using std::shared_ptr;
-using std::vector;
-using std::unordered_map;
-
-const SHA256Hash NULL_SHA256_HASH = SHA256Hash();
+#include "sha256_utils.hpp"
 
 class HashTree {
 public:
-    shared_ptr<HashTree> parent;
-        shared_ptr<HashTree> left;
-            shared_ptr<HashTree> right;
-                SHA256Hash hash;
+    HashTree(SHA256Hash hash);
+    ~HashTree();
 
-                    HashTree(const SHA256Hash& hash);
-                        ~HashTree();
-                        };
+    std::shared_ptr<HashTree> parent;
+    std::shared_ptr<HashTree> left;
+    std::shared_ptr<HashTree> right;
+    SHA256Hash hash;
+};
 
-                        class MerkleTree {
-                        private:
-                            shared_ptr<HashTree> root;
-                                unordered_map<SHA256Hash, shared_ptr<HashTree>> fringeNodes;
+class MerkleTree {
+public:
+    MerkleTree();
+    ~MerkleTree();
 
-                                public:
-                                    MerkleTree();
-                                        ~MerkleTree();
+    void setItems(const std::vector<Transaction>& items);
+    SHA256Hash getRootHash() const;
+    std::shared_ptr<HashTree> getMerkleProof(const Transaction& t) const;
 
-                                            void setItems(const vector<Transaction>& items);
-                                                SHA256Hash getRootHash() const;
-                                                    shared_ptr<HashTree> getMerkleProof(const Transaction& t) const;
-                                                    };
+private:
+    std::shared_ptr<HashTree> root;
+    std::unordered_map<SHA256Hash, std::shared_ptr<HashTree>, SHA256Hash::Hasher> fringeNodes;
 
-                                                    std::ostream& operator<<(std::ostream& os, const HashTree& node);
+    std::shared_ptr<HashTree> getProof(std::shared_ptr<HashTree> fringe, std::shared_ptr<HashTree> previousNode = nullptr) const;
+};
 
-                                                    #endif /* MERKLE_TREE_HPP */
-                                                    
+#endif // MERKLE_TREE_HPP
