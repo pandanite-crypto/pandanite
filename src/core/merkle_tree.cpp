@@ -1,9 +1,6 @@
 #include "merkle_tree.hpp"
-
 #include <queue>
-
 #include <algorithm>
-
 #include <iostream>
 
 HashTree::HashTree(const SHA256Hash& hash) : parent(nullptr), left(nullptr), right(nullptr), hash(hash) {}
@@ -145,37 +142,3 @@ shared_ptr<HashTree> MerkleTree::getMerkleProof(const Transaction& t) const {
     return getProof(iterator->second);
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-        
-
-
-
-
-
-
-        
-
-    
-        
-        
-    
-    
-        
-        
-        
-    
-    
-    
