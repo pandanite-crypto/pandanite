@@ -1,88 +1,181 @@
 #include "merkle_tree.hpp"
+
 #include <queue>
+
 #include <algorithm>
+
 #include <iostream>
-using namespace std;
 
+HashTree::HashTree(const SHA256Hash& hash) : parent(nullptr), left(nullptr), right(nullptr), hash(hash) {}
 
+HashTree::~HashTree() {}
 
-HashTree::HashTree(SHA256Hash hash) {
-    parent = left = right = nullptr;
-    this->hash = hash;
-}
-HashTree::~HashTree() {
-}
+shared_ptr<HashTree> getProof(shared_ptr<HashTree>& fringe, const shared_ptr<HashTree>& previousNode = nullptr) {
 
-shared_ptr<HashTree> getProof(shared_ptr<HashTree> fringe, shared_ptr<HashTree> previousNode=NULL) {
     shared_ptr<HashTree> result = make_shared<HashTree>(fringe->hash);
-    if (previousNode != NULL) {
+
+    if (previousNode != nullptr) {
+
         if (fringe->left && fringe->left != previousNode) {
+
             result->left = fringe->left;
+
             result->right = previousNode;
+
         } else if (fringe->right && fringe->right != previousNode) {
+
             result->right = fringe->right;
+
             result->left = previousNode;
+
         }
+
     }
-    if(fringe->parent) {
+
+    if (fringe->parent) {
+
         return getProof(fringe->parent, fringe);
+
     } else {
+
         return result;
+
     }
+
 }
 
-MerkleTree::MerkleTree() {
-    this->root = nullptr;
-}
+MerkleTree::MerkleTree() : root(nullptr) {}
 
 MerkleTree::~MerkleTree() {
-    this->root = nullptr;
+
+    root = nullptr;
+
 }
 
-// TODO: Check if this is intended: Does items really need to be modified?
-// Typically used like this: m.setItems(block.getTransactions());
-// see server/blockchain.cpp
-// This changes the block as getTransactions() returns a reference of block's transactions
-// VERY BAD DESIGN!!! 
-void MerkleTree::setItems(vector<Transaction>& items) {
-    std::sort(items.begin(), items.end(), [](const Transaction & a, const Transaction & b) -> bool { 
+void MerkleTree::setItems(const vector<Transaction>& items) {
+
+    if (items.empty()) {
+
+        return;
+
+    }
+
+    vector<Transaction> sortedItems = items;
+
+    std::sort(sortedItems.begin(), sortedItems.end(), [](const Transaction& a, const Transaction& b) -> bool {
+
         return SHA256toString(a.getHash()) > SHA256toString(b.getHash());
+
     });
+
     queue<shared_ptr<HashTree>> q;
-    for(auto item : items) {
+
+    for (const auto& item : sortedItems) {
+
         SHA256Hash h = item.getHash();
-        this->fringeNodes[h] =  make_shared<HashTree>(h);
-        q.push(this->fringeNodes[h]);
+
+        fringeNodes[h] = make_shared<HashTree>(h);
+
+        q.push(fringeNodes[h]);
+
     }
 
-    if (q.size()%2 == 1) {
-        auto repeat = make_shared<HashTree>(q.back()->hash);
+    if (q.size() % 2 == 1) {
+
+        auto repeat = make_shared<HashTree>(q.back
+
         q.push(repeat);
+
     }
-    
-    while(q.size()>1) {
+
+    while (q.size() > 1) {
+
         shared_ptr<HashTree> a = q.front();
+
         q.pop();
+
         shared_ptr<HashTree> b = q.front();
+
         q.pop();
+
         shared_ptr<HashTree> root = make_shared<HashTree>(NULL_SHA256_HASH);
+
         root->left = a;
+
         root->right = b;
+
         a->parent = root;
+
         b->parent = root;
+
         root->hash = concatHashes(a->hash, b->hash);
+
         q.push(root);
+
     }
-    this->root = q.front();
+
+    root = q.front();
+
 }
 
-SHA256Hash MerkleTree::getRootHash() {
-    return this->root->hash;
+SHA256Hash MerkleTree::getRootHash() const {
+
+    if (root == nullptr) {
+
+        return NULL_SHA256_HASH;
+
+    }
+
+    return root->hash;
+
 }
 
-shared_ptr<HashTree> MerkleTree::getMerkleProof(Transaction t) const{
+shared_ptr<HashTree> MerkleTree::getMerkleProof(const Transaction& t) const {
+
     SHA256Hash hash = t.getHash();
-    auto iterator {fringeNodes.find(hash)};
-    if (iterator == this->fringeNodes.end()) return {};
+
+    auto iterator = fringeNodes.find(hash);
+
+    if (iterator == fringeNodes.end()) {
+
+        return nullptr;
+
+    }
+
     return getProof(iterator->second);
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+        
+
+
+
+
+
+
+        
+
+    
+        
+        
+    
+    
+        
+        
+        
+    
+    
+    
