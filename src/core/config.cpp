@@ -144,13 +144,13 @@ json getConfig(int argc, char**argv) {
     } else if (testnet) {
         config["hostSources"].push_back("http://173.230.139.86:5000/peers");
     } else {
-        config["hostSources"].push_back("http://65.108.201.140:3000/peers");
-        config["hostSources"].push_back("http://65.108.201.144:3000/peers");
         config["hostSources"].push_back("http://173.230.139.86:3000/peers");
         config["hostSources"].push_back("http://173.230.139.86:3001/peers");
         config["hostSources"].push_back("http://173.230.139.86:3002/peers");
         config["hostSources"].push_back("http://178.254.42.138:3000/peers");
         config["hostSources"].push_back("http://65.108.218.239:3000/peers");
+        config["hostSources"].push_back("http://65.108.201.140:3000/peers");
+        config["hostSources"].push_back("http://65.108.201.144:3000/peers");
     }
     return config;
 }
