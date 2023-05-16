@@ -226,13 +226,17 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
     bool foundFee = false;
     PublicWalletAddress miner;
     TransactionAmount miningFee;
+    std::set<SHA256Hash> transactionHashes; // avoid duplicate transactions within block
     for(auto t : curr.getTransactions()) {
         if (t.isFee()) {
             if (foundFee) return EXTRA_MINING_FEE;
             miner = t.toWallet();
             miningFee = t.getAmount();
             foundFee = true;
-        } else if (txdb.hasTransaction(t) && curr.getId() != 1) {
+        } else if (
+                (transactionHashes.insert(t.getHash()).second == false ) 
+                || (txdb.hasTransaction(t) && curr.getId() != 1)) 
+        {
             return EXPIRED_TRANSACTION;
         }
         
