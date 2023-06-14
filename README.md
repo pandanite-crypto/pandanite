@@ -34,7 +34,8 @@ Windows is not currently supported as a build environment. You may run the [dcrp
 ```
 brew install leveldb
 brew install cmake
-pip3 install conan
+brew install conan@1
+brew install snappy
 ```
 
 *Ubuntu 18.04 LTS* install pre-requirements
@@ -71,6 +72,8 @@ conan install .. --build=missing
 cd ..
 cmake .
 ```
+
+*On MacOS use `/usr/local/Cellar/conan@1/1.60.1/bin/conan install .. --build=missing` instead of `conan install .. --build=missing`.
 
 *Ubuntu 18.04 Requires a code change to build server
 in src/server/server.cpp change:
