@@ -3950,7 +3950,7 @@ T conditional_static_cast(U value)
 // #include <nlohmann/detail/value_t.hpp>
 
 
-#ifdef JSON_HAS_CPP_17
+#if defined (JSON_HAS_CPP_17) && !defined(__APPLE__)
     #include <experimental/filesystem>
 #endif
 
@@ -4626,7 +4626,7 @@ class tuple_element<N, ::nlohmann::detail::iteration_proxy_value<IteratorType >>
 // #include <nlohmann/detail/value_t.hpp>
 
 
-#ifdef JSON_HAS_CPP_17
+#if defined (JSON_HAS_CPP_17) && !defined(__APPLE__)
     #include <experimental/filesystem>
 #endif
 

@@ -3,6 +3,8 @@
 
 #ifdef _WIN32
 #include <filesystem>
+#elif __APPLE__
+#include <filesystem>
 #else
 #include <experimental/filesystem>
 #endif
@@ -34,6 +36,8 @@ void DataStore::deleteDB() {
     leveldb::Options options;
     leveldb::Status status = leveldb::DestroyDB(this->path, options);
 #ifdef _WIN32
+    filesystem::remove_all(this->path);
+#elif __APPLE__
     filesystem::remove_all(this->path); 
 #else
     experimental::filesystem::remove_all(this->path); 
