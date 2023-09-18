@@ -245,6 +245,12 @@ Bigint addWork(Bigint previousWork, uint32_t challengeSize) {
     return previousWork;
 }
 
+Bigint removeWork(Bigint previousWork, uint32_t challengeSize) {
+    Bigint base = 2;
+    previousWork -= base.pow((int) challengeSize);
+    return previousWork;
+}
+
 bool verifyHash(SHA256Hash& target, SHA256Hash& nonce, uint8_t challengeSize, bool usePufferFish, bool useCache) {
     SHA256Hash fullHash  = concatHashes(target, nonce, usePufferFish, useCache);
     return checkLeadingZeroBits(fullHash, challengeSize);

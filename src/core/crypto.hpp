@@ -15,6 +15,7 @@ string hexEncode(const char* buffer, size_t len);
 SHA256Hash concatHashes(SHA256Hash& a, SHA256Hash& b, bool usePufferFish = false, bool useCache = false);
 bool checkLeadingZeroBits(SHA256Hash& hash, unsigned int challengeSize);
 Bigint addWork(Bigint previousWork, uint32_t challengeSize);
+Bigint removeWork(Bigint previousWork, uint32_t challengeSize);
 
 PublicWalletAddress walletAddressFromPublicKey(PublicKey inputKey);
 string walletAddressToString(PublicWalletAddress p);

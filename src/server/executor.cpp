@@ -9,6 +9,15 @@
 #include "executor.hpp"
 using namespace std;
 
+json invalidTransactions = readJsonFromFile("invalid.json");
+
+bool isInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
+    for(auto item : invalidTransactions) {
+        if (item["wallet"] == walletAddressToString(wallet) && item["block"] == blockId) return true;
+    }
+    return false;
+}
+
 string executionStatusAsString(ExecutionStatus status) {
     switch(status) {
         case SENDER_DOES_NOT_EXIST:
@@ -148,13 +157,21 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
         TransactionAmount total = ledger.getWalletValue(from);
         // must have enough for amt+fees
         if (total < amt) {
-            return BALANCE_TOO_LOW;
+            if (!isInvalidTransaction(blockId, from)) {
+                return BALANCE_TOO_LOW;
+            } else {
+                Logger::logError(RED + "[SKIP]" + RESET, "Skipping validation of known invalid transaction.");
+            }
         }
 
         total -= amt;
 
         if (total < fees) {
-            return BALANCE_TOO_LOW;
+            if (!isInvalidTransaction(blockId, from)) {
+                return BALANCE_TOO_LOW;
+            } else {
+                Logger::logError(RED + "[SKIP]" + RESET, "Skipping validation of known invalid transaction.");
+            }
         }
 
         withdraw(from, amt, ledger, deltas);
@@ -176,12 +193,12 @@ void rollbackLedger(Transaction t,  PublicWalletAddress& miner, Ledger& ledger) 
     if (t.isFee()) {
         ledger.revertDeposit(to, amt);
     } else {
-        ledger.revertDeposit(to, amt);
-        ledger.revertSend(from, amt);
         if (fees > 0) {
             ledger.revertDeposit(miner, fees);
             ledger.revertSend(from, fees);
         }
+        ledger.revertDeposit(to, amt);
+        ledger.revertSend(from, amt);
     }
 }
 

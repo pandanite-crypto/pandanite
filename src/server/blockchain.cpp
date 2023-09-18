@@ -24,7 +24,7 @@
 
 #define FORK_CHAIN_POP_COUNT 100
 #define FORK_RESET_RETRIES 3
-#define MAX_DISCONNECTS_BEFORE_RESET 10
+#define MAX_DISCONNECTS_BEFORE_RESET 15
 #define FAILURES_BEFORE_POP_ATTEMPT 1
 
 using namespace std;
@@ -37,21 +37,23 @@ void chain_sync(BlockChain& blockchain) {
             ExecutionStatus status = blockchain.startChainSync();
             if (status != SUCCESS)
             {
+                Logger::logError(RED + "[SYNC ERROR]" + RESET, executionStatusAsString(status));
                 blockchain.retries++;
                 if (blockchain.retries > FORK_RESET_RETRIES)
                 {
-                    Logger::logError(RED + "[FATAL]" + RESET, "Max Rollback Tries Reached.");
-                    blockchain.resetChain();
-                    blockchain.recomputeLedger();
+                    Logger::logError(RED + "[FATAL]" + RESET, "Max Rollback Tries Reached. Try deleting data dir and restarting.");
+                    exit(-1);
                 }
                 else
                 {
                     Logger::logError(RED + "[ERROR]" + RESET, "Rollback retry #" + to_string(blockchain.retries));
+                    std::unique_lock<std::mutex> ul(blockchain.lock);
+                    blockchain.isSyncing = true;
                     for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
                         if (blockchain.numBlocks == 1) break;
                         blockchain.popBlock();
                     }
-                    blockchain.recomputeLedger();
+                    blockchain.isSyncing = false;
                 }
             }
             else
@@ -149,6 +151,7 @@ void BlockChain::resetChain() {
         Logger::logError(RED + "[FATAL]" + RESET, "Could not load genesis.json file.");
         exit(-1);
     }
+
     Block genesis(genesisJson);
 
     ExecutionStatus status = this->addBlock(genesis);
@@ -233,25 +236,6 @@ Block BlockChain::getBlock(uint32_t blockId) const {
     return this->blockStore->getBlock(blockId);
 }
 
-ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
-    if (this->isSyncing) return IS_SYNCING;
-    if (t.isFee()) return EXTRA_MINING_FEE;
-    if (!t.signatureValid()) return INVALID_SIGNATURE;
-    LedgerState deltas;
-    // verify the transaction is consistent with ledger
-    std::unique_lock<std::mutex> ul(lock);
-    ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
-
-    //roll back the ledger to it's original state:
-    Executor::Rollback(this->getLedger(), deltas);
-
-    if (this->txdb.hasTransaction(t)) {
-        status = EXPIRED_TRANSACTION;
-    }
-
-    return status;
-}
-
 SHA256Hash BlockChain::getLastHash() const {
     return this->lastHash;
 }
@@ -324,6 +308,25 @@ uint8_t BlockChain::getDifficulty() const{
     return this->difficulty;
 }
 
+ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
+    if (this->isSyncing) return IS_SYNCING;
+    if (t.isFee()) return EXTRA_MINING_FEE;
+    if (!t.signatureValid()) return INVALID_SIGNATURE;
+    LedgerState deltas;
+    // verify the transaction is consistent with ledger
+    std::unique_lock<std::mutex> ul(lock);
+    ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
+
+    //roll back the ledger to it's original state:
+    Executor::Rollback(this->getLedger(), deltas);
+
+    if (this->txdb.hasTransaction(t)) {
+        status = EXPIRED_TRANSACTION;
+    }
+
+    return status;
+}
+
 vector<Transaction> BlockChain::getTransactionsForWallet(PublicWalletAddress addr) const{
     vector<SHA256Hash> txids = this->blockStore->getTransactionsForWallet(addr);
     vector<Transaction> ret;
@@ -348,14 +351,14 @@ void BlockChain::popBlock() {
     Block last = this->getBlock(this->getBlockCount());
     Executor::RollbackBlock(last, this->ledger, this->txdb);
     this->numBlocks--;
-    Bigint base = 2;
-    this->totalWork -= base.pow((int)last.getDifficulty());
+    this->totalWork = removeWork(this->totalWork, last.getDifficulty());
     this->blockStore->setTotalWork(this->totalWork);
     this->blockStore->setBlockCount(this->numBlocks);
     this->blockStore->removeBlockWalletTransactions(last);
+
     if (this->getBlockCount() > 1) {
         Block newLast = this->getBlock(this->getBlockCount());
-        this->difficulty = newLast.getDifficulty();
+        this->updateDifficulty();
         this->lastHash = newLast.getHash();
     } else {
         this->resetChain();
@@ -376,7 +379,13 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     // check difficulty + nonce
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
-    if (block.getDifficulty() != this->difficulty) return INVALID_DIFFICULTY;
+    if (block.getDifficulty() != this->difficulty) {
+        if (block.getId() >= 536100 && block.getId() <= 536200 && block.getDifficulty() == 27) {
+            Logger::logStatus("Skipping difficulty verification on known invalid difficulty");
+        } else {
+            return INVALID_DIFFICULTY;
+        }
+    }
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
     if (block.getId() != 1) {
@@ -437,12 +446,13 @@ map<string, uint64_t> BlockChain::getHeaderChainStats() const{
     return this->hosts.getHeaderChainStats();
 }
 
-// NOTE: this isn't used?
 void BlockChain::recomputeLedger() {
+    this->isSyncing = true;
+    std::unique_lock<std::mutex> ul(lock);
     this->ledger.clear();
     this->txdb.clear();
     for(int i = 1; i <= this->numBlocks; i++) {
-        Logger::logStatus("Recompute: " + to_string(i));
+        if (i % 10000 == 0) Logger::logStatus("Re-computing chain, finished block: " + to_string(i));
         LedgerState deltas;
         Block block = this->getBlock(i);
         ExecutionStatus addResult = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
@@ -455,6 +465,7 @@ void BlockChain::recomputeLedger() {
             exit(-1);
         }
     }
+    this->isSyncing = false;
 }
 
 ExecutionStatus BlockChain::startChainSync() {
