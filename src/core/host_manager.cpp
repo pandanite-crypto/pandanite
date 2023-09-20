@@ -434,7 +434,7 @@ void HostManager::refreshHostList() {
                 try {
                     json hostInfo = getName(hostUrl);
                     if (hostInfo["version"] < hm.minHostVersion) {
-                        Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
+                        Logger::logStatus(RED + "[ DEPRECATED ] " + RESET  + hostUrl);
                         return;
                     }
                     std::unique_lock<std::mutex> ul(lock);
