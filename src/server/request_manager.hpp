@@ -42,6 +42,7 @@ class RequestManager {
         void exit();
         void deleteDB();
         void enableRateLimiting(bool enabled);
+        int getBlockHeightFromPeer(const string& host) const;
     protected:
         bool limitRequests;
         HostManager& hosts;
