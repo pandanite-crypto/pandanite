@@ -100,14 +100,19 @@ void MemPool::mempool_sync() {
             neighborHeights[neighbor] = height;
         }
 
-        int maxBlockHeight = *std::max_element(neighborHeights.begin(), neighborHeights.end(),
-        [](const auto &lhs, const auto &rhs) {
-        return lhs.second < rhs.second;})->second;
+        auto maxIter = std::max_element(neighborHeights.begin(), neighborHeights.end(),
+            [](const auto &lhs, const auto &rhs) {
+            return lhs.second < rhs.second; });
+        int maxBlockHeight = maxIter->second;
 
         // Filter out neighbors not at maxBlockHeight
-        neighbors.erase(std::remove_if(neighbors.begin(), neighbors.end(),
-            [&neighborHeights, maxBlockHeight](const std::string &host) {
-            return neighborHeights[host] < maxBlockHeight;}), neighbors.end());
+        for(auto it = neighbors.begin(); it != neighbors.end(); ) {
+            if(neighborHeights[*it] < maxBlockHeight) {
+            it = neighbors.erase(it);
+             } else {
+                ++it;
+                }
+        }
 
         std::vector<std::future<bool>> sendResults;
         for (auto neighbor : neighbors) {
@@ -128,7 +133,7 @@ void MemPool::mempool_sync() {
                         Logger::logError("MemPool::mempool_sync", "Attempt " + std::to_string(retry+1) + " failed to send tx to " + neighbor);
                     }
                 }
-                Logger::logStatus("MemPool::mempool_sync", "Skipped sending to " + neighbor + " after " + std::to_string(MAX_RETRIES) + " failed attempts.");
+                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + neighbor + " after " + std::to_string(MAX_RETRIES) + " failed attempts.");
                 
                 // Lock the mutex only for the duration of modifying the map
                 {
