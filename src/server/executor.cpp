@@ -201,25 +201,45 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
             return SENDER_DOES_NOT_EXIST;
         }
         TransactionAmount total = ledger.getWalletValue(from);
-        // must have enough for amt+fees
-        if (total < amt) {
+
+Logger::logStatus(YELLOW + "[INFO]" + RESET, "Wallet balance for wallet: " + walletAddressToString(from) + " is: " + std::to_string(total));
+Logger::logStatus(YELLOW + "[INFO]" + RESET, "Transaction amount for blockId: " + std::to_string(blockId) + " is: " + std::to_string(amt));
+
+// Checking if the wallet balance is sufficient for the transaction amount
+if (total < amt) {
     if (!isInvalidTransaction(blockId, from) && blockId != 0) {
         Logger::logError(RED + "[ERROR]" + RESET, "Balance too low for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
         addInvalidTransaction(blockId, from);
         return BALANCE_TOO_LOW;
     } else {
+        if (isInvalidTransaction(blockId, from)) {
+            Logger::logStatus(YELLOW + "[INFO]" + RESET, "Transaction is already marked invalid for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
+        }
+        if (blockId == 0) {
+            Logger::logStatus(YELLOW + "[INFO]" + RESET, "Transaction is for blockId 0.");
+        }
         Logger::logError(RED + "[SKIP]" + RESET, "Skipping validation of known invalid transaction.");
     }
 }
 
 total -= amt;
+Logger::logStatus(YELLOW + "[INFO]" + RESET, "Wallet balance after deducting transaction amount: " + std::to_string(total));
 
+Logger::logStatus(YELLOW + "[INFO]" + RESET, "Transaction fees for blockId: " + std::to_string(blockId) + " is: " + std::to_string(fees));
+
+// Checking if the wallet balance after deducting the transaction amount is sufficient for the transaction fees
 if (total < fees) {
     if (!isInvalidTransaction(blockId, from) && blockId != 0) {
         Logger::logError(RED + "[ERROR]" + RESET, "Insufficient funds for transaction fees for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
         addInvalidTransaction(blockId, from);
         return BALANCE_TOO_LOW;
     } else {
+        if (isInvalidTransaction(blockId, from)) {
+            Logger::logStatus(YELLOW + "[INFO]" + RESET, "Transaction is already marked invalid for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
+        }
+        if (blockId == 0) {
+            Logger::logStatus(YELLOW + "[INFO]" + RESET, "Transaction is for blockId 0.");
+        }
         Logger::logError(RED + "[SKIP]" + RESET, "Skipping validation of known invalid transaction.");
     }
 }
