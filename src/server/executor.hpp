@@ -36,6 +36,7 @@ enum ExecutionStatus {
 };
 
 string executionStatusAsString(ExecutionStatus s);
+void addInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet);
 
 class Executor {
     public:
