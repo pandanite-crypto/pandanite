@@ -219,25 +219,11 @@ uint64_t HostManager::getNetworkTimestamp() const{
 /*
     Asks nodes for their current POW and chooses the best peer
 */
-/*
-string HostManager::getGoodHost() const{
-    if (this->currPeers.size() < 1) return "";
-    Bigint bestWork = 0;
-    string bestHost = this->currPeers[0]->getHost();
-    std::unique_lock<std::mutex> ul(lock);
-    for(auto h : this->currPeers) {
-        if (h->getTotalWork() > bestWork) {
-            bestWork = h->getTotalWork();
-            bestHost = h->getHost();
-        }
-    }
-    return bestHost;
-} */
 
 string HostManager::getGoodHost() const {
     if (this->currPeers.size() < 1) return "";
 
-    vector<pair<string, int64_t>> hostHeights;  // Pairs of host and their block heights
+    vector<pair<string, int64_t>> hostHeights;
     std::unique_lock<std::mutex> ul(lock);
 
     for(auto h : this->currPeers) {
@@ -254,7 +240,7 @@ string HostManager::getGoodHost() const {
     // Sort hosts based on block height.
     std::sort(hostHeights.begin(), hostHeights.end(), 
               [](const pair<string, int64_t>& a, const pair<string, int64_t>& b) {
-                  return a.second > b.second;  // Descending order
+                  return a.second > b.second;
               });
 
     // The best host will be the first in the sorted list.
@@ -262,7 +248,6 @@ string HostManager::getGoodHost() const {
         return hostHeights[0].first;
     }
 
-    // If no valid hosts found, return an empty string.
     return "";
 }
 
@@ -335,8 +320,6 @@ int HostManager::getBlockHeightFromPeer(const string& host) const {
     CURLcode res;
     string readBuffer;
 
-    Logger::logStatus("Requesting block height from host: " + host);
-
     curl = curl_easy_init();
     if(curl) {
         curl_easy_setopt(curl, CURLOPT_URL, (host + "/block_count").c_str());
@@ -349,7 +332,6 @@ int HostManager::getBlockHeightFromPeer(const string& host) const {
             Logger::logError("CurlError", "Failed to fetch block height from " + host + ". Curl error: " + curl_easy_strerror(res));
             return -1;
         } else {
-            Logger::logStatus("Received block height " + readBuffer + " from host: " + host);
             return stoi(readBuffer);
         }
     }
@@ -362,7 +344,8 @@ int HostManager::getBlockHeightFromPeer(const string& host) const {
 */
 
 set<string> HostManager::sampleFreshHosts(int count) {
-    vector<pair<string, int>> freshHostsWithHeight; // Host and their block heights
+    // Host and their block heights
+    vector<pair<string, int>> freshHostsWithHeight; 
     for (auto pair : this->hostPingTimes) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged
@@ -377,7 +360,7 @@ set<string> HostManager::sampleFreshHosts(int count) {
     // Sort hosts based on their block height
     sort(freshHostsWithHeight.begin(), freshHostsWithHeight.end(),
          [](const pair<string, int>& a, const pair<string, int>& b) {
-             return a.second > b.second; // Descending order of block height
+             return a.second > b.second; 
          });
 
     int numToPick = min(count, (int)freshHostsWithHeight.size());
@@ -540,7 +523,6 @@ void HostManager::syncHeadersWithPeers() {
         this->currPeers.push_back(std::make_shared<HeaderChain>(h, this->checkpoints, this->bannedHashes, this->blockStore));
     }
 }
-
 
 /*
     Returns a list of all peer hosts

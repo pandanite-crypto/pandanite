@@ -127,13 +127,11 @@ void MemPool::mempool_sync() {
                     try {
                         sendTransaction(neighbor, tx);
                         return true;
-                    } catch (const std::exception& e) {
-                        Logger::logError("MemPool::mempool_sync", "Attempt " + std::to_string(retry+1) + ": " + e.what() + " - failed to send tx to " + neighbor);
-                    } catch (...) {
-                        Logger::logError("MemPool::mempool_sync", "Attempt " + std::to_string(retry+1) + " failed to send tx to " + neighbor);
+                     catch (...) {
+                        Logger::logError("Failed to send tx to ", neighbor);
                     }
                 }
-                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + neighbor + " after " + std::to_string(MAX_RETRIES) + " failed attempts.");
+                Logger::logStatus("MemPool::mempool_sync: Skipped sending to ", neighbor);
                 
                 // Lock the mutex only for the duration of modifying the map
                 {

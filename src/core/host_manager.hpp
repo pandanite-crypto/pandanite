@@ -36,7 +36,6 @@ class HostManager {
     protected:
         vector<std::shared_ptr<HeaderChain>> currPeers; 
         std::shared_ptr<BlockStore> blockStore;
-
         mutable std::mutex lock;
         bool disabled;
         bool firewall;
@@ -47,7 +46,6 @@ class HostManager {
         string version;
         string minHostVersion;
         string networkName;
-        
         map<string,uint64_t> hostPingTimes;
         map<string,int32_t> peerClockDeltas;
         map<uint64_t, SHA256Hash> checkpoints;
@@ -56,7 +54,6 @@ class HostManager {
         vector<string> hosts;
         set<string> blacklist;
         set<string> whitelist;
-        
         vector<std::thread> syncThread;
         vector<std::thread> headerStatsThread;
         friend void peer_sync(HostManager& hm);
