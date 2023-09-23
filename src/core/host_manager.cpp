@@ -30,6 +30,17 @@ bool isValidIPv4(string& ip) {
 bool isJsHost(const string& addr) {
     return addr.find("peer://") != std::string::npos;
 }
+namespace{ // anonymous namespace for functions private to the compilation unit
+
+    std::optional<std::string> extractHostVersion(const json& hostInfo){
+        try{
+            auto v{hostInfo["version"]};
+            if (v.is_string()) 
+                return v;
+        }catch(...){}
+        return {};
+    }
+}
 
 string HostManager::computeAddress() {
     if (this->firewall) {
@@ -335,12 +346,8 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 
     // check if the host is reachable:
     if (!isJsHost(addr)) {
-        try {
-            json name = getName(addr);
-        } catch(...) {
-            // if not exit
+        if (auto name{getName(addr)}; !name.has_value())
             return;
-        }
     }
 
     // add to our host list
@@ -431,9 +438,14 @@ void HostManager::refreshHostList() {
         HostManager & hm = *this;
         threads.emplace_back(
             std::thread([hostUrl, &hm, &lock](){
-                try {
-                    json hostInfo = getName(hostUrl);
-                    if (hostInfo["version"] < hm.minHostVersion) {
+                if (auto hostInfo{getName(hostUrl)}; hostInfo.has_value()) {
+                    auto v{extractHostVersion(*hostInfo)};
+                    if (!v.has_value()){
+                        Logger::logStatus(RED + "[ BAD_JSON ] " + RESET  + hostUrl);
+                        return;
+                    }
+                    std::string& version{*v};
+                    if ((*hostInfo)["version"] < hm.minHostVersion) {
                         Logger::logStatus(RED + "[ DEPRECATED ] " + RESET  + hostUrl);
                         return;
                     }
@@ -443,8 +455,7 @@ void HostManager::refreshHostList() {
                         Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
                         hm.hostPingTimes[hostUrl] = std::time(0);
                     }
-                    
-                } catch (...) {
+                }else{
                     Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
                 }
             })
@@ -456,7 +467,7 @@ void HostManager::refreshHostList() {
 void HostManager::syncHeadersWithPeers() {
     // free existing peers
     std::unique_lock<std::mutex> ul(lock);
-    this->currPeers.empty();
+    currPeers.clear();
     
     // pick N random peers
     set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);

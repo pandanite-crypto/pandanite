@@ -7,32 +7,47 @@
 #include "helpers.hpp"
 using namespace std;
 
-uint32_t getCurrentBlockCount(string host_url) {
+namespace{// anonymous namespace, do not export symbols
+    std::optional<json> try_parse_json(std::string_view raw){
+        return json::parse(raw);
+    }
+    std::optional<json> try_parse_json(const std::vector<std::uint8_t>& raw){
+        return json::parse(raw);
+    }
+    std::optional<uint32_t> try_parse_uint32_t(std::string s){
+        try {
+            return stoul(s);
+        }catch(...) {
+            return {};
+        }
+    }
+}
+
+std::optional<uint32_t> getCurrentBlockCount(string host_url) {
     http::Request request{host_url + "/block_count"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return std::stoi(std::string{response.body.begin(), response.body.end()});
+    return try_parse_uint32_t(std::string{response.body.begin(), response.body.end()});
 }
 
-Bigint getTotalWork(string host_url) {
+std::optional<Bigint> getTotalWork(string host_url) {
     http::Request request{host_url + "/total_work"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return Bigint(std::string{response.body.begin(), response.body.end()});
+    return Bigint::from_string(std::string{response.body.begin(), response.body.end()});
 }
 
-json getName(string host_url) {
+std::optional<json> getName(string host_url) {
     http::Request request{host_url + "/name"};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    return try_parse_json(response.body);
 }
 
-json getBlockData(string host_url, int idx) {
+std::optional<json> getBlockData(string host_url, int idx) {
     http::Request request{host_url + "/block?blockId=" + std::to_string(idx)};
     const auto response = request.send("GET","",{},std::chrono::milliseconds{TIMEOUT_MS});
-    string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);  
+    return try_parse_json(response.body);
 }
 
-json pingPeer(string host_url, string peer_url, uint64_t networkTime, string version, string networkName) {
+std::optional<json> pingPeer(string host_url, string peer_url, uint64_t networkTime, string version, string networkName) {
     json info;
     info["address"] = peer_url;
     info["networkName"] = networkName;
@@ -42,11 +57,10 @@ json pingPeer(string host_url, string peer_url, uint64_t networkTime, string ver
     const auto response = request.send("POST", info.dump(), {
         "Content-Type: text/plain"
     },std::chrono::milliseconds{TIMEOUT_MS});
-    string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);  
+    return try_parse_json(response.body);
 }
 
-json submitBlock(string host_url, Block& block) {
+std::optional<json> submitBlock(string host_url, Block& block) {
     BlockHeader b = block.serialize();
     vector<uint8_t> bytes(BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE * b.numTransactions);
 
@@ -63,17 +77,17 @@ json submitBlock(string host_url, Block& block) {
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     }, std::chrono::milliseconds{TIMEOUT_SUBMIT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    return try_parse_json(response.body);
 }
 
-json getMiningProblem(string host_url) {
+std::optional<json> getMiningProblem(string host_url) {
     string url = host_url + "/mine";
     http::Request request(url);
     const auto response = request.send("GET", "", {},std::chrono::milliseconds{TIMEOUT_MS});
-    return json::parse(std::string{response.body.begin(), response.body.end()});
+    return try_parse_json(response.body);
 }
 
-json sendTransaction(string host_url, const Transaction& t) {
+std::string sendTransaction(string host_url, const Transaction& t) {
     http::Request request(host_url + "/add_transaction");
 
     TransactionInfo info = t.serialize();
@@ -83,27 +97,25 @@ json sendTransaction(string host_url, const Transaction& t) {
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS * 3});
-    std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);
+    return std::string{response.body.begin(),response.body.end()};
 }
 
-json sendTransactions(string host_url, vector<Transaction>& transactionList) {
-    http::Request request(host_url + "/add_transaction");
+// std::optional<json> sendTransactions(string host_url, vector<Transaction>& transactionList) {
+//     http::Request request(host_url + "/add_transaction");
+//
+//     vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE * transactionList.size());
+//     for(int i = 0; i < transactionList.size(); i++) {
+//         TransactionInfo tx = transactionList[i].serialize();
+//         transactionInfoToBuffer(tx, (char*)bytes.data() + i*TRANSACTIONINFO_BUFFER_SIZE);
+//     }
+//
+//     const auto response = request.send("POST", bytes, {
+//         "Content-Type: application/octet-stream"
+//     },std::chrono::milliseconds{TIMEOUT_MS * 3});
+//     return try_parse_json(response.body);
+// }
 
-    vector<uint8_t> bytes(TRANSACTIONINFO_BUFFER_SIZE * transactionList.size());
-    for(int i = 0; i < transactionList.size(); i++) {
-        TransactionInfo tx = transactionList[i].serialize();
-        transactionInfoToBuffer(tx, (char*)bytes.data() + i*TRANSACTIONINFO_BUFFER_SIZE);
-    }
-
-    const auto response = request.send("POST", bytes, {
-        "Content-Type: application/octet-stream"
-    },std::chrono::milliseconds{TIMEOUT_MS * 3});
-    std::string responseStr = std::string{response.body.begin(), response.body.end()};
-    return json::parse(responseStr);
-}
-
-json verifyTransaction(string host_url, Transaction& t) {
+std::optional<json> verifyTransaction(string host_url, Transaction& t) {
     http::Request request(host_url + "/verify_transaction");
     TransactionInfo info = t.serialize();
     vector<uint8_t> bytes;
@@ -115,9 +127,10 @@ json verifyTransaction(string host_url, Transaction& t) {
     const auto response = request.send("POST", bytes, {
         "Content-Type: application/octet-stream"
     },std::chrono::milliseconds{TIMEOUT_MS});
+
     std::string responseStr = std::string{response.body.begin(), response.body.end()};
     cout<<"|"<<responseStr<<"|"<<endl;
-    return json::parse(responseStr);
+    return try_parse_json(response.body);
 }
 
 void readRawHeaders(string host_url, int startId, int endId, vector<BlockHeader>& blockHeaders) {

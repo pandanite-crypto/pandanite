@@ -33,7 +33,11 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             if (customHostIp != "") {
                 // mine against a specific IP
                 host = customHostIp;
-                currCount = getCurrentBlockCount(host);
+
+                auto cbc{ getCurrentBlockCount(host)};
+                if (!cbc.has_value()) 
+                    throw std::runtime_error("Cannot get current block count");
+                currCount = *cbc;
             } else {
                 host = hosts.getGoodHost();
                 currCount = hosts.getBlockCount();
@@ -46,7 +50,10 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
 
             
             
-            json problem = getMiningProblem(host);
+            auto parsed = getMiningProblem(host);
+            if (!parsed.has_value()) 
+                throw std::runtime_error("Cannot get mining problem from host "s+host+"."s);
+            json& problem{*parsed};
             int nextBlock = problem["chainLength"];
             nextBlock++;
             // download transactions
@@ -99,18 +106,21 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, newBlock.getId() > PUFFERFISH_START_BLOCK);
             newBlock.setNonce(solution);
             Logger::logStatus("Submitting block...");
-            auto result = submitBlock(host, newBlock);
-            if (result.contains("status") && string(result["status"]) == "SUCCESS")  {
+            auto result{ submitBlock(host, newBlock)};
+            if (!result.has_value()) 
+                throw std::runtime_error("Cannot submit block");
+
+            if (result->contains("status") && string((*result)["status"]) == "SUCCESS")  {
                 Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET );
             } else {
                 Logger::logStatus(RED + "[ REJECTED ] " + RESET);
-                Logger::logStatus(result.dump(4));
+                Logger::logStatus(result->dump(4));
             }          
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         } catch (const std::exception& e) {
-            Logger::logStatus("Exception");
+            Logger::logStatus("Exception: "s+e.what());
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }

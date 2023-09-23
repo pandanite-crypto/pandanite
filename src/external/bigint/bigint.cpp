@@ -35,13 +35,15 @@ Bigint::Bigint(long long value)
     }
 }
 
-Bigint::Bigint(std::string stringInteger)
+std::optional<Bigint> Bigint::from_string(const std::string& stringInteger)
 {
     int size = stringInteger.length();
+    if (size> 100) return {}; //reject too long input
 
-    base = Bigint::default_base;
-    skip = 0;
-    positive = (stringInteger[0] != '-');
+    int base = Bigint::default_base;
+    unsigned int skip = 0;
+    bool positive = (stringInteger[0] != '-');
+    std::vector<int> number;
 
     while (true) {
         if (size <= 0) break;
@@ -51,7 +53,7 @@ Bigint::Bigint(std::string stringInteger)
         int num = 0;
         int prefix = 1;
         for (int i(size - 1); i >= 0 && i >= size - 9; --i) {
-            if (stringInteger[i] < '0' || stringInteger[i] > '9') break;
+            if (stringInteger[i] < '0' || stringInteger[i] > '9') return {};
             num += (stringInteger[i] - '0') * prefix;
             prefix *= 10;
             ++length;
@@ -59,6 +61,7 @@ Bigint::Bigint(std::string stringInteger)
         number.push_back(num);
         size -= length;
     }
+    return Bigint(number,positive,base,skip);
 }
 
 //Adding
@@ -397,15 +400,16 @@ std::ostream &operator<<(std::ostream &out, Bigint const &a)
     return out;
 }
 
-std::istream &operator>>(std::istream &in, Bigint &a)
-{
-    std::string str;
-    in >> str;
-
-    a = str;
-
-    return in;
-}
+// NOT NEEDED?
+// std::istream &operator>>(std::istream &in, Bigint &a)
+// {
+//     std::string str;
+//     in >> str;
+//
+//     a = str;
+//
+//     return in;
+// }
 
 int Bigint::segment_length(int segment) const
 {
