@@ -127,11 +127,11 @@ void MemPool::mempool_sync() {
                     try {
                         sendTransaction(neighbor, tx);
                         return true;
-                     catch (...) {
+                     } catch (...) {
                         Logger::logError("Failed to send tx to ", neighbor);
                     }
                 }
-                Logger::logStatus("MemPool::mempool_sync: Skipped sending to ", neighbor);
+                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + neighbor);
                 
                 // Lock the mutex only for the duration of modifying the map
                 {
