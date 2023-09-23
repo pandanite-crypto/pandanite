@@ -33,7 +33,7 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
                 mempoolInitSuccessful = true;
                 break;  // Successfully initialized mempool, break out of the loop
             } catch(const std::exception& e) {
-                Logger::logError("RequestManager::Constructor", "Failed to initialize mempool from host: ", bestHost);
+                Logger::logError("RequestManager::Failed to initialize mempool from host: ", bestHost);
             }
         }
     }
