@@ -17,7 +17,7 @@ class HostManager {
         string computeAddress();
         void refreshHostList();
         void startPingingPeers();
-
+        int getBlockHeightFromPeer(const string& host) const;
         string getGoodHost() const;
         uint64_t getBlockCount() const;
         Bigint getTotalWork() const;
@@ -30,7 +30,6 @@ class HostManager {
         string getAddress()const;
         uint64_t getNetworkTimestamp()const;
         void setBlockstore(std::shared_ptr<BlockStore> blockStore);
-        
         void addPeer(string addr, uint64_t time, string version, string network);
         bool isDisabled();
         void syncHeadersWithPeers();
@@ -57,7 +56,7 @@ class HostManager {
         vector<string> hosts;
         set<string> blacklist;
         set<string> whitelist;
-
+        
         vector<std::thread> syncThread;
         vector<std::thread> headerStatsThread;
         friend void peer_sync(HostManager& hm);

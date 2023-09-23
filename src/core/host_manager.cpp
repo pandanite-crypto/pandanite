@@ -330,7 +330,7 @@ static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* use
     return size * nmemb;
 }
 
-int HostManager::getBlockHeightFromPeer(const string& host) {
+int HostManager::getBlockHeightFromPeer(const string& host) const {
     CURL* curl;
     CURLcode res;
     string readBuffer;
