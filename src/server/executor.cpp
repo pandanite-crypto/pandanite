@@ -51,7 +51,7 @@ void addInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
     if (backupFile.is_open()) {
         backupFile << invalidTransactions.dump(4);
         backupFile.close();
-        Logger::logStatus(GREEN + "[INFO]" + RESET, "Backup updated: " + backupFileName);
+        Logger::logStatus(GREEN + "[INFO]" + RESET + " Backup updated: " + backupFileName);
     } else {
         Logger::logError(RED + "[ERROR]" + RESET, "Failed to update backup: " + backupFileName);
     }
