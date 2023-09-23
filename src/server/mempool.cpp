@@ -148,7 +148,7 @@ void MemPool::mempool_sync() {
 
             // Logging invalidTxs
             for (const auto& tx : invalidTxs) {
-            Logger::logError("MemPool::mempool_sync", "Transaction " + tx.toString() + " is invalid and removed from the queue.");
+            Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
             }
 
         bool all_sent = true;
