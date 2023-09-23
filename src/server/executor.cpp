@@ -208,7 +208,7 @@ Logger::logStatus(YELLOW + "[INFO]" + RESET + " Transaction amount for blockId: 
 // Checking if the wallet balance is sufficient for the transaction amount
 if (total < amt) {
     if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-        Logger::logError(RED + "[ERROR]" + RESET + " Balance too low for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
+        Logger::logError("", RED + "[ERROR]" + RESET + " Balance too low for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
         addInvalidTransaction(blockId, from);
         return BALANCE_TOO_LOW;
     } else {
@@ -218,7 +218,7 @@ if (total < amt) {
         if (blockId == 0) {
             Logger::logStatus(YELLOW + "[INFO]" + RESET + " Transaction is for blockId 0.");
         }
-        Logger::logError(RED + "[SKIP]" + RESET + " Skipping validation of known invalid transaction.");
+        Logger::logError("", RED + "[SKIP]" + RESET + " Skipping validation of known invalid transaction.");
     }
 }
 
@@ -229,7 +229,7 @@ Logger::logStatus(YELLOW + "[INFO]" + RESET + " Transaction fees for blockId: " 
 // Checking if the wallet balance after deducting the transaction amount is sufficient for the transaction fees
 if (total < fees) {
     if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-        Logger::logError(RED + "[ERROR]" + RESET + " Insufficient funds for transaction fees for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
+        Logger::logError("",RED + "[ERROR]" + RESET + " Insufficient funds for transaction fees for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
         addInvalidTransaction(blockId, from);
         return BALANCE_TOO_LOW;
     } else {
@@ -239,7 +239,7 @@ if (total < fees) {
         if (blockId == 0) {
             Logger::logStatus(YELLOW + "[INFO]" + RESET + " Transaction is for blockId 0.");
         }
-        Logger::logError(RED + "[SKIP]" + RESET + " Skipping validation of known invalid transaction.");
+        Logger::logError("", RED + "[SKIP]" + RESET + " Skipping validation of known invalid transaction.");
     }
 }
 
