@@ -204,6 +204,7 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
         // must have enough for amt+fees
         if (total < amt) {
             if (!isInvalidTransaction(blockId, from)) {
+                Logger::logError(RED + "[ERROR]" + RESET, "Balance too low for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
             addInvalidTransaction(blockId, from);
             return BALANCE_TOO_LOW;
             } else {
@@ -215,6 +216,7 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
 
         if (total < fees) {
             if (!isInvalidTransaction(blockId, from)) {
+                Logger::logError(RED + "[ERROR]" + RESET, "Insufficient funds for transaction fees for blockId: " + std::to_string(blockId) + " and wallet: " + walletAddressToString(from));
             addInvalidTransaction(blockId, from);
             return BALANCE_TOO_LOW;
             } else {
