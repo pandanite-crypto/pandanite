@@ -96,8 +96,8 @@ void MemPool::mempool_sync() {
 
         for (const auto &neighbor : neighbors)
         {
-            int height = hosts.getBlockHeightFromPeer(neighbor);
-            neighborHeights[neighbor] = height;
+            if (auto bh{getCurrentBlockCount(neighbor)}; bh.has_value())
+            neighborHeights.emplace(neighbor,*bh);
         }
 
         auto maxIter = std::max_element(neighborHeights.begin(), neighborHeights.end(),

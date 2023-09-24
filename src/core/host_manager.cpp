@@ -11,7 +11,6 @@
 #include <mutex>
 #include <future>
 #include <cstdio>
-#include <curl/curl.h>
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
@@ -239,8 +238,9 @@ string HostManager::getGoodHost() const {
 
     for(auto h : this->currPeers) {
         try {
-            int64_t blockHeight = getBlockHeightFromPeer(h->getHost());
-            hostHeights.push_back({h->getHost(), blockHeight});
+            auto host{h->getHost()};
+            if (auto bh{getCurrentBlockCount(host)}; bh.has_value())
+                hostHeights.push_back({host, *bh});
         } catch (...) {
             // Log the error, and continue to the next peer.
             Logger::logStatus("Error fetching block height from: " + h->getHost());
@@ -320,35 +320,6 @@ SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) const{
     return ret;
 }
 
-// This is a utility function to handle the data received from curl.
-static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp) {
-    ((string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
-
-int HostManager::getBlockHeightFromPeer(const string& host) const {
-    CURL* curl;
-    CURLcode res;
-    string readBuffer;
-
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, (host + "/block_count").c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-
-        if(res != CURLE_OK) {
-            Logger::logError("CurlError", "Failed to fetch block height from " + host + ". Curl error: " + curl_easy_strerror(res));
-            return -1;
-        } else {
-            return stoi(readBuffer);
-        }
-    }
-    return -1;
-}
-
 
 /*
     Returns N unique random hosts that have pinged us
@@ -361,10 +332,8 @@ set<string> HostManager::sampleFreshHosts(int count) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged
         if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first)) {
-            int blockHeight = getBlockHeightFromPeer(pair.first);
-            if(blockHeight != -1) {
-                freshHostsWithHeight.push_back({pair.first, blockHeight});
-            }
+            if (auto v{getCurrentBlockCount(pair.first)}; v.has_value())
+                freshHostsWithHeight.push_back({pair.first, *v});
         }
     }
 

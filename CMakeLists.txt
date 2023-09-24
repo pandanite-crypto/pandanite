@@ -25,8 +25,6 @@ file(GLOB CORE_SOURCES "src/core/*.cpp")
 file(GLOB SERVER_SOURCES "src/server/*.cpp")
 file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/murmurhash3/*.cpp" "src/external/sha256/*.cpp" "src/external/bigint/*.cpp")
 
-# Find necessary packages
-find_package(CURL REQUIRED)
 
 # Targets and linking
 if (UNIX)
@@ -41,14 +39,14 @@ if (UNIX)
     if (APPLE)
         # Link libraries for APPLE
         foreach(TARGET tests server cli loader tx miner keygen)
-            target_link_libraries(${TARGET} ${CONAN_LIBS} /usr/local/Cellar/leveldb/1.23/lib/libleveldb.a /usr/local/Cellar/snappy/1.1.9/lib/libsnappy.a ${CURL_LIBRARIES})
+            target_link_libraries(${TARGET} ${CONAN_LIBS} /usr/local/Cellar/leveldb/1.23/lib/libleveldb.a /usr/local/Cellar/snappy/1.1.9/lib/libsnappy.a)
         endforeach()
     endif()
 
     if (UNIX AND NOT APPLE)
         # Link libraries for UNIX
         foreach(TARGET tests server cli loader tx miner keygen)
-            target_link_libraries(${TARGET} ${CONAN_LIBS} -lleveldb -lstdc++fs -lssl -lcrypto ${CURL_LIBRARIES})
+            target_link_libraries(${TARGET} ${CONAN_LIBS} -lleveldb -lstdc++fs -lssl -lcrypto)
         endforeach()
     endif()
 endif()
