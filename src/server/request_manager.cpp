@@ -15,22 +15,34 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
     this->mempool = std::make_shared<MemPool>(hosts, *this->blockchain);
     this->rateLimiter = std::make_shared<RateLimiter>(30,5); // max of 30 requests over 5 sec period 
     this->limitRequests = true;
+
+    bool mempoolInitSuccessful = false;
+
     if (!hosts.isDisabled()) {
         this->blockchain->sync();
-     
-        // initialize the mempool with a random peers transactions:
-        auto randomHost = hosts.sampleFreshHosts(1);
-        if (randomHost.size() > 0) {
+
+        // Try to initialize mempool with transactions from top-synced hosts
+        auto topSyncedHosts = hosts.sampleFreshHosts(3); // Get top 3 synced hosts for retry attempts
+        for (const auto& bestHost : topSyncedHosts) {
             try {
-                string host = *randomHost.begin();
                 vector<Transaction> transactions;
-                readRawTransactions(host, transactions);
+                readRawTransactions(bestHost, transactions);
                 for(auto& t : transactions) {
                     mempool->addTransaction(t);
                 }
-            } catch(...) {}
+                mempoolInitSuccessful = true;
+                break;  // Successfully initialized mempool, break out of the loop
+            } catch(const std::exception& e) {
+                Logger::logError("RequestManager::Failed to initialize mempool from host: ", bestHost);
+            }
         }
     }
+
+    if (!mempoolInitSuccessful) {
+        Logger::logError("RequestManager::Constructor", "Failed to initialize mempool after trying with top-synced hosts.");
+        // TODO further actions here.
+    }
+
     this->mempool->sync();
     this->blockchain->setMemPool(this->mempool);
 }

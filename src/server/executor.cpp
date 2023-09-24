@@ -1,15 +1,61 @@
 #include <map>
 #include <optional>
 #include <iostream>
+#include <fstream>
 #include <set>
 #include <cmath>
+#include <mutex>
 #include "../core/block.hpp"
 #include "../core/logger.hpp"
 #include "../core/helpers.hpp"
 #include "executor.hpp"
+
 using namespace std;
 
 json invalidTransactions = readJsonFromFile("invalid.json");
+
+std::mutex invalidTxMutex;
+
+void addInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
+    std::lock_guard<std::mutex> lock(invalidTxMutex);
+
+    json newInvalidEntry = {
+        {"block", blockId},
+        {"wallet", walletAddressToString(wallet)}
+    };
+
+    // Idempotency check
+    for (auto& entry : invalidTransactions) {
+        if (entry == newInvalidEntry) {
+            return;
+        }
+    }
+
+    invalidTransactions.push_back(newInvalidEntry);
+
+    // Write updated data back to the file
+    ofstream outFile("./invalid.json");
+    if (outFile.is_open()) {
+        outFile << invalidTransactions.dump(4);
+        if (outFile.fail()) {
+            Logger::logError(RED + "[ERROR]" + RESET, "Failed to write to invalid.json.");
+            return;
+        }
+        outFile.close();
+    } else {
+        Logger::logError(RED + "[ERROR]" + RESET, "Failed to open invalid.json for writing.");
+    }
+
+    std::string backupFileName = "./invalid_backup.json";
+    ofstream backupFile(backupFileName);
+    if (backupFile.is_open()) {
+        backupFile << invalidTransactions.dump(4);
+        backupFile.close();
+        Logger::logStatus(GREEN + "[INFO]" + RESET + " Backup updated: " + backupFileName);
+    } else {
+        Logger::logError(RED + "[ERROR]" + RESET, "Failed to update backup: " + backupFileName);
+    }
+}
 
 bool isInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
     for(auto item : invalidTransactions) {
@@ -155,25 +201,22 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
             return SENDER_DOES_NOT_EXIST;
         }
         TransactionAmount total = ledger.getWalletValue(from);
-        // must have enough for amt+fees
+
         if (total < amt) {
-            if (!isInvalidTransaction(blockId, from)) {
+            if (!isInvalidTransaction(blockId, from) && blockId != 0) {
+                addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
-            } else {
-                Logger::logError(RED + "[SKIP]" + RESET, "Skipping validation of known invalid transaction.");
-            }
+            } 
         }
 
         total -= amt;
 
         if (total < fees) {
-            if (!isInvalidTransaction(blockId, from)) {
+            if (!isInvalidTransaction(blockId, from) && blockId != 0) {
+                addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
-            } else {
-                Logger::logError(RED + "[SKIP]" + RESET, "Skipping validation of known invalid transaction.");
-            }
+            } 
         }
-
         withdraw(from, amt, ledger, deltas);
         deposit(to, amt, ledger, deltas);
         if (fees > 0) {
