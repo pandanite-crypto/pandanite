@@ -29,7 +29,7 @@ MemPool::~MemPool()
 void MemPool::mempool_sync() {
 
     const int MAX_RETRIES = 3;
-    std::map<std::string, std::chrono::system_clock::time_point> failedPeers;
+    std::map<std::string, std::chrono::steady_clock::time_point> failedPeers;
     std::mutex failedPeersMutex;
 
     while (!shutdown)
@@ -79,7 +79,7 @@ void MemPool::mempool_sync() {
             continue;
         }
 
-        auto now = std::chrono::system_clock::now();
+        auto now = std::chrono::steady_clock::now();
         for (auto it = failedPeers.begin(); it != failedPeers.end();)
         {
             if ((now - it->second) > std::chrono::hours(24))
@@ -109,10 +109,10 @@ void MemPool::mempool_sync() {
         // Filter out peers not at maxBlockHeight
         for(auto it = peers.begin(); it != peers.end(); ) {
             if(peerHeights[*it] < maxBlockHeight) {
-            it = peers.erase(it);
-             } else {
+                it = peers.erase(it);
+            } else {
                 ++it;
-                }
+            }
         }
 
         std::vector<std::future<bool>> sendResults;
@@ -137,7 +137,7 @@ void MemPool::mempool_sync() {
                 // Lock the mutex only for the duration of modifying the map
                 {
                     std::lock_guard<std::mutex> lock(failedPeersMutex);
-                    failedPeers[peer] = std::chrono::system_clock::now();
+                    failedPeers[peer] = std::chrono::steady_clock::now();
                 }
                 
                 return false;
