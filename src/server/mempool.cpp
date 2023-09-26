@@ -117,10 +117,10 @@ void MemPool::mempool_sync() {
 
         std::vector<std::future<bool>> sendResults;
         for (const auto &peer : peers) {
-            if (failedPeers.find(peer) != failedPeers.end())
-            {
+
+            // ignore failed peers
+            if (failedPeers.count(peer) != 0)
                 continue;
-            }
 
              for (const auto& tx : txs) {
                 sendResults.push_back(std::async(std::launch::async, [this, &peer, &tx, &failedPeers, &failedPeersMutex]() -> bool {
