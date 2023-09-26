@@ -132,7 +132,7 @@ void MemPool::mempool_sync() {
                         Logger::logError("Failed to send tx to ", peer);
                     }
                 }
-                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + peer);
+                Logger::logStatus("MemPool::mempool_sync: Failed sending to "s + peer +" "+to_string(MAX_RETRIES)+" times, giving up." );
                 
                 // Lock the mutex only for the duration of modifying the map
                 {
@@ -145,10 +145,10 @@ void MemPool::mempool_sync() {
             }
         }
 
-            // Logging invalidTxs
-            for (const auto& tx : invalidTxs) {
+        // Logging invalidTxs
+        for (const auto& tx : invalidTxs) {
             Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
-            }
+        }
 
         bool all_sent = true;
         for (auto &future : sendResults)
