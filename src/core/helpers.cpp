@@ -131,6 +131,7 @@ json readJsonFromFile(string filepath) {
         throw runtime_error("Cannot open file '"s+filepath+"'.");
     stringstream buffer;
     try {
+        buffer << input.rdbuf();
         return json::parse(buffer.str());
     }catch(...) {
         throw runtime_error("File '"s+filepath+"' does not contain a valid JSON.");
