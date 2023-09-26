@@ -29,8 +29,8 @@ MemPool::~MemPool()
 void MemPool::mempool_sync() {
 
     const int MAX_RETRIES = 3;
-    std::map<std::string, std::chrono::system_clock::time_point> failedNeighbors;
-    std::mutex failedNeighborsMutex;
+    std::map<std::string, std::chrono::system_clock::time_point> failedPeers;
+    std::mutex failedPeersMutex;
 
     while (!shutdown)
     {
@@ -80,11 +80,11 @@ void MemPool::mempool_sync() {
         }
 
         auto now = std::chrono::system_clock::now();
-        for (auto it = failedNeighbors.begin(); it != failedNeighbors.end();)
+        for (auto it = failedPeers.begin(); it != failedPeers.end();)
         {
             if ((now - it->second) > std::chrono::hours(24))
             {
-                it = failedNeighbors.erase(it);
+                it = failedPeers.erase(it);
             }
             else
             {
@@ -92,52 +92,52 @@ void MemPool::mempool_sync() {
             }
         }
 
-        std::set<std::string> neighbors = hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
-        std::map<std::string, int> neighborHeights; // Store block heights for neighbors
+        std::set<std::string> peers = hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
+        std::map<std::string, int> peerHeights; // Store block heights for peers
 
-        for (const auto &neighbor : neighbors)
+        for (const auto &peer : peers)
         {
-            if (auto bh{getCurrentBlockCount(neighbor)}; bh.has_value())
-            neighborHeights.emplace(neighbor,*bh);
+            if (auto bh{getCurrentBlockCount(peer)}; bh.has_value())
+            peerHeights.emplace(peer,*bh);
         }
 
-        auto maxIter = std::max_element(neighborHeights.begin(), neighborHeights.end(),
+        auto maxIter = std::max_element(peerHeights.begin(), peerHeights.end(),
             [](const auto &lhs, const auto &rhs) {
             return lhs.second < rhs.second; });
         int maxBlockHeight = maxIter->second;
 
-        // Filter out neighbors not at maxBlockHeight
-        for(auto it = neighbors.begin(); it != neighbors.end(); ) {
-            if(neighborHeights[*it] < maxBlockHeight) {
-            it = neighbors.erase(it);
+        // Filter out peers not at maxBlockHeight
+        for(auto it = peers.begin(); it != peers.end(); ) {
+            if(peerHeights[*it] < maxBlockHeight) {
+            it = peers.erase(it);
              } else {
                 ++it;
                 }
         }
 
         std::vector<std::future<bool>> sendResults;
-        for (auto neighbor : neighbors) {
-            if (failedNeighbors.find(neighbor) != failedNeighbors.end())
+        for (auto peer : peers) {
+            if (failedPeers.find(peer) != failedPeers.end())
             {
                 continue;
             }
 
              for (const auto& tx : txs) {
-                sendResults.push_back(std::async(std::launch::async, [this, &neighbor, &tx, &failedNeighbors, &failedNeighborsMutex]() -> bool {
+                sendResults.push_back(std::async(std::launch::async, [this, &peer, &tx, &failedPeers, &failedPeersMutex]() -> bool {
                 for (int retry = 0; retry < MAX_RETRIES; ++retry) {
                     try {
-                        sendTransaction(neighbor, tx);
+                        sendTransaction(peer, tx);
                         return true;
                      } catch (...) {
-                        Logger::logError("Failed to send tx to ", neighbor);
+                        Logger::logError("Failed to send tx to ", peer);
                     }
                 }
-                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + neighbor);
+                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + peer);
                 
                 // Lock the mutex only for the duration of modifying the map
                 {
-                    std::lock_guard<std::mutex> lock(failedNeighborsMutex);
-                    failedNeighbors[neighbor] = std::chrono::system_clock::now();
+                    std::lock_guard<std::mutex> lock(failedPeersMutex);
+                    failedPeers[peer] = std::chrono::system_clock::now();
                 }
                 
                 return false;
