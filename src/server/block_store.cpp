@@ -50,10 +50,8 @@ Bigint BlockStore::getTotalWork() const{
     string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(),key, &value);
     if(!status.ok()) throw std::runtime_error("Could not read block count from DB : " + status.ToString());
-    if (auto v{Bigint::from_string(value)}; v.has_value()){
-        return *v;
-    }
-    throw std::runtime_error("DB contains corrupted Bigint value for total work.");
+    Bigint b(value);
+    return b;
 }
 
 bool BlockStore::hasBlockCount() {

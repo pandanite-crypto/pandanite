@@ -18,7 +18,6 @@
 #define pclose _pclose
 #endif
 
-using namespace std;
 
 uint64_t hostToNetworkUint64(uint64_t x) {
     return x;
@@ -127,14 +126,9 @@ void writeJsonToFile(json data, string filepath) {
 
 json readJsonFromFile(string filepath) {
     ifstream input(filepath);
-    if (!input.good()) 
-        throw runtime_error("Cannot open file '"s+filepath+"'.");
     stringstream buffer;
-    try {
-        return json::parse(buffer.str());
-    }catch(...) {
-        throw runtime_error("File '"s+filepath+"' does not contain a valid JSON.");
-    }
+    buffer << input.rdbuf();
+    return json::parse(buffer.str());
 }
 
 std::uint64_t getCurrentTime() {

@@ -75,12 +75,13 @@ uint64_t HeaderChain::getCurrentDownloaded() const{
 }
 
 void HeaderChain::load() {
-    auto opt{ getCurrentBlockCount(this->host)};
-    if (!opt.has_value()) {
+    uint64_t targetBlockCount;
+    try {
+        targetBlockCount = getCurrentBlockCount(this->host);
+    } catch (...) {
         this->failed = true;
         return;
     }
-    uint64_t targetBlockCount{*opt};
     
     SHA256Hash lastHash = NULL_SHA256_HASH;
     if (this->blockHashes.size() > 0) {
