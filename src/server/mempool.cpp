@@ -74,6 +74,11 @@ void MemPool::mempool_sync() {
             }
         }
 
+        // Logging invalidTxs
+        for (const auto& tx : invalidTxs) {
+            Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
+        }
+
         if (transactionQueue.empty())
         {
             continue;
@@ -143,11 +148,6 @@ void MemPool::mempool_sync() {
                 return false;
                 }));
             }
-        }
-
-        // Logging invalidTxs
-        for (const auto& tx : invalidTxs) {
-            Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
         }
 
         bool all_sent = true;
