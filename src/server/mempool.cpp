@@ -15,9 +15,10 @@
 #define TX_BRANCH_FACTOR 10
 #define MIN_FEE_TO_ENTER_MEMPOOL 1
 
-MemPool::MemPool(HostManager &h, BlockChain &b) : hosts(h), blockchain(b)
+MemPool::MemPool(HostManager &h, BlockChain &b) : 
+    shutdown(false),
+    hosts(h), blockchain(b)
 {
-    shutdown = false;
 }
 
 MemPool::~MemPool()
