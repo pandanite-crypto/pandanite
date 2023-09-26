@@ -230,37 +230,20 @@ uint64_t HostManager::getNetworkTimestamp() const{
     Asks nodes for their current POW and chooses the best peer
 */
 
-string HostManager::getGoodHost() const {
+string HostManager::getGoodHost() const{
     if (this->currPeers.size() < 1) return "";
-
-    vector<pair<string, int64_t>> hostHeights;
+    Bigint bestWork = 0;
+    string bestHost = this->currPeers[0]->getHost();
     std::unique_lock<std::mutex> ul(lock);
-
     for(auto h : this->currPeers) {
-        try {
-            auto host{h->getHost()};
-            if (auto bh{getCurrentBlockCount(host)}; bh.has_value())
-                hostHeights.push_back({host, *bh});
-        } catch (...) {
-            // Log the error, and continue to the next peer.
-            Logger::logStatus("Error fetching block height from: " + h->getHost());
-            continue;
+        if (h->getTotalWork() > bestWork) {
+            bestWork = h->getTotalWork();
+            bestHost = h->getHost();
         }
     }
-
-    // Sort hosts based on block height.
-    std::sort(hostHeights.begin(), hostHeights.end(), 
-              [](const pair<string, int64_t>& a, const pair<string, int64_t>& b) {
-                  return a.second > b.second;
-              });
-
-    // The best host will be the first in the sorted list.
-    if (!hostHeights.empty()) {
-        return hostHeights[0].first;
-    }
-
-    return "";
+    return bestHost;
 }
+
 
 /*
     Returns number of block headers downloaded by peer host
