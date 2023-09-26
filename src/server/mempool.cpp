@@ -116,7 +116,7 @@ void MemPool::mempool_sync() {
         }
 
         std::vector<std::future<bool>> sendResults;
-        for (auto peer : peers) {
+        for (const auto &peer : peers) {
             if (failedPeers.find(peer) != failedPeers.end())
             {
                 continue;
