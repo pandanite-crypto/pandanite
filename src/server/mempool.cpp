@@ -26,147 +26,68 @@ MemPool::~MemPool()
     shutdown = true;
 }
 
-void MemPool::mempool_sync() {
+void MemPool::mempool_sync() const {
 
     const int MAX_RETRIES = 3;
-    std::map<std::string, std::chrono::steady_clock::time_point> failedPeers;
-    std::mutex failedPeersMutex;
+
+    std::map<std::string,std::future<bool>> pendingPushes; // maps from node to future
 
     while (!shutdown)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        auto peers {hosts.sampleFreshHosts(TX_BRANCH_FACTOR)};
+        const auto N{pendingTransactions.size()};
+        const auto batchSize{std::min(10ul,N)};
 
-        std::vector<Transaction> txs;
-        {
-            std::unique_lock<std::mutex> lock(toSend_mutex);
-            if (toSend.empty())
-            {
+
+
+        // clean up completed pushes
+        for (auto it = pendingPushes.begin(); it!= pendingPushes.end();){
+            auto& future{it->second};
+            std::future_status status{future.wait_for(std::chrono::seconds(0))};
+
+            // continue if there is a pending send to that node
+            if (status != std::future_status::ready) {
+                ++it;
                 continue;
             }
-            txs = std::vector<Transaction>(std::make_move_iterator(toSend.begin()), std::make_move_iterator(toSend.end()));
-            toSend.clear();
+            future.get(); // should return immediately because status == ready
+            pendingPushes.erase(it++);
         }
 
-        std::vector<Transaction> invalidTxs;
-        {
-            std::unique_lock<std::mutex> lock(mempool_mutex);
-            for (auto it = transactionQueue.begin(); it != transactionQueue.end();)
-            {
-                try
-                {
-                    ExecutionStatus status = blockchain.verifyTransaction(*it);
-                    if (status != SUCCESS)
-                    {
-                        invalidTxs.push_back(*it);
-                        it = transactionQueue.erase(it);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-                }
-                catch (const std::exception &e)
-                {
-                    std::cout << "Caught exception: " << e.what() << '\n';
-                    invalidTxs.push_back(*it);
-                    it = transactionQueue.erase(it);
-                }
+
+        std::unique_lock<std::mutex> lock(mempool_mutex);
+
+        // send each peer a different random set of mempool
+        for (auto& peer: peers) {
+            auto randomOffset={rand() % N};
+            std::vector<Transaction> sampledTransactions;
+            for (size_t i{0}; i<batchSize; ++i) {
+                auto index{ i % N};
+                sampledTransactions.push_back(pendingTransactions[index]);
             }
-        }
 
-        // Logging invalidTxs
-        for (const auto& tx : invalidTxs) {
-            Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
-        }
-
-        if (transactionQueue.empty())
-        {
-            continue;
-        }
-
-        auto now = std::chrono::steady_clock::now();
-        for (auto it = failedPeers.begin(); it != failedPeers.end();)
-        {
-            if ((now - it->second) > std::chrono::hours(24))
-            {
-                it = failedPeers.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
-
-        std::set<std::string> peers = hosts.sampleFreshHosts(TX_BRANCH_FACTOR);
-        std::map<std::string, int> peerHeights; // Store block heights for peers
-
-        for (const auto &peer : peers)
-        {
-            if (auto bh{getCurrentBlockCount(peer)}; bh.has_value())
-            peerHeights.emplace(peer,*bh);
-        }
-
-        auto maxIter = std::max_element(peerHeights.begin(), peerHeights.end(),
-            [](const auto &lhs, const auto &rhs) {
-            return lhs.second < rhs.second; });
-        int maxBlockHeight = maxIter->second;
-
-        // Filter out peers not at maxBlockHeight
-        for(auto it = peers.begin(); it != peers.end(); ) {
-            if(peerHeights[*it] < maxBlockHeight) {
-                it = peers.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-        std::vector<std::future<bool>> sendResults;
-        for (const auto &peer : peers) {
-
-            // ignore failed peers
-            if (failedPeers.count(peer) != 0)
+            // don't send again while still pending send
+            if (pendingPushes.count(peer)>0)
                 continue;
+            pendingPushes[peer] = std::async(std::launch::async, [peer,sampledTransactions = std::move(sampledTransactions)]() -> bool {
+                        try {
+                            for (auto &tx : sampledTransactions) {
+                                sendTransaction(peer, tx);
+                            }
+                            return true;
+                        } catch (...) {
+                            Logger::logError("Failed to send tx to ", peer);
+                            return false;
+                        }
+            });
+        };
+    }
 
-             for (const auto& tx : txs) {
-                sendResults.push_back(std::async(std::launch::async, [this, &peer, &tx, &failedPeers, &failedPeersMutex]() -> bool {
-                for (int retry = 0; retry < MAX_RETRIES; ++retry) {
-                    try {
-                        sendTransaction(peer, tx);
-                        return true;
-                     } catch (...) {
-                        Logger::logError("Failed to send tx to ", peer);
-                    }
-                }
-                Logger::logStatus("MemPool::mempool_sync: Failed sending to "s + peer +" "+to_string(MAX_RETRIES)+" times, giving up." );
-                
-                // Lock the mutex only for the duration of modifying the map
-                {
-                    std::lock_guard<std::mutex> lock(failedPeersMutex);
-                    failedPeers[peer] = std::chrono::steady_clock::now();
-                }
-                
-                return false;
-                }));
-            }
-        }
-
-        bool all_sent = true;
-        for (auto &future : sendResults)
-        {
-            if (!future.get())
-            {
-                all_sent = false;
-            }
-        }
-
-        if (!all_sent)
-        {
-            std::unique_lock<std::mutex> lock(toSend_mutex);
-            for (const auto &tx : txs)
-            {
-                toSend.push_back(tx);
-            }
-        }
+    // wait until all child push threads terminated
+    // to avoid bugs due to captured variables by reference
+    for (auto &push : pendingPushes) {
+        push.second.get();
     }
 }
 
@@ -178,15 +99,16 @@ void MemPool::sync()
 bool MemPool::hasTransaction(Transaction t)
 {
     std::unique_lock<std::mutex> lock(mempool_mutex);
-    return transactionQueue.count(t) > 0;
+    auto it{std::find(pendingTransactions.begin(),pendingTransactions.end(), t)};
+    return (it!=pendingTransactions.end());
 }
 
 ExecutionStatus MemPool::addTransaction(Transaction t)
 {
     std::unique_lock<std::mutex> lock(mempool_mutex);
 
-    if (transactionQueue.count(t) > 0)
-    {
+    auto it{std::find(pendingTransactions.begin(),pendingTransactions.end(), t)};
+    if (it!=pendingTransactions.end()){
         return ALREADY_IN_QUEUE;
     }
 
@@ -214,15 +136,13 @@ ExecutionStatus MemPool::addTransaction(Transaction t)
         return BALANCE_TOO_LOW;
     }
 
-    if (transactionQueue.size() >= (MAX_TRANSACTIONS_PER_BLOCK - 1))
+    if (pendingTransactions.size() >= (MAX_TRANSACTIONS_PER_BLOCK - 1))
     {
         return QUEUE_FULL;
     }
 
-    transactionQueue.insert(t);
+    pendingTransactions.push_back(t);
     mempoolOutgoing[t.fromWallet()] += totalTxAmount;
-    std::unique_lock<std::mutex> toSend_lock(toSend_mutex);
-    toSend.push_back(t);
 
     return SUCCESS;
 }
@@ -230,14 +150,14 @@ ExecutionStatus MemPool::addTransaction(Transaction t)
 size_t MemPool::size()
 {
     std::unique_lock<std::mutex> lock(mempool_mutex);
-    return transactionQueue.size();
+    return pendingTransactions.size();
 }
 
 std::vector<Transaction> MemPool::getTransactions() const
 {
     std::unique_lock<std::mutex> lock(mempool_mutex);
     std::vector<Transaction> transactions;
-    for (const auto &tx : transactionQueue)
+    for (const auto &tx : pendingTransactions)
     {
         transactions.push_back(tx);
     }
@@ -247,11 +167,11 @@ std::vector<Transaction> MemPool::getTransactions() const
 std::pair<char *, size_t> MemPool::getRaw() const
 {
     std::unique_lock<std::mutex> lock(mempool_mutex);
-    size_t len = transactionQueue.size() * TRANSACTIONINFO_BUFFER_SIZE;
+    size_t len = pendingTransactions.size() * TRANSACTIONINFO_BUFFER_SIZE;
     char *buf = (char *)malloc(len);
     int count = 0;
 
-    for (const auto &tx : transactionQueue)
+    for (const auto &tx : pendingTransactions)
     {
         TransactionInfo t = tx.serialize();
         transactionInfoToBuffer(t, buf + count);
@@ -266,10 +186,10 @@ void MemPool::finishBlock(Block &block)
     std::unique_lock<std::mutex> lock(mempool_mutex);
     for (const auto &tx : block.getTransactions())
     {
-        auto it = transactionQueue.find(tx);
-        if (it != transactionQueue.end())
+        auto it{std::find(pendingTransactions.begin(),pendingTransactions.end(), tx)};
+        if (it != pendingTransactions.end())
         {
-            transactionQueue.erase(it);
+            pendingTransactions.erase(it);
 
             if (!tx.isFee())
             {

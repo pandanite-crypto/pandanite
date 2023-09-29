@@ -26,15 +26,13 @@ public:
     std::vector<Transaction> getTransactions() const;
 
 protected:
-    void mempool_sync();
+    void mempool_sync() const;
     bool shutdown;
     std::mutex shutdownLock;
     std::map<PublicWalletAddress, TransactionAmount> mempoolOutgoing;
-    std::list<Transaction> toSend;
     BlockChain& blockchain;
     HostManager& hosts;
-    std::set<Transaction> transactionQueue;
+    std::vector<Transaction> pendingTransactions;
     std::vector<std::thread> syncThread;
     mutable std::mutex mempool_mutex;
-    std::mutex toSend_mutex;
 };
