@@ -61,9 +61,9 @@ int main(int argc, char** argv) {
             return 0;
 }
 
-string host = hosts.getGoodHost();
-
-cout << "Sending to host : " << host << endl;
+auto sampled{ hosts.sampleFreshHosts(20)};
+if (sampled.empty()) 
+    cerr << "No hosts, aborting"<<endl;
 
 Transaction t(fromWallet, toWallet, amount, publicKey, fee);
 t.sign(publicKey, privateKey);
@@ -74,8 +74,18 @@ cout << "TRANSACTION JSON (keep this for your records)" << endl;
 cout << "=================================================" << endl;
 cout << t.toJson().dump() << endl;
 cout << "==============================" << endl;
+
+for (auto &host : sampled) {
+    try {
+    
+cout << "Sending to host : " << host << endl;
 json result = sendTransaction(host, t);
 cout << result << endl;
+    }catch(...) {
+        cout<<"FAILED."<<endl;
+    
+    }
+}
 cout << "Finished." << endl;
 return 0;
 }

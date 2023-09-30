@@ -24,7 +24,7 @@ class HostManager {
         map<string,uint64_t> getHeaderChainStats() const;
         std::pair<string,uint64_t> getRandomHost() const;
         vector<string> getHosts(bool includeSelf=true) const;
-        set<string> sampleFreshHosts(int count);
+        set<string> sampleFreshHosts(int count) const;
         set<string> sampleAllHosts(int count);
         string getAddress()const;
         uint64_t getNetworkTimestamp()const;

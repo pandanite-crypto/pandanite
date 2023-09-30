@@ -34,9 +34,9 @@ namespace{ // anonymous namespace for functions private to the compilation unit
 
     std::optional<std::string> extractHostVersion(const json& hostInfo){
         try{
-            auto v{hostInfo["version"]};
+            auto& v{hostInfo["version"]};
             if (v.is_string()) 
-                return v;
+                return v.get<std::string>();
         }catch(...){}
         return {};
     }
@@ -308,7 +308,7 @@ SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) const{
     Returns N unique random hosts that have pinged us
 */
 
-set<string> HostManager::sampleFreshHosts(int count) {
+set<string> HostManager::sampleFreshHosts(int count) const {
     // Host and their block heights
     vector<pair<string, int>> freshHostsWithHeight; 
     for (auto pair : this->hostPingTimes) {
