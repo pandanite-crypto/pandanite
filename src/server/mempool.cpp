@@ -60,7 +60,7 @@ void MemPool::mempool_sync() const {
 
         // send each peer a different random set of mempool
         for (auto& peer: peers) {
-            auto randomOffset={rand() % N};
+            auto randomOffset={rand() % (N+1)};
             std::vector<Transaction> sampledTransactions;
             for (size_t i{0}; i<batchSize; ++i) {
                 auto index{ i % N};
