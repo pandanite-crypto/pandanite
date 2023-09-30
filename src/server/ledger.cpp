@@ -38,7 +38,13 @@ TransactionAmount Ledger::getWalletValue(const PublicWalletAddress& wallet) cons
     std::string value;
     leveldb::Status status = db->Get(leveldb::ReadOptions(), walletToSlice(wallet), &value);
     if(!status.ok()) throw std::runtime_error("Tried fetching wallet value for non-existant wallet");
-    return *((TransactionAmount*)value.c_str());
+    TransactionAmount amt{ *((TransactionAmount*)value.c_str())};
+
+    // set overflow values to 0
+    constexpr size_t hundredMillions{100ull* 1000ull*1000ull*10000ull};
+    if (amt > hundredMillions)
+        return 0;
+    return amt;
 }
 
 void Ledger::withdraw(const PublicWalletAddress& wallet, TransactionAmount amt) {

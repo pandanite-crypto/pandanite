@@ -174,7 +174,7 @@ void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     }
 }
 
-ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
+ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId, bool checkInvalid) {
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
@@ -202,7 +202,7 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
         }
         TransactionAmount total = ledger.getWalletValue(from);
 
-        if (total < amt) {
+        if (checkInvalid && total < amt) {
             if (!isInvalidTransaction(blockId, from) && blockId != 0) {
                 addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
@@ -211,7 +211,7 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
 
         total -= amt;
 
-        if (total < fees) {
+        if (checkInvalid && total < fees) {
             if (!isInvalidTransaction(blockId, from) && blockId != 0) {
                 addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
@@ -278,10 +278,10 @@ ExecutionStatus Executor::ExecuteTransaction(Ledger& ledger, Transaction t,  Led
     }
 
     PublicWalletAddress miner = NULL_ADDRESS;
-    return updateLedger(t, miner, ledger, deltas, PDN(0), 0); // ExecuteTransaction is only used on non-fee transactions
+    return updateLedger(t, miner, ledger, deltas, PDN(0), 0,true); // ExecuteTransaction is only used on non-fee transactions
 }
 
-ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee) {
+ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionStore & txdb, LedgerState& deltas, TransactionAmount blockMiningFee, bool checkInvalid) {
     // try executing each transaction
     bool foundFee = false;
     PublicWalletAddress miner;
@@ -315,7 +315,7 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
         if (!t.isFee() && !t.signatureValid() && curr.getId() != 1) {
             return INVALID_SIGNATURE;
         }
-        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas, blockMiningFee, curr.getId());
+        ExecutionStatus updateStatus = updateLedger(t, miner, ledger, deltas, blockMiningFee, curr.getId(), checkInvalid);
         if (updateStatus != SUCCESS) {
             return updateStatus;
         }

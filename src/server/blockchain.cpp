@@ -26,6 +26,7 @@
 #define FORK_RESET_RETRIES 25
 #define MAX_DISCONNECTS_BEFORE_RESET 15
 #define FAILURES_BEFORE_POP_ATTEMPT 1
+constexpr size_t NO_VALIDITY_CHECK_BEFORE_HEIGHT=599700;
 
 using namespace std;
 
@@ -417,7 +418,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
     LedgerState deltasFromBlock;
-    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee(block.getId()));
+    bool checkInvalid = NO_VALIDITY_CHECK_BEFORE_HEIGHT <= getBlockCount();
+    ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee(block.getId()), checkInvalid);
 
     if (status != SUCCESS) {
         Executor::Rollback(this->ledger, deltasFromBlock);
@@ -455,7 +457,8 @@ void BlockChain::recomputeLedger() {
         if (i % 10000 == 0) Logger::logStatus("Re-computing chain, finished block: " + to_string(i));
         LedgerState deltas;
         Block block = this->getBlock(i);
-        ExecutionStatus addResult = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i));
+        bool checkInvalid = NO_VALIDITY_CHECK_BEFORE_HEIGHT <= getBlockCount();
+        ExecutionStatus addResult = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltas, this->getCurrentMiningFee(i), checkInvalid);
         // add all transactions to txdb:
         for(auto t : block.getTransactions()) {
             if (!t.isFee()) this->txdb.insertTransaction(t, block.getId());
