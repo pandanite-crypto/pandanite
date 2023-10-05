@@ -327,7 +327,7 @@ set<string> HostManager::sampleFreshHosts(int count) const {
     }
     
     if (freshHostsWithHeight.empty()) {
-        Logger::logStatus("HostManager::sampleFreshHosts No fresh hosts found. Falling back to fixed hosts.");
+        //Logger::logStatus("HostManager::sampleFreshHosts No fresh hosts found. Falling back to fixed hosts.");
         return set<string>(fixedHosts.begin(), fixedHosts.end());
     }
     
