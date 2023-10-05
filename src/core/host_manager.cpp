@@ -309,6 +309,12 @@ SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) const{
 */
 
 set<string> HostManager::sampleFreshHosts(int count) const {
+     // Fixed hosts to be used as a fallback
+    std::vector<string> fixedHosts = {
+        "http://94.130.69.234:6002",
+        "http://88.119.169.111:3000",
+        "http://65.108.201.144:3005"
+    };
     // Host and their block heights
     vector<pair<string, int>> freshHostsWithHeight; 
     for (auto pair : this->hostPingTimes) {
@@ -319,13 +325,21 @@ set<string> HostManager::sampleFreshHosts(int count) const {
                 freshHostsWithHeight.push_back({pair.first, *v});
         }
     }
-
+    
+    if (freshHostsWithHeight.empty()) {
+        Logger::logStatus("HostManager::sampleFreshHosts No fresh hosts found. Falling back to fixed hosts.");
+        return set<string>(fixedHosts.begin(), fixedHosts.end());
+    }
+    
     // Sort hosts based on their block height
     sort(freshHostsWithHeight.begin(), freshHostsWithHeight.end(),
          [](const pair<string, int>& a, const pair<string, int>& b) {
              return a.second > b.second; 
          });
-
+     if (!freshHostsWithHeight.empty()) {
+        Logger::logStatus("HostManager::sampleFreshHosts Top-synced host: " + freshHostsWithHeight[0].first + " with block height: " + std::to_string(freshHostsWithHeight[0].second));    
+      }
+     
     int numToPick = min(count, (int)freshHostsWithHeight.size());
     set<string> sampledHosts;
     for(int i = 0; i < numToPick; ++i) {
