@@ -6,8 +6,8 @@
 #include <cmath>
 #include <mutex>
 #include "../core/block.hpp"
-#include "../core/logger.hpp"
 #include "../core/helpers.hpp"
+#include "spdlog/spdlog.h"
 #include "executor.hpp"
 
 using namespace std;
@@ -38,12 +38,12 @@ void addInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
     if (outFile.is_open()) {
         outFile << invalidTransactions.dump(4);
         if (outFile.fail()) {
-            Logger::logError(RED + "[ERROR]" + RESET, "Failed to write to invalid.json.");
+            spdlog::error("Failed to write to invalid.json.");
             return;
         }
         outFile.close();
     } else {
-        Logger::logError(RED + "[ERROR]" + RESET, "Failed to open invalid.json for writing.");
+        spdlog::error("Failed to open invalid.json for writing.");
     }
 
     std::string backupFileName = "./invalid_backup.json";
@@ -51,9 +51,9 @@ void addInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
     if (backupFile.is_open()) {
         backupFile << invalidTransactions.dump(4);
         backupFile.close();
-        Logger::logStatus(GREEN + "[INFO]" + RESET + " Backup updated: " + backupFileName);
+        spdlog::info("Backup updated: {}");
     } else {
-        Logger::logError(RED + "[ERROR]" + RESET, "Failed to update backup: " + backupFileName);
+        spdlog::error("Failed to update backup: {}", backupFileName);
     }
 }
 

@@ -151,7 +151,6 @@ std::optional<json> verifyTransaction(string host_url, Transaction &t) {
 
   std::string responseStr =
       std::string{response.body.begin(), response.body.end()};
-  cout << "|" << responseStr << "|" << endl;
   return into_json(response.body);
 }
 

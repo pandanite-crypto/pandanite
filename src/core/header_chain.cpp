@@ -1,7 +1,7 @@
 #include "header_chain.hpp"
 #include "api.hpp"
 #include "block.hpp"
-#include "logger.hpp"
+#include "spdlog/spdlog.h"
 #include <iostream>
 #include <thread>
 using namespace std;
@@ -103,7 +103,7 @@ void HeaderChain::load() {
                 if (this->bannedHashes.find(curr) != this->bannedHashes.end()) {
                     // check if the current hash corresponds to a banned hash
                     if (block.getHash() == this->bannedHashes[curr]) {
-                        Logger::logStatus("Banned hash found for block: " + to_string(curr));
+                        spdlog::info("Banned hash found for block: {}", to_string(curr));
                         failure = true;
                         break;
                     } 
@@ -111,7 +111,7 @@ void HeaderChain::load() {
                 if (this->checkPoints.find(curr) != this->checkPoints.end()) {
                     // check the checkpoint hash:
                     if (block.getHash() != this->checkPoints[curr]) {
-                        // Logger::logStatus("Checkpoint hash failed for block: " + to_string(curr));
+                        // spdlog::info("Checkpoint hash failed for block: {}", to_string(curr));
                         failure = true;
                         break;
                     } 
@@ -132,7 +132,7 @@ void HeaderChain::load() {
                 this->totalWork = totalWork;
             }
             if (failure) {
-                Logger::logStatus("header chain sync failed host=" + this->host);
+                spdlog::warn("header chain sync failed host={}", this->host);
                 this->failed = true;
                 this->reset();
                 return;
@@ -149,7 +149,7 @@ void HeaderChain::load() {
     }
     this->failed = false;
     if (numBlocks != startBlocks) {
-        // Logger::logStatus("Chain for " + this->host + " updated to length=" + to_string(this->chainLength) + " total_work=" + to_string(this->totalWork));
+        spdlog::info("Chain for {} updated to length= {}  total_work= {}" , this->host, to_string(this->chainLength), to_string(this->totalWork));
     }
 }
 

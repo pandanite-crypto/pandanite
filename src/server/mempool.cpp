@@ -7,10 +7,10 @@
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
-#include "../core/logger.hpp"
 #include "../core/api.hpp"
 #include "mempool.hpp"
 #include "blockchain.hpp"
+#include "spdlog/spdlog.h"
 
 #define TX_BRANCH_FACTOR 10
 #define MIN_FEE_TO_ENTER_MEMPOOL 1
@@ -81,7 +81,7 @@ void MemPool::mempool_sync() const {
                             }
                             return true;
                         } catch (...) {
-                            Logger::logError("Failed to send tx to ", peer);
+                            spdlog::warn("Failed to send tx to {}", peer);
                             return false;
                         }
             });

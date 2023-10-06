@@ -13,8 +13,8 @@
 #include <fstream>
 #include <algorithm>
 #include <mutex>
+#include "spdlog/spdlog.h"
 #include "../core/merkle_tree.hpp"
-#include "../core/logger.hpp"
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "../core/user.hpp"
@@ -38,16 +38,16 @@ void chain_sync(BlockChain& blockchain) {
             ExecutionStatus status = blockchain.startChainSync();
             if (status != SUCCESS)
             {
-                Logger::logError(RED + "[SYNC ERROR]" + RESET, executionStatusAsString(status));
+                spdlog::error("[SYNC ERROR]", executionStatusAsString(status));
                 blockchain.retries++;
                 if (blockchain.retries > FORK_RESET_RETRIES)
                 {
-                    Logger::logError(RED + "[FATAL]" + RESET, "Max Rollback Tries Reached. Try deleting data dir and restarting.");
+                    spdlog::critical("Max Rollback Tries Reached. Try deleting data dir and restarting.");
                     exit(-1);
                 }
                 else
                 {
-                    Logger::logError(RED + "[ERROR]" + RESET, "Rollback retry #" + to_string(blockchain.retries));
+                    spdlog::warn("Rollback retry #" + to_string(blockchain.retries));
                     std::unique_lock<std::mutex> ul(blockchain.lock);
                     blockchain.isSyncing = true;
                     for (uint64_t i = 0; i < FORK_CHAIN_POP_COUNT*blockchain.retries; i++) {
@@ -59,15 +59,15 @@ void chain_sync(BlockChain& blockchain) {
             }
             else
             {
-                Logger::logStatus("Chain Sync Status: SUCCESS Top Block: " + to_string(blockchain.numBlocks));
+                spdlog::info("Chain Sync Status: SUCCESS Top Block: {}", to_string(blockchain.numBlocks));
                 blockchain.retries = 0;
             }
         }
         else
         {
-            Logger::logStatus("Debug isSyncing: " + to_string(blockchain.isSyncing));
-            Logger::logStatus("Debug hosts.getBlockCount: " + to_string(blockchain.hosts.getBlockCount()));
-            Logger::logStatus("Debug numBlocks: " + to_string(blockchain.numBlocks));
+            spdlog::info("Debug isSyncing: {}", to_string(blockchain.isSyncing));
+            spdlog::info("Debug hosts.getBlockCount: {}", to_string(blockchain.hosts.getBlockCount()));
+            spdlog::info("Debug numBlocks: {}", to_string(blockchain.numBlocks));
         }
     }
 }
@@ -94,7 +94,7 @@ BlockChain::~BlockChain() {
 void BlockChain::initChain() {
     this->isSyncing = false;
     if (this->blockStore->hasBlockCount()) {
-        Logger::logStatus("BlockStore exists, loading from disk");
+        spdlog::info("BlockStore exists, loading from disk");
         size_t count = this->blockStore->getBlockCount();
         this->numBlocks = count;
         this->targetBlockCount = count;
@@ -108,7 +108,7 @@ void BlockChain::initChain() {
 }
 
 void BlockChain::resetChain() {
-    Logger::logStatus("BlockStore does not exist");
+    spdlog::info("BlockStore does not exist");
     this->difficulty = 16;
     this->targetBlockCount = 1;
     this->numBlocks = 0;
@@ -149,7 +149,7 @@ void BlockChain::resetChain() {
     try {
          genesisJson = readJsonFromFile("genesis.json");
     } catch(...) {
-        Logger::logError(RED + "[FATAL]" + RESET, "Could not load genesis.json file.");
+        spdlog::critical("Could not load genesis.json file.");
         exit(-1);
     }
 
@@ -382,7 +382,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) {
         if (block.getId() >= 536100 && block.getId() <= 536200 && block.getDifficulty() == 27) {
-            Logger::logStatus("Skipping difficulty verification on known invalid difficulty");
+            spdlog::info("Skipping difficulty verification on known invalid difficulty");
         } else {
             return INVALID_DIFFICULTY;
         }
@@ -438,8 +438,8 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         this->blockStore->setBlockCount(this->numBlocks);
         this->lastHash = block.getHash();
         this->updateDifficulty();
-        Logger::logStatus("Added block " + to_string(block.getId()));
-        Logger::logStatus("difficulty= " + to_string(block.getDifficulty()));
+        spdlog::info("Added block {}", to_string(block.getId()));
+        spdlog::info("difficulty= {}", to_string(block.getDifficulty()));
     }
     return status;
 }
@@ -455,7 +455,7 @@ void BlockChain::recomputeLedger() {
     this->ledger.clear();
     this->txdb.clear();
     for(int i = 1; i <= this->numBlocks; i++) {
-        if (i % 10000 == 0) Logger::logStatus("Re-computing chain, finished block: " + to_string(i));
+        if (i % 10000 == 0) spdlog::info("Re-computing chain, finished block: {}", to_string(i));
         LedgerState deltas;
         Block block = this->getBlock(i);
         bool checkInvalid = NO_VALIDITY_CHECK_BEFORE_HEIGHT <= getBlockCount();
@@ -465,7 +465,7 @@ void BlockChain::recomputeLedger() {
             if (!t.isFee()) this->txdb.insertTransaction(t, block.getId());
         }
         if (addResult != SUCCESS) {
-            Logger::logError(RED + "[FATAL]" + RESET, "Corrupt blockchain. Exiting. Please delete data dir and sync from scratch.");
+            spdlog::critical("Corrupt blockchain. Exiting. Please delete data dir and sync from scratch.");
             exit(-1);
         }
     }
@@ -500,7 +500,7 @@ ExecutionStatus BlockChain::startChainSync() {
     int startCount = this->numBlocks;
 
     int needed = this->targetBlockCount - startCount;
-    if (needed > 0) Logger::logStatus("fetching target blockcount=" + to_string(this->targetBlockCount));
+    if (needed > 0) spdlog::info("fetching target blockcount={}", to_string(this->targetBlockCount));
     // download any remaining blocks in batches
     uint64_t start = std::time(0);
     for(int i = startCount + 1; i <= this->targetBlockCount; i+=BLOCKS_PER_FETCH) {
@@ -517,18 +517,18 @@ ExecutionStatus BlockChain::startChainSync() {
                 if (addResult != SUCCESS) {
                     failure = true;
                     status = addResult;
-                    Logger::logError("Chain failed at blockID, recomputing ledger", std::to_string(b.getId()));
+                    spdlog::error("Chain failed at blockID, recomputing ledger {}", std::to_string(b.getId()));
                     break;
                 }
             }
             if (failure) {
-                Logger::logError("BlockChain::startChainSync", executionStatusAsString(status));
+                spdlog::error("BlockChain::startChainSync {}", executionStatusAsString(status));
                 this->isSyncing = false;
                 return status;
             }
         } catch (const std::exception &e) {
             this->isSyncing = false;
-            Logger::logError("BlockChain::startChainSync", "Failed to load block" + string(e.what()));
+            spdlog::error("BlockChain::startChainSync, Failed to load block: {}" + string(e.what()));
             return UNKNOWN_ERROR;
         }
     }
@@ -536,7 +536,7 @@ ExecutionStatus BlockChain::startChainSync() {
     uint64_t d = final - start;
     stringstream s;
     s<<"Downloaded " << needed <<" blocks in " << d << " seconds from " + bestHost;
-    if (needed > 1) Logger::logStatus(s.str());
+    if (needed > 1) spdlog::info(s.str());
     this->isSyncing = false;
     return SUCCESS;
 }

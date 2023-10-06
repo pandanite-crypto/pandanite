@@ -3,9 +3,9 @@
 #include <future>
 #include <math.h>
 #include "../core/helpers.hpp"
-#include "../core/logger.hpp"
 #include "../core/merkle_tree.hpp"
 #include "request_manager.hpp"
+#include "spdlog/spdlog.h"
 using namespace std;
 
 #define NEW_BLOCK_PEER_FANOUT 8
@@ -33,13 +33,13 @@ RequestManager::RequestManager(HostManager& hosts, string ledgerPath, string blo
                 mempoolInitSuccessful = true;
                 break;  // Successfully initialized mempool, break out of the loop
             } catch(const std::exception& e) {
-                Logger::logError("RequestManager::Failed to initialize mempool from host: ", bestHost);
+                spdlog::error("RequestManager::Failed to initialize mempool from host: {}", bestHost);
             }
         }
     }
 
     if (!mempoolInitSuccessful) {
-        Logger::logError("RequestManager::Constructor", "Failed to initialize mempool after trying with top-synced hosts.");
+        spdlog::error("RequestManager::Constructor Failed to initialize mempool after trying with top-synced hosts.");
         // TODO further actions here.
     }
 
@@ -112,7 +112,7 @@ json RequestManager::submitProofOfWork(Block& newBlock) {
                     Block a = newBlock;
                     submitBlock(neighbor, a);
                 } catch(...) {
-                    Logger::logStatus("Could not forward new block to " + neighbor);
+                    spdlog::warn("Could not forward new block to {}" + neighbor);
                 }
             }}.detach();
         }

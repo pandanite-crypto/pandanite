@@ -7,6 +7,7 @@
 #include "../core/common.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/config.hpp"
+#include "spdlog/spdlog.h"
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -21,16 +22,16 @@ int main(int argc, char** argv) {
         PublicWalletAddress keyFromAddress = walletAddressFromPublicKey(stringToPublicKey(keys["publicKey"]));
         PublicWalletAddress statedFromAddress = stringToWalletAddress(keys["wallet"]);
         if (keyFromAddress != statedFromAddress) {
-            cout << "Wallet address does not match public key. Keyfile is likely corrupted." << endl;
+            spdlog::warn("Wallet address does not match public key. Keyfile is likely corrupted.");
             return 0;
         }
     } catch(...) {
-        cout << "Could not read ./keys.json" << endl;
+        spdlog::error("Could not read ./keys.json");
         return 0;
     }
 
     if (keys.find("publicKey") == keys.end() || keys.find("privateKey") == keys.end()) {
-        cout << "Missing publicKey or privateKey in keys.json" << endl;
+        spdlog::error("Missing publicKey or privateKey in keys.json");
         return 0;
     }
 
@@ -49,7 +50,7 @@ int main(int argc, char** argv) {
     TransactionAmount amount;
     cin >> amount;
     if (cin.fail()) {
-        cout << "Invalid amount entered" << endl;
+        cerr << "Invalid amount entered" << endl;
         return 0;
     }
 
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
     TransactionAmount fee;
     cin >> fee;
     if (cin.fail()) {
-        cout << "Invalid fee entered" << endl;
+        cerr << "Invalid fee entered" << endl;
             return 0;
 }
 

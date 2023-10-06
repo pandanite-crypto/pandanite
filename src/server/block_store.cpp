@@ -2,7 +2,6 @@
 #include <thread>
 #include "../core/crypto.hpp"
 #include "../core/transaction.hpp"
-#include "../core/logger.hpp"
 #include "block_store.hpp"
 using namespace std;
 

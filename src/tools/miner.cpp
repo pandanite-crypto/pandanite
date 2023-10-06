@@ -4,9 +4,9 @@
 #include "../core/crypto.hpp"
 #include "../core/merkle_tree.hpp"
 #include "../core/host_manager.hpp"
-#include "../core/logger.hpp"
 #include "../core/user.hpp"
 #include "../core/config.hpp"
+#include "spdlog/spdlog.h"
 #include <iostream>
 #include <mutex>
 #include <set>
@@ -44,7 +44,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             }
 
             if (host == "") {
-                Logger::logStatus("no host found");
+                spdlog::info("no host found");
                 return;
             }
 
@@ -60,7 +60,7 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
             vector<Transaction> transactions;
             readRawTransactions(host, transactions);
 
-            Logger::logStatus("[ NEW ] block = " + std::to_string(nextBlock) + ", difficulty = " + to_string(problem["challengeSize"]) + ", transactions = " + to_string(transactions.size()) + " - " + host);
+            spdlog::info("[ NEW ] block = {}, difficulty = {}, transactions = {} - {}", std::to_string(nextBlock), to_string(problem["challengeSize"]), to_string(transactions.size()),  host    );
 
             string lastHashStr = problem["lastHash"];
             SHA256Hash lastHash = stringToSHA256(lastHashStr);
@@ -105,22 +105,22 @@ void get_work(PublicWalletAddress wallet, HostManager& hosts, string& customHost
 
             SHA256Hash solution = mineHash(newBlock.getHash(), challengeSize, newBlock.getId() > PUFFERFISH_START_BLOCK);
             newBlock.setNonce(solution);
-            Logger::logStatus("Submitting block...");
+            spdlog::info("Submitting block...");
             auto result{ submitBlock(host, newBlock)};
             if (!result.has_value()) 
                 throw std::runtime_error("Cannot submit block");
 
             if (result->contains("status") && string((*result)["status"]) == "SUCCESS")  {
-                Logger::logStatus(GREEN + "[ ACCEPTED ] " + RESET );
+                spdlog::info("[ ACCEPTED ]");
             } else {
-                Logger::logStatus(RED + "[ REJECTED ] " + RESET);
-                Logger::logStatus(result->dump(4));
+                spdlog::error("[ REJECTED ]");
+                spdlog::error(result->dump(4));
             }          
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         } catch (const std::exception& e) {
-            Logger::logStatus("Exception: "s+e.what());
+            spdlog::error("Exception: "s+e.what());
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
@@ -141,16 +141,16 @@ int main(int argc, char **argv) {
         try {
             keys = readJsonFromFile("./keys.json");
         } catch(...) {
-            Logger::logStatus("Could not read ./keys.json");
+            spdlog::error("Could not read ./keys.json");
             return 0;
         }
         wallet = stringToWalletAddress(keys["wallet"]);
-        Logger::logStatus("Running miner. Coins stored in : " + string(keys["wallet"]));
+        spdlog::info("Running miner. Coins stored in : {}", string(keys["wallet"]));
     } else {
         wallet = stringToWalletAddress(customWallet);
-        Logger::logStatus("Running miner. Coins stored in : " + customWallet);
+        spdlog::info("Running miner. Coins stored in : {}", customWallet);
     }
         
-    Logger::logStatus("Starting miner on single thread");
+    spdlog::info("Starting miner on single thread");
     get_work(wallet, hosts, customIp);
 }

@@ -1,12 +1,12 @@
 
 #include "crypto.hpp"
 #include "helpers.hpp"
-#include "logger.hpp"
 #include "constants.hpp"
 #include <iostream>
 #include <atomic>
 #include <thread>
 #include <random>
+#include "spdlog/spdlog.h"
 #include "../external/ed25519/ed25519.h" //https://github.com/orlp/ed25519
 #include "../external/pufferfish/pufferfish.h" //https://github.com/epixoip/pufferfish
 #include "../external/sha256/sha2.hpp" 
@@ -36,7 +36,7 @@ SHA256Hash PUFFERFISH(const char* buffer, size_t len, bool useCache) {
     memset(hash, 0, PF_HASHSPACE);
     int ret = 0;
     if ((ret = pf_newhash((const void*) buffer, len, 0, 8, hash)) != 0) {
-        Logger::logStatus("PUFFERFISH failed to compute hash");
+        spdlog::error("PUFFERFISH failed to compute hash");
     }
     size_t sz = PF_HASHSPACE;
 
@@ -278,7 +278,7 @@ SHA256Hash mineHash(SHA256Hash target, unsigned char challengeSize, bool usePuff
 
         if (hashes++ > 1024) {
             double hps = (double)hashes / ((double)(getTimeMilliseconds() - st) / 1000);
-            Logger::logStatus("[thread" + std::to_string(threadId) + "] mining at " + std::to_string(hps) + "h/sec");
+            spdlog::info("[thread {}] mining at {} h/sec", std::to_string(threadId),std::to_string(hps));
             hashes = 0;
             st = getTimeMilliseconds();
         }

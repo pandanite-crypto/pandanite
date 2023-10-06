@@ -1,15 +1,16 @@
 #include "../core/common.hpp"
 #include "../core/host_manager.hpp"
 #include "../server/blockchain.hpp"
+#include "spdlog/spdlog.h"
 
 #include <fstream>
 using namespace std;
 
 int main(int argc, char** argv) {
-    cout<<"=====LOAD BLOCKCHAIN===="<<endl;
+    spdlog::info("=====LOAD BLOCKCHAIN====");
     string line;
     ifstream infile(argv[1]);
-    cout<<"Loading from "<<argv[1]<<endl;
+    spdlog::info("Loading from {}", argv[1]);
     if (infile.is_open()) {
         HostManager h;
         BlockChain* blockchain = new BlockChain(h);
@@ -18,14 +19,14 @@ int main(int argc, char** argv) {
                 json data = json::parse(line);
                 Block b = Block(data);
                 blockchain->addBlock(b);
-                cout<<"Added block: " << data.dump() << endl;
+                spdlog::info("Added block: {}", data.dump());
             } catch (...){
-                cout<<"Error parsing data file. Please delete data dir and try again"<<endl;
+                spdlog::error("Error parsing data file. Please delete data dir and try again");
                 break;
             }
         }
     } else {
-        cout<<"Failed to load file."<<endl;
+        spdlog::error("Failed to load file.");
     }
     
 }

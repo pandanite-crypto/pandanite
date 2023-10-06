@@ -2,13 +2,14 @@
 #include "helpers.hpp"
 #include "api.hpp"
 #include "constants.hpp"
-#include "logger.hpp"
 #include "header_chain.hpp"
 #include "../external/http.hpp"
+#include "spdlog/spdlog.h"
 #include <iostream>
 #include <sstream>
 #include <thread>
 #include <mutex>
+#include <fstream>
 #include <future>
 #include <cstdio>
 using namespace std;
@@ -62,7 +63,7 @@ string HostManager::computeAddress() {
         }
 
         if (!found) {
-            Logger::logError("IP discovery", "Could not determine current IP address");
+            spdlog::error("IP discovery {} Could not determine current IP address");
         }
     } else {
         this->address = this->ip + ":" + to_string(this->port);
@@ -92,14 +93,13 @@ void peer_sync(HostManager& hm) {
 void header_stats(HostManager& hm) {
     std::this_thread::sleep_for(std::chrono::seconds(30));
     while(true) {
-        Logger::logStatus("================ Header Sync Status ===============");
+        spdlog::info("================ Header Sync Status ===============");
         map<string, pair<uint64_t, std::string>> stats = hm.getHeaderChainStats();
             for(auto item : stats) {
                 stringstream ss;
-            ss << "Host: " << item.first << ", blocks: " << item.second.first << ", node_ver: " << item.second.second;
-            Logger::logStatus(ss.str());
+            spdlog::info("Host: {} blocks: {}, node_ver: {}", item.first, item.second.first,  item.second.second);
         }
-        Logger::logStatus("===================================================");
+        spdlog::info("===================================================");
         std::this_thread::sleep_for(std::chrono::seconds(30));
     }
 }
@@ -137,7 +137,7 @@ HostManager::HostManager(json config) {
                     blocked = blocked.substr(0, blocked.size() - 1);
                 }
                 this->blacklist.insert(blocked);
-                Logger::logStatus("Ignoring host " + blocked);
+                spdlog::info("Ignoring host {}", blocked);
             }
         }
     }
@@ -153,7 +153,7 @@ HostManager::HostManager(json config) {
                     enabled = enabled.substr(0, enabled.size() - 1);
                 }
                 this->whitelist.insert(enabled);
-                Logger::logStatus("Enabling host " + enabled);
+                spdlog::info("Enabling host {}", enabled);
             }
         }
     }
@@ -327,7 +327,7 @@ set<string> HostManager::sampleFreshHosts(int count) const {
     }
     
     if (freshHostsWithHeight.empty()) {
-        //Logger::logStatus("HostManager::sampleFreshHosts No fresh hosts found. Falling back to fixed hosts.");
+        spdlog::debug("HostManager::sampleFreshHosts No fresh hosts found. Falling back to fixed hosts.");
         return set<string>(fixedHosts.begin(), fixedHosts.end());
     }
     
@@ -337,7 +337,7 @@ set<string> HostManager::sampleFreshHosts(int count) const {
              return a.second > b.second; 
          });
      if (!freshHostsWithHeight.empty()) {
-        Logger::logStatus("HostManager::sampleFreshHosts Top-synced host: " + freshHostsWithHeight[0].first + " with block height: " + std::to_string(freshHostsWithHeight[0].second));    
+        spdlog::info("HostManager::sampleFreshHosts Top-synced host: {} with block height: {}", freshHostsWithHeight[0].first,std::to_string(freshHostsWithHeight[0].second));    
       }
      
     int numToPick = min(count, (int)freshHostsWithHeight.size());
@@ -376,7 +376,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 
     // add to our host list
     if (this->whitelist.size() == 0 || this->whitelist.find(addr) != this->whitelist.end()){
-        Logger::logStatus("Added new peer: " + addr);
+        spdlog::info("Added new peer: {}", addr);
         hosts.push_back(addr);
     } else {
         return;
@@ -399,7 +399,7 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
             try {
                 pingPeer(neighbor, addr, std::time(0), _version, networkName);
             } catch(...) {
-                Logger::logStatus("Could not add peer " + addr + " to " + neighbor);
+                spdlog::info("Could not add peer " + addr + " to " + neighbor);
             }
         }));
     }
@@ -425,7 +425,7 @@ bool HostManager::isDisabled() {
 void HostManager::refreshHostList() {
     if (this->hostSources.size() == 0) return;
     
-    Logger::logStatus("Finding peers...");
+    spdlog::info("Finding peers...");
 
     set<string> fullHostList;
 
@@ -465,22 +465,22 @@ void HostManager::refreshHostList() {
                 if (auto hostInfo{getName(hostUrl)}; hostInfo.has_value()) {
                     auto v{extractHostVersion(*hostInfo)};
                     if (!v.has_value()){
-                        Logger::logStatus(RED + "[ BAD_JSON ] " + RESET  + hostUrl);
+                        spdlog::error("[ BAD_JSON ] {}", hostUrl);
                         return;
                     }
                     std::string& version{*v};
                     if ((*hostInfo)["version"] < hm.minHostVersion) {
-                        Logger::logStatus(RED + "[ DEPRECATED ] " + RESET  + hostUrl);
+                        spdlog::warn("[ DEPRECATED ] {}", hostUrl);
                         return;
                     }
                     std::unique_lock<std::mutex> ul(lock);
                     if (hm.whitelist.size() == 0 || hm.whitelist.find(hostUrl) != hm.whitelist.end()){
                         hm.hosts.push_back(hostUrl);
-                        Logger::logStatus(GREEN + "[ CONNECTED ] " + RESET  + hostUrl);
+                        spdlog::info("[ CONNECTED ] {}", hostUrl);
                         hm.hostPingTimes[hostUrl] = std::time(0);
                     }
                 }else{
-                    Logger::logStatus(RED + "[ UNREACHABLE ] " + RESET  + hostUrl);
+                    spdlog::warn("[ UNREACHABLE ] {}", hostUrl);
                 }
             })
         );

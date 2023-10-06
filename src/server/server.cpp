@@ -9,15 +9,14 @@
 #include <signal.h>
 #include <execinfo.h>
 #include <filesystem>
-#include "../core/logger.hpp"
 #include "../core/crypto.hpp"
 #include "../core/host_manager.hpp"
 #include "../core/helpers.hpp"
 #include "../core/api.hpp"
 #include "../core/crypto.hpp"
 #include "../core/config.hpp"
-#include "../core/logger.hpp"
 #include "request_manager.hpp"
+#include "spdlog/spdlog.h"
 #include "server.hpp"
 
 using namespace std;
@@ -55,7 +54,7 @@ namespace {
             std::cerr << "Error: signal " << signal << std::endl;
             backtrace_symbols_fd(array, size, STDERR_FILENO);
 
-            Logger::logError(RED + "[FATAL]" + RESET, "Error: signal " + std::to_string(signal));
+            spdlog::critical("Error: signal {}", std::to_string(signal));
 	
 		}
 		
@@ -70,17 +69,17 @@ void PandaniteServer::run(json config) {
     std::filesystem::path data{ "data" };
 
     if (!std::filesystem::exists(data)) {
-        Logger::logStatus("Creating data directory...");
+        spdlog::info("Creating data directory...");
         try {
             std::filesystem::create_directory(data);
         }
         catch (std::exception& e) {
-            std::cout << e.what() << std::endl;
+            spdlog::error(e.what());
         }
     }
 
     
-    Logger::logStatus("Starting Server Version: ");
+    spdlog::info("Starting Server Version: ");
     HostManager hosts(config);
 
     
@@ -94,9 +93,9 @@ void PandaniteServer::run(json config) {
 
 
     shutdown_handler = [&](int signal) {
-        Logger::logStatus("Shutting down server.");
+        spdlog::info("Shutting down server.");
         manager.exit();
-        Logger::logStatus("FINISHED");
+        spdlog::info("FINISHED");
     };
 
     signal(SIGINT, signal_handler);
@@ -107,30 +106,30 @@ void PandaniteServer::run(json config) {
 
     if (config["rateLimiter"] == false) manager.enableRateLimiting(false);
     
-    Logger::logStatus("RequestManager ready...");
+    spdlog::info("RequestManager ready...");
 
-    Logger::logStatus("Server Ready.");
+    spdlog::info("Server Ready.");
 
     auto corsHandler = [&manager](auto *res, auto *req) {
         sendCorsHeaders(res);
         res->end("");
     };
     
-    auto logsHandler = [&manager](auto *res, auto *req) {
-        rateLimit(manager, res);
-        sendCorsHeaders(res);
-        try {
-            string s = "";
-            for(auto str : Logger::buffer) {
-                s += str + "<br/>";
-            }
-            res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(s);
-        } catch(const std::exception &e) {
-            Logger::logError("/logs", e.what());
-        } catch(...) {
-            Logger::logError("/logs", "unknown");
-        }
-    };
+    // auto logsHandler = [&manager](auto *res, auto *req) {
+    //     rateLimit(manager, res);
+    //     sendCorsHeaders(res);
+    //     try {
+    //         string s = "";
+    //         for(auto str : LoggerDeprecated::buffer) {
+    //             s += str + "<br/>";
+    //         }
+    //         res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(s);
+    //     } catch(const std::exception &e) {
+    //         spdlog::error("/logs {}", e.what());
+    //     } catch(...) {
+    //         spdlog::error("/logs {}", "unknown");
+    //     }
+    // };
 
     auto statsHandler = [&manager](auto *res, auto *req) {
         rateLimit(manager, res);
@@ -139,9 +138,9 @@ void PandaniteServer::run(json config) {
             json stats = manager.getStats();
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(stats.dump());
         } catch(const std::exception &e) {
-            Logger::logError("/stats", e.what());
+            spdlog::error("/stats {}", e.what());
         } catch(...) {
-            Logger::logError("/stats", "unknown");
+            spdlog::error("/stats {}", "unknown");
         }
     };
 
@@ -152,9 +151,9 @@ void PandaniteServer::run(json config) {
             std::string count = manager.getTotalWork();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
         } catch(const std::exception &e) {
-            Logger::logError("/total_work", e.what());
+            spdlog::error("/total_work {}", e.what());
         } catch(...) {
-            Logger::logError("/total_work", "unknown");
+            spdlog::error("/total_work {}", "unknown");
         }
     };
 
@@ -182,9 +181,9 @@ void PandaniteServer::run(json config) {
             std::string count = manager.getBlockCount();
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(count);
         } catch(const std::exception &e) {
-            Logger::logError("/block_count", e.what());
+            spdlog::error("/block_count {}", e.what());
         } catch(...) {
-            Logger::logError("/block_count", "unknown");
+            spdlog::error("/block_count {}", "unknown");
         }
     };
 
@@ -197,10 +196,10 @@ void PandaniteServer::run(json config) {
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
             result["error"] = "Unknown error";
-            Logger::logError("/get_tx_json", e.what());
+            spdlog::error("/get_tx_json {}", e.what());
             res->end("");
         } catch(...) {
-            Logger::logError("/get_tx_json", "unknown");
+            spdlog::error("/get_tx_json {}", "unknown");
             res->end("");
         }
     };
@@ -226,10 +225,10 @@ void PandaniteServer::run(json config) {
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
             result["error"] = "Unknown error";
-            Logger::logError("/block", e.what());
+            spdlog::error("/block {}", e.what());
             res->end("");
         } catch(...) {
-            Logger::logError("/block", "unknown");
+            spdlog::error("/block {}", "unknown");
             res->end("");
         }
     };
@@ -255,10 +254,10 @@ void PandaniteServer::run(json config) {
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
             result["error"] = "Unknown error";
-            Logger::logError("/mine_status", e.what());
+            spdlog::error("/mine_status {}", e.what());
             res->end("");
         } catch(...) {
-            Logger::logError("/mine_status", "unknown");
+            spdlog::error("/mine_status {}", "unknown");
             res->end("");
         }
     };
@@ -277,9 +276,9 @@ void PandaniteServer::run(json config) {
             json ledger = manager.getLedger(w);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
         } catch(const std::exception &e) {
-            Logger::logError("/ledger", e.what());
+            spdlog::error("/ledger {}", e.what());
         } catch(...) {
-            Logger::logError("/ledger", "unknown");
+            spdlog::error("/ledger {}", "unknown");
         }
     };
 
@@ -297,9 +296,9 @@ void PandaniteServer::run(json config) {
             json ret = manager.getTransactionsForWallet(w);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ret.dump());
         } catch(const std::exception &e) {
-            Logger::logError("/wallet", e.what());
+            spdlog::error("/wallet {}", e.what());
         } catch(...) {
-            Logger::logError("/wallet", "unknown");
+            spdlog::error("/wallet {}", "unknown");
         }
     };
 
@@ -312,9 +311,9 @@ void PandaniteServer::run(json config) {
             json ledger = manager.getLedger(w);
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(ledger.dump());
         } catch(const std::exception &e) {
-            Logger::logError("/ledger", e.what());
+            spdlog::error("/ledger {}", e.what());
         } catch(...) {
-            Logger::logError("/ledger", "unknown");
+            spdlog::error("/ledger {}", "unknown");
         }
     };
 
@@ -335,9 +334,9 @@ void PandaniteServer::run(json config) {
             key["privateKey"] = privKey;
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(key.dump());
         } catch (const std::exception& e) {
-            Logger::logError("/create_wallet", e.what());
+            spdlog::error("/create_wallet {}", e.what());
         } catch(...) {
-            Logger::logError("/create_wallet", "unknown");
+            spdlog::error("/create_wallet {}", "unknown");
         }
     };
 
@@ -367,9 +366,9 @@ void PandaniteServer::run(json config) {
                     json result = t.toJson();
                     res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
                 }  catch(const std::exception &e) {
-                    Logger::logError("/create_transaction", e.what());
+                    spdlog::error("/create_transaction {}", e.what());
                 } catch(...) {
-                    Logger::logError("/create_transaction", "unknown");
+                    spdlog::error("/create_transaction {}", "unknown");
                 }
             }
         });
@@ -395,10 +394,10 @@ void PandaniteServer::run(json config) {
                     json result = manager.addPeer(peerInfo["address"], peerInfo["time"], peerInfo["version"], peerInfo["networkName"]);
                     res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
                 }  catch(const std::exception &e) {
-                    Logger::logStatus(peerInfo.dump());
-                    Logger::logError("/add_peer", e.what());
+                    spdlog::info(peerInfo.dump());
+                    spdlog::error("/add_peer {}", e.what());
                 } catch(...) {
-                    Logger::logError("/add_peer", "unknown");
+                    spdlog::error("/add_peer {}", "unknown");
                 }
             }
         });
@@ -420,7 +419,7 @@ void PandaniteServer::run(json config) {
                     if (buffer.length() < BLOCKHEADER_BUFFER_SIZE + TRANSACTIONINFO_BUFFER_SIZE) {
                         json response;
                         response["error"] = "Malformed block";
-                        Logger::logError("/submit","Malformed block");
+                        spdlog::error("/submit {}","Malformed block");
                         res->end(response.dump());
                     } else {
                         char * ptr = (char*)buffer.c_str();
@@ -429,7 +428,7 @@ void PandaniteServer::run(json config) {
                         if (buffer.size() != BLOCKHEADER_BUFFER_SIZE + blockH.numTransactions*TRANSACTIONINFO_BUFFER_SIZE) {
                             json response;
                             response["error"] = "Malformed block";
-                            Logger::logError("/submit","Malformed block");
+                            spdlog::error("/submit {}","Malformed block");
                             res->end(response.dump());
                             return;
                         }
@@ -439,7 +438,7 @@ void PandaniteServer::run(json config) {
                             json response;
                             response["error"] = "Too many transactions";
                             res->end(response.dump());
-                            Logger::logError("/submit","Too many transactions");
+                            spdlog::error("/submit {}","Too many transactions");
                         } else {
                             for(int j = 0; j < blockH.numTransactions; j++) {
                                 TransactionInfo t = transactionInfoFromBuffer(ptr);
@@ -456,12 +455,12 @@ void PandaniteServer::run(json config) {
                     json response;
                     response["error"] = string(e.what());
                     res->end(response.dump());
-                    Logger::logError("/submit", e.what());
+                    spdlog::error("/submit {}", e.what());
                 } catch(...) {
                     json response;
                     response["error"] = "unknown";
                     res->end(response.dump());
-                    Logger::logError("/submit", "unknown");
+                    spdlog::error("/submit {}", "unknown");
                 }
                 
             }
@@ -479,9 +478,9 @@ void PandaniteServer::run(json config) {
             delete buffer.first;
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/gettx", e.what());
+            spdlog::error("/gettx {}", e.what());
         } catch(...) {
-            Logger::logError("/gettx", "unknown");
+            spdlog::error("/gettx {}", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
@@ -495,9 +494,9 @@ void PandaniteServer::run(json config) {
             json response = manager.getSupply();
             res->end(response.dump());
         } catch(const std::exception &e) {
-            Logger::logError("/supply", e.what());
+            spdlog::error("/supply {}", e.what());
         } catch(...) {
-            Logger::logError("/supply", "unknown");
+            spdlog::error("/supply {}", "unknown");
         }
     };
 
@@ -508,9 +507,9 @@ void PandaniteServer::run(json config) {
             json response = manager.getProofOfWork();
             res->end(response.dump());
         } catch(const std::exception &e) {
-            Logger::logError("/mine", e.what());
+            spdlog::error("/mine {}", e.what());
         } catch(...) {
-            Logger::logError("/mine", "unknown");
+            spdlog::error("/mine {}", "unknown");
         }
     };
 
@@ -523,7 +522,7 @@ void PandaniteServer::run(json config) {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
             if ((end-start) > BLOCKS_PER_FETCH) {
-                Logger::logError("/sync", "invalid range requested");
+                spdlog::error("/sync {}", "invalid range requested");
                 res->end("");
             }
             res->writeHeader("Content-Type", "application/octet-stream");
@@ -535,9 +534,9 @@ void PandaniteServer::run(json config) {
             }
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/sync", e.what());
+            spdlog::error("/sync {}", e.what());
         } catch(...) {
-            Logger::logError("/sync", "unknown");
+            spdlog::error("/sync {}", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
@@ -551,7 +550,7 @@ void PandaniteServer::run(json config) {
             int start = std::stoi(string(req->getParameter(0)));
             int end = std::stoi(string(req->getParameter(1)));
             if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
-                Logger::logError("/block_headers", "invalid range requested");
+                spdlog::error("/block_headers {}", "invalid range requested");
                 res->end("");
             }
             res->writeHeader("Content-Type", "application/octet-stream");
@@ -564,9 +563,9 @@ void PandaniteServer::run(json config) {
             }
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/block_headers", e.what());
+            spdlog::error("/block_headers {}", e.what());
         } catch(...) {
-            Logger::logError("/block_headers", "unknown");
+            spdlog::error("/block_headers {}", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
@@ -588,10 +587,10 @@ void PandaniteServer::run(json config) {
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
             result["error"] = "Unknown error";
-            Logger::logError("/block", e.what());
+            spdlog::error("/block {}", e.what());
             res->end("");
         } catch(...) {
-            Logger::logError("/block", "unknown");
+            spdlog::error("/block {}", "unknown");
             res->end("");
         }
     };
@@ -611,10 +610,10 @@ void PandaniteServer::run(json config) {
             res->writeHeader("Content-Type", "application/json; charset=utf-8")->end(result.dump());
         } catch(const std::exception &e) {
             result["error"] = "Unknown error";
-            Logger::logError("/block", e.what());
+            spdlog::error("/block {}", e.what());
             res->end("");
         } catch(...) {
-            Logger::logError("/block", "unknown");
+            spdlog::error("/block {}", "unknown");
             res->end("");
         }
     };
@@ -634,7 +633,7 @@ void PandaniteServer::run(json config) {
             int start = std::stoi(string(req->getQuery("start")));
             int end = std::stoi(string(req->getQuery("end")));
             if ((end-start) > BLOCKS_PER_FETCH) {
-                Logger::logError("/v2/sync", "invalid range requested");
+                spdlog::error("/v2/sync {}", "invalid range requested");
                 res->end("");
             }
             res->writeHeader("Content-Type", "application/octet-stream");
@@ -646,9 +645,9 @@ void PandaniteServer::run(json config) {
             }
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/v2/sync", e.what());
+            spdlog::error("/v2/sync {}", e.what());
         } catch(...) {
-            Logger::logError("/v2/sync", "unknown");
+            spdlog::error("/v2/sync {}", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
@@ -668,7 +667,7 @@ void PandaniteServer::run(json config) {
             int start = std::stoi(string(req->getQuery("start")));
             int end = std::stoi(string(req->getQuery("end")));
             if ((end-start) > BLOCK_HEADERS_PER_FETCH) {
-                Logger::logError("/v2/block_headers", "invalid range requested");
+                spdlog::error("/v2/block_headers {}", "invalid range requested");
                 res->end("");
             }
             res->writeHeader("Content-Type", "application/octet-stream");
@@ -681,9 +680,9 @@ void PandaniteServer::run(json config) {
             }
             res->end("");
         } catch(const std::exception &e) {
-            Logger::logError("/v2/block_headers", e.what());
+            spdlog::error("/v2/block_headers {}", e.what());
         } catch(...) {
-            Logger::logError("/v2/block_headers", "unknown");
+            spdlog::error("/v2/block_headers {}", "unknown");
         }
         res->onAborted([res]() {
             res->end("ABORTED");
@@ -705,7 +704,7 @@ void PandaniteServer::run(json config) {
                     if (buffer.length() < TRANSACTIONINFO_BUFFER_SIZE) {
                         json response;
                         response["error"] = "Malformed transaction";
-                        Logger::logError("/add_transaction","Malformed transaction");
+                        spdlog::error("/add_transaction {}","Malformed transaction");
                         res->end(response.dump());
                     } else {
                         uint32_t numTransactions = buffer.length() / TRANSACTIONINFO_BUFFER_SIZE;
@@ -719,9 +718,9 @@ void PandaniteServer::run(json config) {
                         res->end(response.dump());
                     }
                 }  catch(const std::exception &e) {
-                    Logger::logError("/add_transaction", e.what());
+                    spdlog::error("/add_transaction {}", e.what());
                 } catch(...) {
-                    Logger::logError("/add_transaction", "unknown");
+                    spdlog::error("/add_transaction {}", "unknown");
                 }
             }
         });
@@ -760,9 +759,9 @@ void PandaniteServer::run(json config) {
                     }
                     res->end(response.dump());
                 }  catch(const std::exception &e) {
-                    Logger::logError("/add_transaction", e.what());
+                    spdlog::error("/add_transaction {}", e.what());
                 } catch(...) {
-                    Logger::logError("/add_transaction", "unknown");
+                    spdlog::error("/add_transaction {}", "unknown");
                 }
             }
         });
@@ -791,9 +790,9 @@ void PandaniteServer::run(json config) {
                     }
                     res->end(response.dump());
                 }  catch(const std::exception &e) {
-                    Logger::logError("/verify_transaction", e.what());
+                    spdlog::error("/verify_transaction {}", e.what());
                 } catch(...) {
-                    Logger::logError("/verify_transaction", "unknown");
+                    spdlog::error("/verify_transaction {}", "unknown");
                 }
             }
         });
@@ -806,9 +805,9 @@ void PandaniteServer::run(json config) {
             std::string hashrate = to_string(manager.getNetworkHashrate());
             res->writeHeader("Content-Type", "text/html; charset=utf-8")->end(hashrate);
         } catch(const std::exception &e) {
-            Logger::logError("/getnetworkhashrate", e.what());
+            spdlog::error("/getnetworkhashrate {}", e.what());
         } catch(...) {
-            Logger::logError("/getnetworkhashrate", "unknown");
+            spdlog::error("/getnetworkhashrate {}", "unknown");
         }
     };
 
@@ -847,7 +846,7 @@ void PandaniteServer::run(json config) {
         .get("/total_work", totalWorkHandler)
         .get("/peers", peerHandler)
         .get("/block_count", blockCountHandler)
-        .get("/logs", logsHandler)
+        // .get("/logs", logsHandler)
         .get("/stats", statsHandler)
         .get("/block", blockHandler)
         .get("/tx_json", txJsonHandler)
@@ -900,8 +899,6 @@ void PandaniteServer::run(json config) {
         
         
         .listen((int)config["port"], [&hosts](auto *token) {
-            Logger::logStatus("==========================================");
-            Logger::logStatus("Started server: " + hosts.getAddress());
-            Logger::logStatus("==========================================");
+            spdlog::info("Started server: {}",  hosts.getAddress());
         }).run();
 }
