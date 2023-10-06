@@ -3,5 +3,6 @@ spdlog/1.12.0
 zlib/1.2.13
 openssl/3.0.0
 uwebsockets/19.3.0
+leveldb/1.23
 [generators]
 cmake
