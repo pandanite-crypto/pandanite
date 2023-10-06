@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include <cstdint>
 #include "leveldb/db.h"
 #include "../core/common.hpp"
 #include "data_store.hpp"

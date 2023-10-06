@@ -444,9 +444,10 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     return status;
 }
 
-map<string, uint64_t> BlockChain::getHeaderChainStats() const{
+map<string, pair<uint64_t, std::string>> BlockChain::getHeaderChainStats() const {
     return this->hosts.getHeaderChainStats();
 }
+
 
 void BlockChain::recomputeLedger() {
     this->isSyncing = true;

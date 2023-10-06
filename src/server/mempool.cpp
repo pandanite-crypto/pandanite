@@ -60,13 +60,17 @@ void MemPool::mempool_sync() const {
 
         // send each peer a different random set of mempool
         for (auto& peer: peers) {
-            auto randomOffset={rand() % N};
-            std::vector<Transaction> sampledTransactions;
-            for (size_t i{0}; i<batchSize; ++i) {
-                auto index{ i % N};
-                sampledTransactions.push_back(pendingTransactions[index]);
+	    std::vector<Transaction> sampledTransactions;
+		
+	    //if ( N > 0) added only to check when we have pending transaction otherwise e. Floating point exception
+            if ( N > 0) {
+                auto randomOffset = rand() % N;
+                for (size_t i{0}; i < batchSize && i < N; ++i) {
+                    auto index = (randomOffset + i) % N;
+                    sampledTransactions.push_back(pendingTransactions[index]);
+                }
             }
-
+		
             // don't send again while still pending send
             if (pendingPushes.count(peer)>0)
                 continue;

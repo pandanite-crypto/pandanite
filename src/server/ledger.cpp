@@ -49,21 +49,47 @@ TransactionAmount Ledger::getWalletValue(const PublicWalletAddress& wallet) cons
 
 void Ledger::withdraw(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
+    
+    if (amt > value) {
+        //throw std::runtime_error("Underflow detected during withdrawal");
+    }
     value -= amt;
     this->setWalletValue(wallet, value);
 }
 
 void Ledger::revertSend(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
-    this->setWalletValue(wallet, value + amt);
+    
+    // Check for overflow
+    if (UINT64_MAX - value < amt) {
+	//throw std::runtime_error("Overflow detected during revertSend");
+    }
+
+    value += amt;
+
+    this->setWalletValue(wallet, value);
 }
 
 void Ledger::deposit(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
-    this->setWalletValue(wallet, value + amt);
+    
+    // Check for overflow
+    if (UINT64_MAX - value < amt) {
+        //throw std::runtime_error("Overflow detected during revertSend");
+    }
+
+    value += amt;
+
+    this->setWalletValue(wallet, value);
 }
 
 void Ledger::revertDeposit(PublicWalletAddress to, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(to);
-    this->setWalletValue(to, value - amt);
+
+    if (amt > value) {
+        //throw std::runtime_error("Underflow detected during revertDeposit");
+    }
+
+    value -= amt;
+    this->setWalletValue(to, value);
 }

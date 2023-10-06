@@ -159,19 +159,27 @@ void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  Led
     }
 }
 
-void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
-    if (ledger.hasWallet(from)) {
-        ledger.withdraw(from, amt);
-    } else {
-        throw std::runtime_error("Tried withdrawing from non-existant account");
+bool withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
+    if (!ledger.hasWallet(from)) {
+        return false;
     }
 
+    TransactionAmount curr_balance = ledger.getWalletValue(from);
+    if (curr_balance < amt) {
+        return false; // Insufficient funds
+    }
+
+    // First, try updating the deltas
     auto senderDelta = deltas.find(from);
     if (senderDelta == deltas.end()) {
         deltas.insert(pair<PublicWalletAddress, TransactionAmount>(from, -amt));
     } else {
         senderDelta->second -= amt;
     }
+
+    // After updating the deltas
+    ledger.withdraw(from, amt);  // Assuming this doesn't throw exceptions on failure
+    return true;  // Successful withdrawal
 }
 
 ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId, bool checkInvalid) {
@@ -217,10 +225,20 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
                 return BALANCE_TOO_LOW;
             } 
         }
-        withdraw(from, amt, ledger, deltas);
+        if (!withdraw(from, amt, ledger, deltas)) {
+             if (!isInvalidTransaction(blockId, from) && blockId != 0) {
+                addInvalidTransaction(blockId, from);
+                return BALANCE_TOO_LOW;
+            }
+        }
         deposit(to, amt, ledger, deltas);
         if (fees > 0) {
-            withdraw(from, fees, ledger, deltas);
+            if (!withdraw(from, fees, ledger, deltas)) {
+                 if (!isInvalidTransaction(blockId, from) && blockId != 0) {
+                addInvalidTransaction(blockId, from);
+                return BALANCE_TOO_LOW;
+            }
+            }
             deposit(miner, fees, ledger, deltas);
         }
     }
