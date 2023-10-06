@@ -93,10 +93,10 @@ void header_stats(HostManager& hm) {
     std::this_thread::sleep_for(std::chrono::seconds(30));
     while(true) {
         Logger::logStatus("================ Header Sync Status ===============");
-        map<string, uint64_t> stats = hm.getHeaderChainStats();
-        for(auto item : stats) {
-            stringstream ss;
-            ss<<"Host: " <<item.first<<", blocks: "<<item.second;
+        map<string, pair<uint64_t, std::string>> stats = hm.getHeaderChainStats();
+            for(auto item : stats) {
+                stringstream ss;
+            ss << "Host: " << item.first << ", blocks: " << item.second.first << ", node_ver: " << item.second.second;
             Logger::logStatus(ss.str());
         }
         Logger::logStatus("===================================================");
@@ -248,10 +248,10 @@ string HostManager::getGoodHost() const{
 /*
     Returns number of block headers downloaded by peer host
 */
-map<string,uint64_t> HostManager::getHeaderChainStats() const{
-    map<string, uint64_t> ret;
+map<string, pair<uint64_t, std::string>> HostManager::getHeaderChainStats() const{
+    map<string, pair<uint64_t, std::string>> ret;
     for(auto h : this->currPeers) {
-        ret[h->getHost()] = h->getCurrentDownloaded();
+        ret[h->getHost()] = make_pair(h->getCurrentDownloaded(), this->version);
     }
     return ret;
 }
