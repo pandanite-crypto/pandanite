@@ -251,7 +251,7 @@ string HostManager::getGoodHost() const{
 map<string, pair<uint64_t, std::string>> HostManager::getHeaderChainStats() const{
     map<string, pair<uint64_t, std::string>> ret;
     for(auto h : this->currPeers) {
-        ret[h->getHost()] = make_pair(h->getCurrentDownloaded(), this->version);
+        ret.try_emplace(h->getHost(), h->getCurrentDownloaded(), this->version);
     }
     return ret;
 }
