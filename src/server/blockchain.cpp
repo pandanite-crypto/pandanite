@@ -65,9 +65,9 @@ void chain_sync(BlockChain& blockchain) {
         }
         else
         {
-            spdlog::info("Debug isSyncing: {}", to_string(blockchain.isSyncing));
-            spdlog::info("Debug hosts.getBlockCount: {}", to_string(blockchain.hosts.getBlockCount()));
-            spdlog::info("Debug numBlocks: {}", to_string(blockchain.numBlocks));
+            spdlog::debug("isSyncing: {}", to_string(blockchain.isSyncing));
+            spdlog::debug("hosts.getBlockCount: {}", to_string(blockchain.hosts.getBlockCount()));
+            spdlog::debug("numBlocks: {}", to_string(blockchain.numBlocks));
         }
     }
 }
@@ -528,7 +528,7 @@ ExecutionStatus BlockChain::startChainSync() {
             }
         } catch (const std::exception &e) {
             this->isSyncing = false;
-            spdlog::error("BlockChain::startChainSync, Failed to load block: {}" + string(e.what()));
+            spdlog::error("BlockChain::startChainSync, Failed to load block: {}", string(e.what()));
             return UNKNOWN_ERROR;
         }
     }
