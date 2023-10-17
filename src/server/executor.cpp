@@ -220,24 +220,15 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
         total -= amt;
 
         if (checkInvalid && total < fees) {
-            if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-                addInvalidTransaction(blockId, from);
-                return BALANCE_TOO_LOW;
-            } 
+            return BALANCE_TOO_LOW;
         }
         if (!withdraw(from, amt, ledger, deltas)) {
-             if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-                addInvalidTransaction(blockId, from);
-                return BALANCE_TOO_LOW;
-            }
+            return BALANCE_TOO_LOW;
         }
         deposit(to, amt, ledger, deltas);
         if (fees > 0) {
             if (!withdraw(from, fees, ledger, deltas)) {
-                 if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-                addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
-            }
             }
             deposit(miner, fees, ledger, deltas);
         }
